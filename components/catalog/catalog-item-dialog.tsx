@@ -150,8 +150,17 @@ export function CatalogItemDialog({
       }
       onSuccess();
       onClose();
-    } catch (error: any) {
-      setSubmitError(error.message || "Failed to save item");
+    } catch (error) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "message" in error &&
+        typeof error.message === "string"
+      ) {
+        setSubmitError(error.message);
+      } else {
+        setSubmitError("Failed to save item");
+      }
     }
   });
 

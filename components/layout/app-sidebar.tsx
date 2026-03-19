@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Package } from "lucide-react";
+import { Calendar, LayoutDashboard, Package, Users } from "lucide-react";
 import { SIDEBAR_NAV_ITEMS } from "@/lib/constants/navigation";
 import { cn } from "@/lib/utils";
 
@@ -11,6 +11,7 @@ const iconMap = {
   leads: Users,
   Users,
   catalog: Package,
+  calendar: Calendar,
 } as const;
 
 export function AppSidebar() {

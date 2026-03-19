@@ -17,9 +17,11 @@ import { Button } from "@/components/ui/button";
 import { LeadWhatsAppChatDrawer } from "@/components/whatsapp/lead-whatsapp-chat-drawer";
 import { CreateInvoiceModal } from "@/components/leads/create-invoice-modal";
 import { InvoiceCard } from "@/components/leads/invoice-card";
+import { LeadMeetingsSection } from "@/components/leads/lead-meetings-section";
 import { useLookupMaps } from "@/hooks/use-lookup-maps";
 import { fetchLeads, moveLeadStage } from "@/lib/api/leads";
 import { createActivity, fetchLeadActivities } from "@/lib/api/activities";
+import { fetchMeetings } from "@/lib/api/meetings";
 import {
   createFollowUp,
   fetchLeadFollowUps,
@@ -33,6 +35,7 @@ import type { ActivityType, LeadActivity } from "@/lib/types/activity";
 import type { LeadFollowUp } from "@/lib/types/followup";
 import type { Task } from "@/lib/types/task";
 import type { Invoice } from "@/lib/types/invoice";
+import type { Meeting } from "@/lib/types/meeting";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -118,10 +121,12 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
   const [lead, setLead] = useState<Lead | null>(null);
   const [activities, setActivities] = useState<LeadActivity[]>([]);
   const [followUps, setFollowUps] = useState<LeadFollowUp[]>([]);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [meetingsLoading, setMeetingsLoading] = useState(false);
 
   // Drawer / modal
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -211,6 +216,29 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
     }
   }, [lead]);
 
+  const refreshMeetings = useCallback(async () => {
+    setMeetingsLoading(true);
+    try {
+      const { meetings: meetingData } = await fetchMeetings(
+        {
+          lead_id: leadId,
+          from_date: "2020-01-01",
+          limit: 50,
+        },
+        DEFAULT_USER_ID
+      );
+      setMeetings(meetingData);
+    } catch {
+      // keep lead detail usable even if meetings fail to load
+    } finally {
+      setMeetingsLoading(false);
+    }
+  }, [leadId]);
+
+  useEffect(() => {
+    void refreshMeetings();
+  }, [refreshMeetings]);
+
   const refreshActivities = useCallback(async () => {
     const data = await fetchLeadActivities(leadId, DEFAULT_USER_ID);
     setActivities(
@@ -240,6 +268,10 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
     const data = await fetchLeadInvoices(leadId, DEFAULT_USER_ID);
     setInvoices(data);
   }, [leadId]);
+
+  const handleMeetingStatusChange = useCallback(async () => {
+    await Promise.all([refreshMeetings(), refreshActivities()]);
+  }, [refreshActivities, refreshMeetings]);
 
   // ─── Submit handlers ───────────────────────────────────────────────────────
 
@@ -313,7 +345,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
     try {
       await markFollowUpDone(id, {}, DEFAULT_USER_ID);
       await refreshFollowUps();
-    } catch (_err) {
+    } catch {
       // silently ignore — list will reflect server state on next refresh
     }
   };
@@ -322,7 +354,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
     try {
       await updateTask(id, { status: "done" }, DEFAULT_USER_ID);
       await refreshTasks();
-    } catch (_err) {
+    } catch {
       // silently ignore
     }
   };
@@ -358,7 +390,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
         setSelectedStageId(newStageId);
         setStageMoveSuccess(`Moved to ${nextStage?.name ?? "new stage"}`);
       }
-    } catch (_err) {
+    } catch {
       setStageMoveError("Failed to move stage");
     } finally {
       setIsMovingStage(false);
@@ -759,6 +791,16 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
             </div>
           )}
         </section>
+
+        <LeadMeetingsSection
+          meetings={meetings}
+          isLoading={meetingsLoading}
+          leadId={leadId}
+          customerId={lead.customerId}
+          customerName={lead.customerName ?? "Customer"}
+          onMeetingCreated={refreshMeetings}
+          onStatusChange={handleMeetingStatusChange}
+        />
 
         {/* Tasks */}
         <section className="space-y-3 rounded-xl border border-zinc-200 bg-white p-4">

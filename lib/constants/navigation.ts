@@ -1,4 +1,4 @@
-export type SidebarIconName = "dashboard" | "leads" | "Users" | "catalog";
+export type SidebarIconName = "dashboard" | "leads" | "Users" | "catalog" | "calendar";
 
 export type SidebarNavItem = {
   href: string;
@@ -11,4 +11,5 @@ export const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
   { href: "/leads", label: "Leads", icon: "leads" },
   { href: "/customers", label: "Customers", icon: "Users" },
   { href: "/catalog", label: "Catalog", icon: "catalog" },
+  { href: "/meetings", label: "Meetings", icon: "calendar" },
 ];
