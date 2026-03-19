@@ -57,6 +57,7 @@ export interface Payment {
   paymentMethod: PaymentMethod;
   paymentDate: string;
   reference: string | null;
+  createdAt: string;
 }
 
 export interface CreatePaymentInput {
@@ -65,4 +66,12 @@ export interface CreatePaymentInput {
   payment_method: PaymentMethod;
   payment_date: string;
   reference?: string;
+}
+
+export interface PaymentAttachment {
+  id: string;
+  filename: string;
+  file_url: string;
+  file_size: number;
+  created_at: string;
 }

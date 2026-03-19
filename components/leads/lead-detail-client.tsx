@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { LeadWhatsAppChatDrawer } from "@/components/whatsapp/lead-whatsapp-chat-drawer";
 import { CreateInvoiceModal } from "@/components/leads/create-invoice-modal";
+import { InvoiceCard } from "@/components/leads/invoice-card";
 import { useLookupMaps } from "@/hooks/use-lookup-maps";
 import { fetchLeads, moveLeadStage } from "@/lib/api/leads";
 import { createActivity, fetchLeadActivities } from "@/lib/api/activities";
@@ -66,14 +67,6 @@ function timeAgo(isoString: string): string {
   const days = Math.floor(hours / 24);
   if (days < 30) return `${days}d ago`;
   return formatDate(isoString);
-}
-
-function getInvoiceStatusClass(status: string): string {
-  if (status === "paid") return "bg-green-100 text-green-700";
-  if (status === "sent") return "bg-blue-100 text-blue-700";
-  if (status === "overdue") return "bg-red-100 text-red-700";
-  if (status === "partial") return "bg-amber-100 text-amber-700";
-  return "bg-zinc-100 text-zinc-600";
 }
 
 function getPriorityLabel(priority: number): string {
@@ -595,34 +588,13 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
           ) : (
             <div className="space-y-2">
               {invoices.map((inv) => (
-                <div
+                <InvoiceCard
                   key={inv.id}
-                  className="space-y-1.5 rounded-xl border border-zinc-200 bg-white p-3"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-medium text-zinc-800">
-                      #{inv.invoiceNumber}
-                    </span>
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${getInvoiceStatusClass(inv.status)}`}
-                    >
-                      {inv.status}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-zinc-900">
-                      {formatRupees(inv.totalAmount)}
-                    </span>
-                    <span className="text-xs text-zinc-500">
-                      Due: {formatDate(inv.dueDate)}
-                    </span>
-                  </div>
-                  {inv.items && inv.items.length > 0 ? (
-                    <p className="text-xs text-zinc-400">
-                      {inv.items.length} item{inv.items.length !== 1 ? "s" : ""}
-                    </p>
-                  ) : null}
-                </div>
+                  invoice={inv}
+                  onPaymentRecorded={() => {
+                    void refreshInvoices();
+                  }}
+                />
               ))}
             </div>
           )}

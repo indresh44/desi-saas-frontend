@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api/client";
+import { API_BASE_URL } from "@/lib/constants/api";
 import { API_ENDPOINTS, DEFAULT_USER_ID } from "@/lib/constants/api";
 import {
   CreateInvoiceInput,
@@ -7,6 +8,7 @@ import {
   Invoice,
   InvoiceItem,
   Payment,
+  PaymentAttachment,
 } from "@/lib/types/invoice";
 
 type InvoiceItemApiResponse = {
@@ -40,6 +42,13 @@ type PaymentApiResponse = {
   payment_method: "upi" | "cash" | "bank_transfer" | "card";
   payment_date: string;
   reference: string | null;
+  created_at: string;
+};
+
+type AttachmentUploadResponse = {
+  id: string;
+  file_url: string;
+  filename: string;
 };
 
 function getUserHeader(userId: string) {
@@ -93,6 +102,7 @@ function toPaymentModel(raw: PaymentApiResponse): Payment {
     paymentMethod: raw.payment_method,
     paymentDate: raw.payment_date,
     reference: raw.reference,
+    createdAt: raw.created_at,
   };
 }
 
@@ -151,4 +161,78 @@ export async function createPayment(
   });
 
   return toPaymentModel(result.data);
+}
+
+export async function fetchInvoicePayments(
+  invoiceId: string,
+  userId = DEFAULT_USER_ID
+): Promise<Payment[]> {
+  const path = withQuery(API_ENDPOINTS.payments, { invoice_id: invoiceId });
+
+  const result = await apiClient<PaymentApiResponse[]>(path, {
+    method: "GET",
+    headers: getUserHeader(userId),
+    cache: "no-store",
+  });
+
+  return result.data.map(toPaymentModel);
+}
+
+export async function fetchPaymentAttachments(
+  paymentId: string,
+  userId = DEFAULT_USER_ID
+): Promise<PaymentAttachment[]> {
+  const path = withQuery("/api/v1/attachments", {
+    entity_type: "payment",
+    entity_id: paymentId,
+  });
+
+  const result = await apiClient<PaymentAttachment[]>(path, {
+    method: "GET",
+    headers: getUserHeader(userId),
+    cache: "no-store",
+  });
+
+  return result.data;
+}
+
+export async function uploadAttachment(
+  entityType: string,
+  entityId: string,
+  file: File,
+  userId = DEFAULT_USER_ID
+): Promise<AttachmentUploadResponse> {
+  const path = "/api/v1/attachments/upload";
+  const formData = new FormData();
+
+  formData.append("file", file);
+  formData.append("entity_type", entityType);
+  formData.append("entity_id", entityId);
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    headers: getUserHeader(userId),
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const fallbackMessage = "Request failed";
+    let errorMessage = fallbackMessage;
+
+    try {
+      const errorBody = (await response.json()) as { message?: string };
+      if (errorBody.message) {
+        errorMessage = errorBody.message;
+      }
+    } catch {
+      errorMessage = response.statusText || fallbackMessage;
+    }
+
+    throw {
+      message: errorMessage,
+      status: response.status,
+    };
+  }
+
+  return (await response.json()) as AttachmentUploadResponse;
 }
