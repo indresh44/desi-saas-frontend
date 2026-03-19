@@ -1,0 +1,311 @@
+"use client";
+
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { fetchTodaysFollowUps, markFollowUpDone } from "@/lib/api/followups";
+import { fetchLeads } from "@/lib/api/leads";
+import { LeadFollowUp } from "@/lib/types/followup";
+import { Lead } from "@/lib/types/lead";
+
+function formatTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
+
+  return date.toLocaleTimeString("en-IN", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+function formatShortDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
+
+  return date.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+  });
+}
+
+function formatRupees(value: string) {
+  const numericValue = Number(value);
+  if (Number.isNaN(numericValue)) {
+    return "-";
+  }
+
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(numericValue);
+}
+
+function getStageBadgeClass(stageId: string) {
+  const normalized = stageId.toLowerCase();
+
+  if (normalized.includes("hot") || normalized.includes("won")) {
+    return "bg-rose-50 text-rose-700 border-rose-200";
+  }
+
+  if (normalized.includes("warm") || normalized.includes("progress")) {
+    return "bg-amber-50 text-amber-700 border-amber-200";
+  }
+
+  if (normalized.includes("cold") || normalized.includes("lost")) {
+    return "bg-zinc-100 text-zinc-700 border-zinc-200";
+  }
+
+  return "bg-sky-50 text-sky-700 border-sky-200";
+}
+
+function isCurrentMonth(dateValue: string) {
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) {
+    return false;
+  }
+
+  const now = new Date();
+  return (
+    date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth()
+  );
+}
+
+export default function DashboardClient() {
+  const [followUps, setFollowUps] = useState<LeadFollowUp[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [markingId, setMarkingId] = useState<string | null>(null);
+
+  const loadDashboard = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const [todaysFollowUps, allLeads] = await Promise.all([
+        fetchTodaysFollowUps(),
+        fetchLeads(),
+      ]);
+
+      setFollowUps(todaysFollowUps);
+      setLeads(allLeads);
+    } catch (loadError) {
+      const message =
+        loadError instanceof Error
+          ? loadError.message
+          : "Unable to load dashboard data.";
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const refreshFollowUps = useCallback(async () => {
+    const todaysFollowUps = await fetchTodaysFollowUps();
+    setFollowUps(todaysFollowUps);
+  }, []);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
+
+  const pendingFollowUps = useMemo(
+    () => followUps.filter((item) => item.status === "pending"),
+    [followUps]
+  );
+
+  const recentLeads = useMemo(
+    () =>
+      [...leads]
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )
+        .slice(0, 5),
+    [leads]
+  );
+
+  const leadsThisMonth = useMemo(
+    () => leads.filter((lead) => isCurrentMonth(lead.createdAt)).length,
+    [leads]
+  );
+
+  const handleMarkDone = useCallback(
+    async (id: string) => {
+      setMarkingId(id);
+      try {
+        await markFollowUpDone(id, {});
+        await refreshFollowUps();
+      } catch (markError) {
+        const message =
+          markError instanceof Error
+            ? markError.message
+            : "Unable to update follow-up status.";
+        setError(message);
+      } finally {
+        setMarkingId(null);
+      }
+    },
+    [refreshFollowUps]
+  );
+
+  return (
+    <section className="space-y-8">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+          Dashboard
+        </h1>
+        <p className="text-sm text-zinc-600">
+          Quick snapshot of what needs attention today.
+        </p>
+      </div>
+
+      {error ? (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          {error}
+        </div>
+      ) : null}
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="rounded-2xl border border-zinc-200 bg-white p-5">
+          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+            Follow-ups Today
+          </p>
+          <p className="mt-3 text-3xl font-semibold text-zinc-900">
+            {isLoading ? "..." : pendingFollowUps.length}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-zinc-200 bg-white p-5">
+          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+            Total Leads
+          </p>
+          <p className="mt-3 text-3xl font-semibold text-zinc-900">
+            {isLoading ? "..." : leads.length}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-zinc-200 bg-white p-5">
+          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+            This Month&apos;s Leads
+          </p>
+          <p className="mt-3 text-3xl font-semibold text-zinc-900">
+            {isLoading ? "..." : leadsThisMonth}
+          </p>
+        </div>
+      </div>
+
+      <section className="space-y-4">
+        <h2 className="text-lg font-semibold text-zinc-900">Today&apos;s Follow-ups</h2>
+
+        {isLoading ? (
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="h-32 animate-pulse rounded-xl border border-zinc-200 bg-zinc-50" />
+            <div className="h-32 animate-pulse rounded-xl border border-zinc-200 bg-zinc-50" />
+          </div>
+        ) : pendingFollowUps.length === 0 ? (
+          <div className="rounded-xl border border-zinc-200 bg-white px-4 py-8 text-center text-sm text-zinc-600">
+            No follow-ups scheduled for today 🎉
+          </div>
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2">
+            {pendingFollowUps.map((followUp) => (
+              <article
+                key={followUp.id}
+                className="rounded-xl border border-zinc-200 bg-white p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="truncate text-sm font-semibold text-zinc-900">
+                      {followUp.leadTitle || "Lead"}
+                    </h3>
+                    {followUp.customerName ? (
+                      <p className="mt-1 text-xs text-zinc-600">
+                        {followUp.customerName}
+                      </p>
+                    ) : null}
+                  </div>
+                  <p className="text-xs font-medium text-zinc-500">
+                    {formatTime(followUp.scheduledAt)}
+                  </p>
+                </div>
+
+                {followUp.note ? (
+                  <p className="mt-3 line-clamp-2 text-sm text-zinc-700">
+                    {followUp.note}
+                  </p>
+                ) : null}
+
+                <button
+                  type="button"
+                  onClick={() => handleMarkDone(followUp.id)}
+                  disabled={markingId === followUp.id}
+                  className="mt-4 inline-flex items-center rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {markingId === followUp.id ? "Updating..." : "✓ Done"}
+                </button>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-zinc-900">Recent Leads</h2>
+          <Link
+            href="/leads"
+            className="text-sm font-medium text-zinc-700 transition hover:text-zinc-900"
+          >
+            View All →
+          </Link>
+        </div>
+
+        <div className="rounded-xl border border-zinc-200 bg-white">
+          {isLoading ? (
+            <div className="space-y-2 p-4">
+              <div className="h-12 animate-pulse rounded-md bg-zinc-100" />
+              <div className="h-12 animate-pulse rounded-md bg-zinc-100" />
+              <div className="h-12 animate-pulse rounded-md bg-zinc-100" />
+            </div>
+          ) : recentLeads.length === 0 ? (
+            <div className="px-4 py-8 text-center text-sm text-zinc-600">
+              No leads yet. Start by adding one.
+            </div>
+          ) : (
+            <ul className="divide-y divide-zinc-100">
+              {recentLeads.map((lead) => (
+                <li key={lead.id} className="px-4 py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="min-w-0 flex-1 truncate text-sm font-medium text-zinc-900">
+                      {lead.title}
+                    </p>
+                    <p className="max-w-[45%] truncate text-xs text-zinc-600">
+                      {lead.customerName ?? "Unknown Customer"}
+                    </p>
+                  </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-zinc-600">
+                    <span
+                      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${getStageBadgeClass(
+                        lead.stageName ?? lead.stageId
+                      )}`}
+                    >
+                      {lead.stageName ?? "Unknown Stage"}
+                    </span>
+                    <span>{formatRupees(lead.estimatedValue)}</span>
+                    <span>Service: {formatShortDate(lead.serviceDate)}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
+    </section>
+  );
+}
