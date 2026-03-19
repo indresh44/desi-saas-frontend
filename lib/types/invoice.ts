@@ -4,11 +4,17 @@ export type PaymentMethod = "upi" | "cash" | "bank_transfer" | "card";
 export interface InvoiceItem {
   id: string;
   invoiceId: string;
+  catalogItemId: string | null;
+  name: string;
   description: string;
+  unit: string;
   quantity: number;
+  rate: number;
   unitPrice: number;
   gstPercent: number;
+  lineTotal: number;
   amount: number;
+  sortOrder: number | null;
 }
 
 export interface Invoice {
@@ -26,16 +32,19 @@ export interface Invoice {
 }
 
 export interface CreateInvoiceItemInput {
-  description: string;
+  catalog_item_id?: string | null;
+  name: string;
+  description?: string;
+  unit?: string;
   quantity: number;
   unit_price: number;
   gst_percent: number;
+  sort_order?: number;
 }
 
 export interface CreateInvoiceInput {
   invoice: {
     lead_id: string;
-    total_amount: number;
     status: InvoiceStatus;
     issued_date: string;
     due_date: string;

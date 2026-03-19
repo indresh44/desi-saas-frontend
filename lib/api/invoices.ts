@@ -14,11 +14,17 @@ import {
 type InvoiceItemApiResponse = {
   id: string;
   invoice_id: string;
-  description: string;
+  catalog_item_id?: string | null;
+  name?: string;
+  description?: string | null;
+  unit?: string | null;
   quantity: number;
-  unit_price: number;
+  rate?: number;
+  unit_price?: number;
   gst_percent: number;
-  amount: number;
+  line_total?: number;
+  amount?: number;
+  sort_order?: number;
 };
 
 type InvoiceApiResponse = {
@@ -67,14 +73,23 @@ function withQuery(path: string, params: Record<string, string | undefined>) {
 }
 
 function toInvoiceItemModel(raw: InvoiceItemApiResponse): InvoiceItem {
+  const rate = Number(raw.rate ?? raw.unit_price ?? 0);
+  const lineTotal = Number(raw.line_total ?? raw.amount ?? raw.quantity * rate);
+
   return {
     id: raw.id,
     invoiceId: raw.invoice_id,
-    description: raw.description,
+    catalogItemId: raw.catalog_item_id ?? null,
+    name: raw.name ?? raw.description ?? "",
+    description: raw.description ?? "",
+    unit: raw.unit ?? "piece",
     quantity: raw.quantity,
-    unitPrice: raw.unit_price,
+    rate,
+    unitPrice: rate,
     gstPercent: raw.gst_percent,
-    amount: raw.amount,
+    lineTotal,
+    amount: lineTotal,
+    sortOrder: raw.sort_order ?? null,
   };
 }
 
