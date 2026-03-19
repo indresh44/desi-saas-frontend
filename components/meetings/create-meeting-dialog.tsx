@@ -24,7 +24,8 @@ const meetingSchema = z.object({
   notes: z.string().optional().or(z.literal("")),
 });
 
-type MeetingFormValues = z.infer<typeof meetingSchema>;
+type MeetingFormValues = z.output<typeof meetingSchema>;
+type MeetingFormInput = z.input<typeof meetingSchema>;
 
 const defaultValues: MeetingFormValues = {
   customerId: "",
@@ -64,7 +65,7 @@ export function CreateMeetingDialog({
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const form = useForm<MeetingFormValues>({
+  const form = useForm<MeetingFormInput, undefined, MeetingFormValues>({
     resolver: zodResolver(meetingSchema),
     defaultValues,
   });

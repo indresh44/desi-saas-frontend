@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { fetchPaymentAttachments } from "@/lib/api/invoices";
-import { DEFAULT_USER_ID } from "@/lib/constants/api";
 import type { PaymentAttachment } from "@/lib/types/invoice";
 
 type Props = {
@@ -27,7 +26,7 @@ export function PaymentAttachmentPreview({ paymentId }: Props) {
       setIsLoading(true);
 
       try {
-        const data = await fetchPaymentAttachments(paymentId, DEFAULT_USER_ID);
+        const data = await fetchPaymentAttachments(paymentId);
         if (isMounted) {
           setAttachments(data);
         }

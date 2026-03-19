@@ -1,11 +1,8 @@
 const rawApiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-const rawDefaultUserId = process.env.NEXT_PUBLIC_DEFAULT_USER_ID;
 
 export const API_BASE_URL = rawApiBaseUrl
   ? rawApiBaseUrl.replace(/\/$/, "")
   : "http://172.105.53.206:8000";
-
-export const DEFAULT_USER_ID = rawDefaultUserId?.trim() || "ba61cf8f-d920-4bc0-88d0-b2773fd60a9d";
 
 export const API_ENDPOINTS = {
   leads: "/api/v1/leads",

@@ -1,6 +1,5 @@
 import { apiClient } from "@/lib/api/client";
-import { API_BASE_URL } from "@/lib/constants/api";
-import { API_ENDPOINTS, DEFAULT_USER_ID } from "@/lib/constants/api";
+import { API_ENDPOINTS } from "@/lib/constants/api";
 import {
   CreateInvoiceInput,
   CreatePaymentInput,
@@ -56,10 +55,6 @@ type AttachmentUploadResponse = {
   file_url: string;
   filename: string;
 };
-
-function getUserHeader(userId: string) {
-  return { "X-User-Id": userId || DEFAULT_USER_ID };
-}
 
 function withQuery(path: string, params: Record<string, string | undefined>) {
   const searchParams = new URLSearchParams();
@@ -122,14 +117,12 @@ function toPaymentModel(raw: PaymentApiResponse): Payment {
 }
 
 export async function fetchLeadInvoices(
-  leadId: string,
-  userId = DEFAULT_USER_ID
+  leadId: string
 ): Promise<Invoice[]> {
   const path = withQuery(API_ENDPOINTS.invoices, { lead_id: leadId });
 
   const result = await apiClient<InvoiceApiResponse[]>(path, {
     method: "GET",
-    headers: getUserHeader(userId),
     cache: "no-store",
   });
 
@@ -137,12 +130,10 @@ export async function fetchLeadInvoices(
 }
 
 export async function createInvoice(
-  input: CreateInvoiceInput,
-  userId = DEFAULT_USER_ID
+  input: CreateInvoiceInput
 ): Promise<Invoice> {
   const result = await apiClient<InvoiceApiResponse>(API_ENDPOINTS.invoices, {
     method: "POST",
-    headers: getUserHeader(userId),
     body: input,
   });
 
@@ -150,14 +141,12 @@ export async function createInvoice(
 }
 
 export async function fetchCustomerOutstanding(
-  customerId: string,
-  userId = DEFAULT_USER_ID
+  customerId: string
 ): Promise<CustomerOutstanding> {
   const result = await apiClient<CustomerOutstanding>(
     API_ENDPOINTS.customerOutstanding(customerId),
     {
       method: "GET",
-      headers: getUserHeader(userId),
       cache: "no-store",
     }
   );
@@ -166,12 +155,10 @@ export async function fetchCustomerOutstanding(
 }
 
 export async function createPayment(
-  input: CreatePaymentInput,
-  userId = DEFAULT_USER_ID
+  input: CreatePaymentInput
 ): Promise<Payment> {
   const result = await apiClient<PaymentApiResponse>(API_ENDPOINTS.payments, {
     method: "POST",
-    headers: getUserHeader(userId),
     body: input,
   });
 
@@ -179,14 +166,12 @@ export async function createPayment(
 }
 
 export async function fetchInvoicePayments(
-  invoiceId: string,
-  userId = DEFAULT_USER_ID
+  invoiceId: string
 ): Promise<Payment[]> {
   const path = withQuery(API_ENDPOINTS.payments, { invoice_id: invoiceId });
 
   const result = await apiClient<PaymentApiResponse[]>(path, {
     method: "GET",
-    headers: getUserHeader(userId),
     cache: "no-store",
   });
 
@@ -194,8 +179,7 @@ export async function fetchInvoicePayments(
 }
 
 export async function fetchPaymentAttachments(
-  paymentId: string,
-  userId = DEFAULT_USER_ID
+  paymentId: string
 ): Promise<PaymentAttachment[]> {
   const path = withQuery("/api/v1/attachments", {
     entity_type: "payment",
@@ -204,7 +188,6 @@ export async function fetchPaymentAttachments(
 
   const result = await apiClient<PaymentAttachment[]>(path, {
     method: "GET",
-    headers: getUserHeader(userId),
     cache: "no-store",
   });
 
@@ -214,40 +197,21 @@ export async function fetchPaymentAttachments(
 export async function uploadAttachment(
   entityType: string,
   entityId: string,
-  file: File,
-  userId = DEFAULT_USER_ID
+  file: File
 ): Promise<AttachmentUploadResponse> {
-  const path = "/api/v1/attachments/upload";
   const formData = new FormData();
 
   formData.append("file", file);
   formData.append("entity_type", entityType);
   formData.append("entity_id", entityId);
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const result = await apiClient<AttachmentUploadResponse>(
+    "/api/v1/attachments/upload",
+    {
     method: "POST",
-    headers: getUserHeader(userId),
     body: formData,
-  });
-
-  if (!response.ok) {
-    const fallbackMessage = "Request failed";
-    let errorMessage = fallbackMessage;
-
-    try {
-      const errorBody = (await response.json()) as { message?: string };
-      if (errorBody.message) {
-        errorMessage = errorBody.message;
-      }
-    } catch {
-      errorMessage = response.statusText || fallbackMessage;
     }
+  );
 
-    throw {
-      message: errorMessage,
-      status: response.status,
-    };
-  }
-
-  return (await response.json()) as AttachmentUploadResponse;
+  return result.data;
 }

@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import { API_ENDPOINTS, DEFAULT_USER_ID } from "../constants/api";
+import { API_ENDPOINTS } from "../constants/api";
 import {
   CreateMeetingInput,
   Meeting,
@@ -8,10 +8,6 @@ import {
   UpdateMeetingInput,
   toMeetingModel,
 } from "../types/meeting";
-
-function getUserHeader(userId: string) {
-  return { "X-User-Id": userId || DEFAULT_USER_ID };
-}
 
 function withQuery(base: string, params: Record<string, string | undefined>): string {
   const qs = Object.entries(params)
@@ -30,8 +26,7 @@ export async function fetchMeetings(
     to_date?: string;
     limit?: number;
     offset?: number;
-  },
-  userId: string = DEFAULT_USER_ID
+  }
 ): Promise<{ meetings: Meeting[]; total: number }> {
   const path = withQuery(API_ENDPOINTS.meetings, {
     customer_id: filters?.customer_id,
@@ -43,9 +38,7 @@ export async function fetchMeetings(
     offset: filters?.offset?.toString(),
   });
 
-  const { data } = await apiClient<MeetingListApiResponse>(path, {
-    headers: getUserHeader(userId),
-  });
+  const { data } = await apiClient<MeetingListApiResponse>(path);
 
   return {
     meetings: data.items.map(toMeetingModel),
@@ -54,12 +47,10 @@ export async function fetchMeetings(
 }
 
 export async function createMeeting(
-  input: CreateMeetingInput,
-  userId: string = DEFAULT_USER_ID
+  input: CreateMeetingInput
 ): Promise<Meeting> {
   const { data } = await apiClient<MeetingApiResponse>(API_ENDPOINTS.meetings, {
     method: "POST",
-    headers: getUserHeader(userId),
     body: input,
   });
 
@@ -68,12 +59,10 @@ export async function createMeeting(
 
 export async function updateMeeting(
   meetingId: string,
-  input: UpdateMeetingInput,
-  userId: string = DEFAULT_USER_ID
+  input: UpdateMeetingInput
 ): Promise<Meeting> {
   const { data } = await apiClient<MeetingApiResponse>(`${API_ENDPOINTS.meetings}/${meetingId}`, {
     method: "PATCH",
-    headers: getUserHeader(userId),
     body: input,
   });
 
@@ -81,11 +70,9 @@ export async function updateMeeting(
 }
 
 export async function deleteMeeting(
-  meetingId: string,
-  userId: string = DEFAULT_USER_ID
+  meetingId: string
 ): Promise<void> {
-  await apiClient(`${API_ENDPOINTS.meetings}/${meetingId}`, {
+  await apiClient<null>(`${API_ENDPOINTS.meetings}/${meetingId}`, {
     method: "DELETE",
-    headers: getUserHeader(userId),
   });
 }

@@ -29,7 +29,6 @@ import {
 } from "@/lib/api/followups";
 import { createTask, fetchLeadTasks, updateTask } from "@/lib/api/tasks";
 import { fetchLeadInvoices } from "@/lib/api/invoices";
-import { DEFAULT_USER_ID } from "@/lib/constants/api";
 import type { Lead } from "@/lib/types/lead";
 import type { ActivityType, LeadActivity } from "@/lib/types/activity";
 import type { LeadFollowUp } from "@/lib/types/followup";
@@ -177,11 +176,11 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
     try {
       const [leadsData, activitiesData, followUpsData, tasksData, invoicesData] =
         await Promise.all([
-          fetchLeads(undefined, DEFAULT_USER_ID),
-          fetchLeadActivities(leadId, DEFAULT_USER_ID),
-          fetchLeadFollowUps(leadId, DEFAULT_USER_ID),
-          fetchLeadTasks(leadId, DEFAULT_USER_ID),
-          fetchLeadInvoices(leadId, DEFAULT_USER_ID),
+          fetchLeads(),
+          fetchLeadActivities(leadId),
+          fetchLeadFollowUps(leadId),
+          fetchLeadTasks(leadId),
+          fetchLeadInvoices(leadId),
         ]);
 
       setLead(leadsData.find((l) => l.id === leadId) ?? null);
@@ -224,8 +223,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
           lead_id: leadId,
           from_date: "2020-01-01",
           limit: 50,
-        },
-        DEFAULT_USER_ID
+        }
       );
       setMeetings(meetingData);
     } catch {
@@ -240,7 +238,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
   }, [refreshMeetings]);
 
   const refreshActivities = useCallback(async () => {
-    const data = await fetchLeadActivities(leadId, DEFAULT_USER_ID);
+    const data = await fetchLeadActivities(leadId);
     setActivities(
       [...data].sort(
         (a, b) =>
@@ -250,7 +248,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
   }, [leadId]);
 
   const refreshFollowUps = useCallback(async () => {
-    const data = await fetchLeadFollowUps(leadId, DEFAULT_USER_ID);
+    const data = await fetchLeadFollowUps(leadId);
     setFollowUps(
       [...data].sort(
         (a, b) =>
@@ -260,12 +258,12 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
   }, [leadId]);
 
   const refreshTasks = useCallback(async () => {
-    const data = await fetchLeadTasks(leadId, DEFAULT_USER_ID);
+    const data = await fetchLeadTasks(leadId);
     setTasks(data);
   }, [leadId]);
 
   const refreshInvoices = useCallback(async () => {
-    const data = await fetchLeadInvoices(leadId, DEFAULT_USER_ID);
+    const data = await fetchLeadInvoices(leadId);
     setInvoices(data);
   }, [leadId]);
 
@@ -281,8 +279,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
     setActivityError(null);
     try {
       await createActivity(
-        { lead_id: leadId, type: activityType, description: activityDesc.trim() },
-        DEFAULT_USER_ID
+        { lead_id: leadId, type: activityType, description: activityDesc.trim() }
       );
       setActivityDesc("");
       setActivityType("note");
@@ -303,7 +300,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
       const input = followUpNote.trim()
         ? { lead_id: leadId, scheduled_at: followUpDate, note: followUpNote.trim() }
         : { lead_id: leadId, scheduled_at: followUpDate };
-      await createFollowUp(input, DEFAULT_USER_ID);
+      await createFollowUp(input);
       setFollowUpDate("");
       setFollowUpNote("");
       setShowFollowUpForm(false);
@@ -316,19 +313,19 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
   };
 
   const handleTaskSubmit = async () => {
-    if (!taskTitle.trim()) return;
+    if (!lead || !taskTitle.trim()) return;
     setTaskSubmitting(true);
     setTaskError(null);
     try {
       const input = {
         lead_id: leadId,
         title: taskTitle.trim(),
-        assigned_to: DEFAULT_USER_ID,
+        assigned_to: lead.assignedTo,
         priority: parseInt(taskPriority, 10) || 2,
         status: "pending" as const,
         ...(taskDueDate ? { due_date: taskDueDate } : {}),
       };
-      await createTask(input, DEFAULT_USER_ID);
+      await createTask(input);
       setTaskTitle("");
       setTaskDueDate("");
       setTaskPriority("2");
@@ -343,7 +340,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
 
   const handleMarkDone = async (id: string) => {
     try {
-      await markFollowUpDone(id, {}, DEFAULT_USER_ID);
+      await markFollowUpDone(id, {});
       await refreshFollowUps();
     } catch {
       // silently ignore — list will reflect server state on next refresh
@@ -352,7 +349,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
 
   const handleTaskDone = async (id: string) => {
     try {
-      await updateTask(id, { status: "done" }, DEFAULT_USER_ID);
+      await updateTask(id, { status: "done" });
       await refreshTasks();
     } catch {
       // silently ignore
@@ -369,7 +366,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
     setStageMoveSuccess(null);
 
     try {
-      const updatedLead = await moveLeadStage(lead.id, newStageId, DEFAULT_USER_ID);
+      const updatedLead = await moveLeadStage(lead.id, newStageId);
       if (updatedLead) {
         setLead(updatedLead);
         setSelectedStageId(updatedLead.stageId);

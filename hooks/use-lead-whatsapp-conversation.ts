@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { findOrCreateConversationByLead } from "@/lib/api/whatsapp";
-import { DEFAULT_USER_ID } from "@/lib/constants/api";
 import { WhatsAppConversationRead } from "@/lib/types/whatsapp";
 
 type UseLeadWhatsAppConversationResult = {
@@ -33,7 +32,7 @@ export function useLeadWhatsAppConversation(
     setError(null);
 
     try {
-      const data = await findOrCreateConversationByLead(leadId, DEFAULT_USER_ID);
+      const data = await findOrCreateConversationByLead(leadId);
       setConversation(data);
     } catch (refreshError) {
       if (

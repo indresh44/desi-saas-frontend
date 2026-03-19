@@ -1,5 +1,5 @@
 import { apiClient } from "@/lib/api/client";
-import { API_ENDPOINTS, DEFAULT_USER_ID } from "@/lib/constants/api";
+import { API_ENDPOINTS } from "@/lib/constants/api";
 import { Pipeline, PipelineStage } from "@/lib/types/pipeline";
 
 type PipelineApiResponse = {
@@ -16,10 +16,6 @@ type PipelineStageApiResponse = {
   position: number;
   color: string;
 };
-
-function getUserHeader(userId: string) {
-  return { "X-User-Id": userId || DEFAULT_USER_ID };
-}
 
 function withQuery(path: string, params: Record<string, string | undefined>) {
   const searchParams = new URLSearchParams();
@@ -51,10 +47,9 @@ function toPipelineStageModel(raw: PipelineStageApiResponse): PipelineStage {
   };
 }
 
-export async function fetchPipelines(userId = DEFAULT_USER_ID): Promise<Pipeline[]> {
+export async function fetchPipelines(): Promise<Pipeline[]> {
   const result = await apiClient<PipelineApiResponse[]>(API_ENDPOINTS.pipelines, {
     method: "GET",
-    headers: getUserHeader(userId),
     cache: "no-store",
   });
 
@@ -62,26 +57,21 @@ export async function fetchPipelines(userId = DEFAULT_USER_ID): Promise<Pipeline
 }
 
 export async function fetchPipelineStages(
-  pipelineId: string,
-  userId = DEFAULT_USER_ID
+  pipelineId: string
 ): Promise<PipelineStage[]> {
   const path = withQuery(API_ENDPOINTS.pipelineStages, { pipeline_id: pipelineId });
 
   const result = await apiClient<PipelineStageApiResponse[]>(path, {
     method: "GET",
-    headers: getUserHeader(userId),
     cache: "no-store",
   });
 
   return result.data.map(toPipelineStageModel);
 }
 
-export async function fetchAllStages(
-  userId = DEFAULT_USER_ID
-): Promise<PipelineStage[]> {
+export async function fetchAllStages(): Promise<PipelineStage[]> {
   const result = await apiClient<PipelineStageApiResponse[]>(API_ENDPOINTS.pipelineStages, {
     method: "GET",
-    headers: getUserHeader(userId),
     cache: "no-store",
   });
 

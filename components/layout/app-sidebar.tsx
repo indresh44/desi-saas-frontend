@@ -3,23 +3,26 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Calendar, LayoutDashboard, Package, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth/auth-context";
 import { SIDEBAR_NAV_ITEMS } from "@/lib/constants/navigation";
 import { cn } from "@/lib/utils";
 
 const iconMap = {
   dashboard: LayoutDashboard,
   leads: Users,
-  Users,
+  users: Users,
   catalog: Package,
   calendar: Calendar,
 } as const;
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
 
   return (
-    <aside className="hidden w-60 shrink-0 border-r border-zinc-200 bg-white md:block">
-      <nav className="space-y-1 p-3">
+    <aside className="hidden w-60 shrink-0 border-r border-zinc-200 bg-white md:flex md:flex-col">
+      <nav className="flex-1 space-y-1 p-3">
         {SIDEBAR_NAV_ITEMS.map((item) => {
           const Icon = iconMap[item.icon];
           const isActive =
@@ -43,6 +46,20 @@ export function AppSidebar() {
           );
         })}
       </nav>
+
+      <div className="border-t border-zinc-200 p-3">
+        <p className="truncate text-sm font-medium text-zinc-800">{user?.name ?? "User"}</p>
+        <p className="truncate text-xs text-zinc-500">{user?.email ?? ""}</p>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="mt-2 w-full"
+          onClick={() => void logout()}
+        >
+          Logout
+        </Button>
+      </div>
     </aside>
   );
 }

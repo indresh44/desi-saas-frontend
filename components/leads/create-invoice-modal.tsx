@@ -7,7 +7,6 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { searchCatalogItems } from "@/lib/api/catalog-items";
 import { createInvoice } from "@/lib/api/invoices";
-import { DEFAULT_USER_ID } from "@/lib/constants/api";
 import type { CatalogItem } from "@/lib/types/catalog-item";
 
 type LineItem = {
@@ -302,8 +301,7 @@ export function CreateInvoiceModal({ leadId, onCreated, onClose }: Props) {
             gst_percent: item.gstPercent,
             sort_order: index,
           })),
-        },
-        DEFAULT_USER_ID
+        }
       );
       onCreated();
       onClose();

@@ -1,5 +1,5 @@
 import { apiClient } from "@/lib/api/client";
-import { API_ENDPOINTS, DEFAULT_USER_ID } from "@/lib/constants/api";
+import { API_ENDPOINTS } from "@/lib/constants/api";
 import {
   CreateFollowUpInput,
   LeadFollowUp,
@@ -19,10 +19,6 @@ type LeadFollowUpApiResponse = {
   customer_name?: string;
   customer_phone?: string;
 };
-
-function getUserHeader(userId: string) {
-  return { "X-User-Id": userId || DEFAULT_USER_ID };
-}
 
 function withQuery(path: string, params: Record<string, string | undefined>) {
   const searchParams = new URLSearchParams();
@@ -51,14 +47,11 @@ function toFollowUpModel(raw: LeadFollowUpApiResponse): LeadFollowUp {
   };
 }
 
-export async function fetchTodaysFollowUps(
-  userId = DEFAULT_USER_ID
-): Promise<LeadFollowUp[]> {
+export async function fetchTodaysFollowUps(): Promise<LeadFollowUp[]> {
   const result = await apiClient<LeadFollowUpApiResponse[]>(
     API_ENDPOINTS.leadFollowUpsToday,
     {
       method: "GET",
-      headers: getUserHeader(userId),
       cache: "no-store",
     }
   );
@@ -67,14 +60,12 @@ export async function fetchTodaysFollowUps(
 }
 
 export async function fetchLeadFollowUps(
-  leadId: string,
-  userId = DEFAULT_USER_ID
+  leadId: string
 ): Promise<LeadFollowUp[]> {
   const path = withQuery(API_ENDPOINTS.leadFollowUps, { lead_id: leadId });
 
   const result = await apiClient<LeadFollowUpApiResponse[]>(path, {
     method: "GET",
-    headers: getUserHeader(userId),
     cache: "no-store",
   });
 
@@ -82,14 +73,12 @@ export async function fetchLeadFollowUps(
 }
 
 export async function createFollowUp(
-  input: CreateFollowUpInput,
-  userId = DEFAULT_USER_ID
+  input: CreateFollowUpInput
 ): Promise<LeadFollowUp> {
   const result = await apiClient<LeadFollowUpApiResponse>(
     API_ENDPOINTS.leadFollowUps,
     {
       method: "POST",
-      headers: getUserHeader(userId),
       body: input,
     }
   );
@@ -99,14 +88,12 @@ export async function createFollowUp(
 
 export async function markFollowUpDone(
   id: string,
-  input: MarkFollowUpDoneInput,
-  userId = DEFAULT_USER_ID
+  input: MarkFollowUpDoneInput
 ): Promise<LeadFollowUp> {
   const result = await apiClient<LeadFollowUpApiResponse>(
     `${API_ENDPOINTS.leadFollowUps}/${id}/done`,
     {
       method: "PATCH",
-      headers: getUserHeader(userId),
       body: input,
     }
   );

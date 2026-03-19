@@ -1,5 +1,4 @@
 import { apiClient } from "./client";
-import { DEFAULT_USER_ID } from "../constants/api";
 import {
   CatalogItem,
   CatalogItemApiResponse,
@@ -7,10 +6,6 @@ import {
   UpdateCatalogItemInput,
   toCatalogItemModel,
 } from "../types/catalog-item";
-
-function getUserHeader(userId: string) {
-  return { "X-User-Id": userId || DEFAULT_USER_ID };
-}
 
 function withQuery(
   base: string,
@@ -26,29 +21,24 @@ function withQuery(
 // List catalog items (default: active only)
 export async function fetchCatalogItems(
   search?: string,
-  isActive: boolean = true,
-  userId: string = DEFAULT_USER_ID
+  isActive: boolean = true
 ): Promise<CatalogItem[]> {
   const path = withQuery("/api/v1/catalog-items", {
     search,
     is_active: String(isActive),
   });
-  const { data } = await apiClient<CatalogItemApiResponse[]>(path, {
-    headers: getUserHeader(userId),
-  });
+  const { data } = await apiClient<CatalogItemApiResponse[]>(path);
   return data.map(toCatalogItemModel);
 }
 
 // Create a catalog item
 export async function createCatalogItem(
-  input: CreateCatalogItemInput,
-  userId: string = DEFAULT_USER_ID
+  input: CreateCatalogItemInput
 ): Promise<CatalogItem> {
   const { data } = await apiClient<CatalogItemApiResponse>(
     "/api/v1/catalog-items",
     {
       method: "POST",
-      headers: getUserHeader(userId),
       body: input,
     }
   );
@@ -58,14 +48,12 @@ export async function createCatalogItem(
 // Update a catalog item
 export async function updateCatalogItem(
   itemId: string,
-  input: UpdateCatalogItemInput,
-  userId: string = DEFAULT_USER_ID
+  input: UpdateCatalogItemInput
 ): Promise<CatalogItem> {
   const { data } = await apiClient<CatalogItemApiResponse>(
     `/api/v1/catalog-items/${itemId}`,
     {
       method: "PATCH",
-      headers: getUserHeader(userId),
       body: input,
     }
   );
@@ -74,14 +62,12 @@ export async function updateCatalogItem(
 
 // Deactivate (soft delete) a catalog item
 export async function deactivateCatalogItem(
-  itemId: string,
-  userId: string = DEFAULT_USER_ID
+  itemId: string
 ): Promise<CatalogItem> {
   const { data } = await apiClient<CatalogItemApiResponse>(
     `/api/v1/catalog-items/${itemId}`,
     {
       method: "DELETE",
-      headers: getUserHeader(userId),
     }
   );
   return toCatalogItemModel(data);
@@ -91,8 +77,7 @@ export async function deactivateCatalogItem(
 // This is the same as fetchCatalogItems with a search param, exported separately
 // for semantic clarity in other components.
 export async function searchCatalogItems(
-  query: string,
-  userId: string = DEFAULT_USER_ID
+  query: string
 ): Promise<CatalogItem[]> {
-  return fetchCatalogItems(query, true, userId);
+  return fetchCatalogItems(query, true);
 }

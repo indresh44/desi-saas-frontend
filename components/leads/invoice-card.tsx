@@ -6,7 +6,6 @@ import { PaymentAttachmentPreview } from "@/components/leads/payment-attachment-
 import { Button } from "@/components/ui/button";
 import { RecordPaymentModal } from "@/components/leads/record-payment-modal";
 import { fetchInvoicePayments } from "@/lib/api/invoices";
-import { DEFAULT_USER_ID } from "@/lib/constants/api";
 import type { Invoice, Payment, PaymentMethod } from "@/lib/types/invoice";
 
 type Props = {
@@ -80,7 +79,7 @@ export function InvoiceCard({ invoice, onPaymentRecorded }: Props) {
     setPaymentsError(null);
 
     try {
-      const data = await fetchInvoicePayments(invoice.id, DEFAULT_USER_ID);
+      const data = await fetchInvoicePayments(invoice.id);
       setPayments(
         [...data].sort(
           (a, b) =>

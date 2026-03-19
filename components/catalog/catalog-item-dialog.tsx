@@ -32,10 +32,8 @@ const schema = z
     description: z.string().trim().optional(),
     unit: z.string().min(1, "Unit is required"),
     customUnit: z.string().trim().optional(),
-    defaultRate: z
-      .number({ invalid_type_error: "Rate must be a number" })
-      .min(0, "Rate must be positive"),
-    gstPercent: z.number().min(0).max(28),
+    defaultRate: z.coerce.number().min(0, "Rate must be positive"),
+    gstPercent: z.coerce.number().min(0).max(28),
   })
   .superRefine((data, ctx) => {
     if (data.unit === "custom" && !data.customUnit) {
@@ -47,7 +45,8 @@ const schema = z
     }
   });
 
-type FormData = z.infer<typeof schema>;
+type FormData = z.output<typeof schema>;
+type FormInput = z.input<typeof schema>;
 
 interface Props {
   isOpen: boolean;
@@ -65,7 +64,7 @@ export function CatalogItemDialog({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const isEditMode = !!initialData;
 
-  const form = useForm<FormData>({
+  const form = useForm<FormInput, undefined, FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       name: "",

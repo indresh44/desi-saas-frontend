@@ -1,5 +1,4 @@
 import { apiClient } from "@/lib/api/client";
-import { DEFAULT_USER_ID } from "@/lib/constants/api";
 import { CreateActivityInput, LeadActivity } from "@/lib/types/activity";
 
 type LeadActivityApiResponse = {
@@ -10,10 +9,6 @@ type LeadActivityApiResponse = {
   created_by: string;
   created_at: string;
 };
-
-function getUserHeader(userId: string) {
-  return { "X-User-Id": userId || DEFAULT_USER_ID };
-}
 
 function toActivityModel(raw: LeadActivityApiResponse): LeadActivity {
   return {
@@ -27,14 +22,12 @@ function toActivityModel(raw: LeadActivityApiResponse): LeadActivity {
 }
 
 export async function fetchLeadActivities(
-  leadId: string,
-  userId = DEFAULT_USER_ID
+  leadId: string
 ): Promise<LeadActivity[]> {
   const path = `/api/v1/leads/${leadId}/activities`;
 
   const result = await apiClient<LeadActivityApiResponse[]>(path, {
     method: "GET",
-    headers: getUserHeader(userId),
     cache: "no-store",
   });
 
@@ -42,14 +35,12 @@ export async function fetchLeadActivities(
 }
 
 export async function createActivity(
-  input: CreateActivityInput,
-  userId = DEFAULT_USER_ID
+  input: CreateActivityInput
 ): Promise<LeadActivity> {
   const path = `/api/v1/leads/${input.lead_id}/activities`;
 
   const result = await apiClient<LeadActivityApiResponse>(path, {
     method: "POST",
-    headers: getUserHeader(userId),
     body: input,
   });
 

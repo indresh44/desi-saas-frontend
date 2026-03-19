@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createPayment, uploadAttachment } from "@/lib/api/invoices";
-import { DEFAULT_USER_ID } from "@/lib/constants/api";
 import type { Invoice, PaymentMethod } from "@/lib/types/invoice";
 
 type Props = {
@@ -121,12 +120,11 @@ export function RecordPaymentModal({
           payment_method: paymentMethod,
           payment_date: paymentDate,
           ...(reference.trim() ? { reference: reference.trim() } : {}),
-        },
-        DEFAULT_USER_ID
+        }
       );
 
       if (selectedFile) {
-        await uploadAttachment("payment", payment.id, selectedFile, DEFAULT_USER_ID);
+        await uploadAttachment("payment", payment.id, selectedFile);
       }
 
       onSuccess();

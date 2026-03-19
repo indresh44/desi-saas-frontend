@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchConversationMessages, sendWhatsAppText } from "@/lib/api/whatsapp";
-import { DEFAULT_USER_ID } from "@/lib/constants/api";
 import { WhatsAppMessageRead } from "@/lib/types/whatsapp";
 
 type UseWhatsAppMessagesResult = {
@@ -37,7 +36,6 @@ export function useWhatsAppMessages(
       const data = await fetchConversationMessages(conversationId, {
         limit: 50,
         offset: 0,
-        userId: DEFAULT_USER_ID,
       });
 
       const sorted = [...data].sort((a, b) => {
@@ -87,8 +85,7 @@ export function useWhatsAppMessages(
           {
             conversation_id: conversationId,
             text: trimmedText,
-          },
-          DEFAULT_USER_ID
+          }
         );
         setMessages((prev) => [...prev, sentMessage]);
       } catch (sendError) {

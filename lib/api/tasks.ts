@@ -1,5 +1,5 @@
 import { apiClient } from "@/lib/api/client";
-import { API_ENDPOINTS, DEFAULT_USER_ID } from "@/lib/constants/api";
+import { API_ENDPOINTS } from "@/lib/constants/api";
 import { CreateTaskInput, Task, TaskStatus } from "@/lib/types/task";
 
 type TaskApiResponse = {
@@ -13,10 +13,6 @@ type TaskApiResponse = {
   priority: number;
   created_at: string;
 };
-
-function getUserHeader(userId: string) {
-  return { "X-User-Id": userId || DEFAULT_USER_ID };
-}
 
 function withQuery(path: string, params: Record<string, string | undefined>) {
   const searchParams = new URLSearchParams();
@@ -44,14 +40,12 @@ function toTaskModel(raw: TaskApiResponse): Task {
 }
 
 export async function fetchLeadTasks(
-  leadId: string,
-  userId = DEFAULT_USER_ID
+  leadId: string
 ): Promise<Task[]> {
   const path = withQuery(API_ENDPOINTS.tasks, { lead_id: leadId });
 
   const result = await apiClient<TaskApiResponse[]>(path, {
     method: "GET",
-    headers: getUserHeader(userId),
     cache: "no-store",
   });
 
@@ -59,12 +53,10 @@ export async function fetchLeadTasks(
 }
 
 export async function createTask(
-  input: CreateTaskInput,
-  userId = DEFAULT_USER_ID
+  input: CreateTaskInput
 ): Promise<Task> {
   const result = await apiClient<TaskApiResponse>(API_ENDPOINTS.tasks, {
     method: "POST",
-    headers: getUserHeader(userId),
     body: input,
   });
 
@@ -73,12 +65,10 @@ export async function createTask(
 
 export async function updateTask(
   id: string,
-  data: Partial<{ status: TaskStatus }>,
-  userId = DEFAULT_USER_ID
+  data: Partial<{ status: TaskStatus }>
 ): Promise<Task> {
   const result = await apiClient<TaskApiResponse>(`${API_ENDPOINTS.tasks}/${id}`, {
     method: "PATCH",
-    headers: getUserHeader(userId),
     body: data,
   });
 

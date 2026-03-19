@@ -1,8 +1,6 @@
 import { apiClient } from "@/lib/api/client";
 import {
-  API_BASE_URL,
   API_ENDPOINTS,
-  DEFAULT_USER_ID,
 } from "@/lib/constants/api";
 import {
   CreateLeadInput,
@@ -59,12 +57,6 @@ function isLeadApiResponseItem(value: unknown): value is LeadApiResponseItem {
   );
 }
 
-function getUserHeader(userId: string) {
-  return {
-    "X-User-Id": userId || DEFAULT_USER_ID,
-  };
-}
-
 function withQuery(base: string, params: Record<string, string | undefined>): string {
   const qs = Object.entries(params)
     .filter(([, value]) => value !== undefined && value !== "")
@@ -74,8 +66,7 @@ function withQuery(base: string, params: Record<string, string | undefined>): st
 }
 
 export async function fetchLeads(
-  filters?: { customer_id?: string },
-  userId = DEFAULT_USER_ID
+  filters?: { customer_id?: string }
 ): Promise<Lead[]> {
   const path = withQuery(API_ENDPOINTS.leads, {
     customer_id: filters?.customer_id,
@@ -83,7 +74,6 @@ export async function fetchLeads(
 
   const result = await apiClient<LeadApiResponseItem[]>(path, {
     method: "GET",
-    headers: getUserHeader(userId),
     cache: "no-store",
   });
 
@@ -91,8 +81,7 @@ export async function fetchLeads(
 }
 
 export async function createLead(
-  input: CreateLeadInput,
-  userId = DEFAULT_USER_ID
+  input: CreateLeadInput
 ): Promise<Lead | null> {
   const payload = toCreateLeadPayload(input);
 
@@ -100,7 +89,6 @@ export async function createLead(
     API_ENDPOINTS.leads,
     {
       method: "POST",
-      headers: getUserHeader(userId),
       body: payload,
     }
   );
@@ -114,47 +102,17 @@ export async function createLead(
 
 export async function moveLeadStage(
   leadId: string,
-  stageId: string,
-  userId = DEFAULT_USER_ID
+  stageId: string
 ): Promise<Lead | null> {
   const path = `${API_ENDPOINTS.leads}/${leadId}/move`;
-  const headers = new Headers(getUserHeader(userId));
-  headers.set("Content-Type", "application/json");
+  const result = await apiClient<
+    LeadApiResponseItem | { lead?: LeadApiResponseItem | null } | null
+  >(path, {
+    method: "POST",
+    body: { stage_id: stageId },
+  });
 
-  const response = await fetch(
-    `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`,
-    {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ stage_id: stageId }),
-    }
-  );
-
-  if (!response.ok) {
-    const fallbackMessage = "Failed to move stage";
-    let errorMessage = fallbackMessage;
-
-    try {
-      const errorBody = (await response.json()) as { message?: string };
-      if (errorBody.message) {
-        errorMessage = errorBody.message;
-      }
-    } catch {
-      errorMessage = response.statusText || fallbackMessage;
-    }
-
-    throw { message: errorMessage, status: response.status };
-  }
-
-  const rawText = await response.text();
-  if (!rawText) {
-    return null;
-  }
-
-  const parsed = JSON.parse(rawText) as
-    | LeadApiResponseItem
-    | { lead?: LeadApiResponseItem | null }
-    | null;
+  const parsed = result.data;
 
   if (!parsed) {
     return null;

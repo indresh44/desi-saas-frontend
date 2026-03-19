@@ -13,7 +13,6 @@ import {
   createCustomer,
   getCustomerByPhone,
 } from "@/lib/api/customers";
-import { DEFAULT_USER_ID } from "@/lib/constants/api";
 import { Customer } from "@/lib/types/customer";
 
 const createLeadSchema = z
@@ -124,7 +123,7 @@ export function CreateLeadDialog({
       let customerId = selectedCustomer?.id || "";
 
       if (!customerId) {
-        const byPhone = await getCustomerByPhone(phone, DEFAULT_USER_ID);
+        const byPhone = await getCustomerByPhone(phone);
 
         if (byPhone.found && byPhone.customer) {
           customerId = byPhone.customer.id;
@@ -138,8 +137,7 @@ export function CreateLeadDialog({
               name: values.customerName?.trim() || "",
               phone,
               email: values.customerEmail?.trim() || null,
-            },
-            DEFAULT_USER_ID
+            }
           );
           customerId = createdCustomer.id;
         }
@@ -156,8 +154,7 @@ export function CreateLeadDialog({
           assignedTo: null,
           notes: values.notes?.trim() || "",
           businessId: "",
-        },
-        DEFAULT_USER_ID
+        }
       );
 
       await onCreated();

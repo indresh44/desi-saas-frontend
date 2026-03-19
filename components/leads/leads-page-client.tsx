@@ -10,7 +10,6 @@ import { LeadWhatsAppChatDrawer } from "@/components/whatsapp/lead-whatsapp-chat
 import { useLookupMaps } from "@/hooks/use-lookup-maps";
 import { searchCustomers } from "@/lib/api/customers";
 import { fetchLeads } from "@/lib/api/leads";
-import { DEFAULT_USER_ID } from "@/lib/constants/api";
 import { Customer } from "@/lib/types/customer";
 import { Lead } from "@/lib/types/lead";
 import { PipelineStage } from "@/lib/types/pipeline";
@@ -208,7 +207,7 @@ export function LeadsPageClient() {
       setCustomerSearchError(null);
 
       try {
-        const data = await searchCustomers(trimmedCustomerSearch, DEFAULT_USER_ID);
+        const data = await searchCustomers(trimmedCustomerSearch);
         setCustomerResults(data);
       } catch (error) {
         if (
@@ -246,8 +245,7 @@ export function LeadsPageClient() {
 
     try {
       const data = await fetchLeads(
-        customerIdFilter ? { customer_id: customerIdFilter } : undefined,
-        DEFAULT_USER_ID
+        customerIdFilter ? { customer_id: customerIdFilter } : undefined
       );
       setLeads(data);
     } catch (error) {
