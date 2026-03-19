@@ -24,5 +24,6 @@ export const API_ENDPOINTS = {
   invoices: "/api/v1/invoices",
   payments: "/api/v1/payments",
   tasks: "/api/v1/tasks",
+  catalogItems: "/api/v1/catalog-items",
   customerOutstanding: (id: string) => `/api/v1/customers/${id}/outstanding`,
 } as const;
