@@ -177,7 +177,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
     try {
       const [leadsData, activitiesData, followUpsData, tasksData, invoicesData] =
         await Promise.all([
-          fetchLeads(DEFAULT_USER_ID),
+          fetchLeads(undefined, DEFAULT_USER_ID),
           fetchLeadActivities(leadId, DEFAULT_USER_ID),
           fetchLeadFollowUps(leadId, DEFAULT_USER_ID),
           fetchLeadTasks(leadId, DEFAULT_USER_ID),

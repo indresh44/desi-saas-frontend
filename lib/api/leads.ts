@@ -65,8 +65,23 @@ function getUserHeader(userId: string) {
   };
 }
 
-export async function fetchLeads(userId = DEFAULT_USER_ID): Promise<Lead[]> {
-  const result = await apiClient<LeadApiResponseItem[]>(API_ENDPOINTS.leads, {
+function withQuery(base: string, params: Record<string, string | undefined>): string {
+  const qs = Object.entries(params)
+    .filter(([, value]) => value !== undefined && value !== "")
+    .map(([key, value]) => `${key}=${encodeURIComponent(value!)}`)
+    .join("&");
+  return qs ? `${base}?${qs}` : base;
+}
+
+export async function fetchLeads(
+  filters?: { customer_id?: string },
+  userId = DEFAULT_USER_ID
+): Promise<Lead[]> {
+  const path = withQuery(API_ENDPOINTS.leads, {
+    customer_id: filters?.customer_id,
+  });
+
+  const result = await apiClient<LeadApiResponseItem[]>(path, {
     method: "GET",
     headers: getUserHeader(userId),
     cache: "no-store",

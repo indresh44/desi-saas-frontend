@@ -302,7 +302,7 @@ export default function CustomersPageClient() {
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap items-center gap-3">
                           <Link
-                            href="/leads"
+                            href={`/leads?customer_id=${customer.id}&customer_name=${encodeURIComponent(customer.name)}`}
                             className="text-sm font-medium text-zinc-700 transition hover:text-zinc-900"
                           >
                             View Leads →
