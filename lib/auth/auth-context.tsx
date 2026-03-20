@@ -38,6 +38,7 @@ interface AuthContextValue {
   business: AuthBusiness | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  updateBusiness: (nextBusiness: AuthBusiness | null) => void;
   login: (input: LoginInput) => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
   logout: () => Promise<void>;
@@ -170,11 +171,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.replace("/login");
   }, [router]);
 
+  const updateBusiness = useCallback((nextBusiness: AuthBusiness | null) => {
+    setBusiness(nextBusiness);
+    setStoredBusiness(nextBusiness);
+  }, []);
+
   const value: AuthContextValue = {
     user,
     business,
     isLoading,
     isAuthenticated: !!user,
+    updateBusiness,
     login,
     register,
     logout,

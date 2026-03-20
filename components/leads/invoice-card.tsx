@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Loader2, Pencil, Plus } from "lucide-react";
+import { ChevronDown, ChevronUp, Download, Loader2, Pencil, Plus, RefreshCw } from "lucide-react";
 import { PaymentAttachmentPreview } from "@/components/leads/payment-attachment-preview";
 import { Button } from "@/components/ui/button";
 import { RecordPaymentModal } from "@/components/leads/record-payment-modal";
-import { fetchInvoicePayments } from "@/lib/api/invoices";
+import { fetchInvoicePayments, getInvoicePdf } from "@/lib/api/invoices";
 import type { Invoice, Payment, PaymentMethod } from "@/lib/types/invoice";
 
 type Props = {
@@ -74,6 +74,8 @@ export function InvoiceCard({ invoice, onEdit, onPaymentRecorded }: Props) {
   const [paymentsError, setPaymentsError] = useState<string | null>(null);
   const [showItems, setShowItems] = useState(false);
   const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
   const loadPayments = useCallback(async () => {
     setIsLoadingPayments(true);
@@ -156,6 +158,29 @@ export function InvoiceCard({ invoice, onEdit, onPaymentRecorded }: Props) {
     onPaymentRecorded();
   };
 
+  const handleDownloadPdf = async () => {
+    setPdfLoading(true);
+    setPdfError(null);
+
+    try {
+      const pdfUrl = await getInvoicePdf(invoice.id);
+      window.open(pdfUrl, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "message" in error &&
+        typeof (error as { message: unknown }).message === "string"
+      ) {
+        setPdfError((error as { message: string }).message);
+      } else {
+        setPdfError("Failed to generate PDF.");
+      }
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   return (
     <>
       <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
@@ -183,8 +208,25 @@ export function InvoiceCard({ invoice, onEdit, onPaymentRecorded }: Props) {
             <p className="text-lg font-semibold text-zinc-900">
               {formatRupees(totalAmount)}
             </p>
-            {invoice.status === "draft" && onEdit ? (
-              <div className="mt-2 flex justify-end">
+
+            <div className="mt-2 flex justify-end gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => void handleDownloadPdf()}
+                disabled={pdfLoading}
+                title="Download PDF"
+              >
+                {pdfLoading ? (
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Download className="h-3.5 w-3.5" />
+                )}
+                PDF
+              </Button>
+
+              {invoice.status === "draft" && onEdit ? (
                 <Button
                   type="button"
                   size="sm"
@@ -194,10 +236,16 @@ export function InvoiceCard({ invoice, onEdit, onPaymentRecorded }: Props) {
                   <Pencil className="h-3.5 w-3.5" />
                   Edit
                 </Button>
-              </div>
-            ) : null}
+              ) : null}
+            </div>
           </div>
         </div>
+
+        {pdfError ? (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {pdfError}
+          </div>
+        ) : null}
 
         <div className="space-y-2 rounded-xl border border-zinc-100 bg-zinc-50 p-3">
           <div className="flex items-center justify-between gap-3 text-sm">

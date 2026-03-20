@@ -5,6 +5,7 @@ import {
   CreatePaymentInput,
   CustomerOutstanding,
   Invoice,
+  InvoiceApiResponse,
   InvoiceItem,
   Payment,
   PaymentAttachment,
@@ -25,20 +26,6 @@ type InvoiceItemApiResponse = {
   line_total?: number;
   amount?: number;
   sort_order?: number;
-};
-
-type InvoiceApiResponse = {
-  id: string;
-  business_id: string;
-  lead_id: string | null;
-  booking_id: string | null;
-  invoice_number: string;
-  total_amount: number;
-  status: "draft" | "sent" | "paid" | "partial" | "overdue";
-  issued_date: string;
-  due_date: string;
-  created_at: string;
-  items?: InvoiceItemApiResponse[];
 };
 
 type PaymentApiResponse = {
@@ -96,12 +83,13 @@ function toInvoiceModel(raw: InvoiceApiResponse): Invoice {
     leadId: raw.lead_id,
     bookingId: raw.booking_id,
     invoiceNumber: raw.invoice_number,
+    pdfUrl: raw.pdf_url,
     totalAmount: raw.total_amount,
     status: raw.status,
     issuedDate: raw.issued_date,
     dueDate: raw.due_date,
     createdAt: raw.created_at,
-    items: raw.items?.map(toInvoiceItemModel),
+    items: raw.items?.map((item) => toInvoiceItemModel(item as InvoiceItemApiResponse)),
   };
 }
 
@@ -227,4 +215,15 @@ export async function uploadAttachment(
   );
 
   return result.data;
+}
+
+export async function getInvoicePdf(
+  invoiceId: string,
+  force: boolean = false,
+): Promise<string> {
+  const path = force
+    ? `/api/v1/invoices/${invoiceId}/pdf?force=true`
+    : `/api/v1/invoices/${invoiceId}/pdf`;
+  const { data } = await apiClient<{ pdf_url: string }>(path);
+  return data.pdf_url;
 }

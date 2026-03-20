@@ -23,12 +23,42 @@ export interface Invoice {
   leadId: string | null;
   bookingId: string | null;
   invoiceNumber: string;
+  pdfUrl: string | null;
   totalAmount: number;
   status: InvoiceStatus;
   issuedDate: string;
   dueDate: string;
   createdAt: string;
   items?: InvoiceItem[];
+}
+
+export interface InvoiceApiResponse {
+  id: string;
+  business_id: string;
+  lead_id: string | null;
+  booking_id: string | null;
+  invoice_number: string;
+  pdf_url: string | null;
+  total_amount: number;
+  status: InvoiceStatus;
+  issued_date: string;
+  due_date: string;
+  created_at: string;
+  items?: {
+    id: string;
+    invoice_id: string;
+    catalog_item_id?: string | null;
+    name?: string;
+    description?: string | null;
+    unit?: string | null;
+    quantity: number;
+    rate?: number;
+    unit_price?: number;
+    gst_percent: number;
+    line_total?: number;
+    amount?: number;
+    sort_order?: number;
+  }[];
 }
 
 export interface CreateInvoiceItemInput {
