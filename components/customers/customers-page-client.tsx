@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { MessageCircle, Plus, Search } from "lucide-react";
+import { MessageCircle, Pencil, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { createCustomer, fetchCustomers } from "@/lib/api/customers";
+import { createCustomer, fetchCustomers, updateCustomer } from "@/lib/api/customers";
 import { fetchCustomerOutstanding } from "@/lib/api/invoices";
-import { Customer } from "@/lib/types/customer";
+import { Customer, UpdateCustomerInput } from "@/lib/types/customer";
 
 type OutstandingState = {
   isLoading: boolean;
@@ -25,6 +25,11 @@ function normalizePhone(value: string) {
   return value.replace(/\D/g, "");
 }
 
+function normalizeEmail(value: string) {
+  const trimmedValue = value.trim();
+  return trimmedValue ? trimmedValue : null;
+}
+
 export default function CustomersPageClient() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,9 +40,17 @@ export default function CustomersPageClient() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [editingCustomerId, setEditingCustomerId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [outstandingByCustomer, setOutstandingByCustomer] = useState<
     Record<string, OutstandingState>
   >({});
+
+  const inputClassName =
+    "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 disabled:opacity-50";
 
   const loadCustomers = useCallback(async () => {
     setIsLoading(true);
@@ -127,7 +140,7 @@ export default function CustomersPageClient() {
         await createCustomer({
           name: trimmedName,
           phone: trimmedPhone,
-          email: trimmedEmail || null,
+          email: normalizeEmail(trimmedEmail),
         });
 
         setName("");
@@ -144,6 +157,77 @@ export default function CustomersPageClient() {
       }
     },
     [email, loadCustomers, name, phone]
+  );
+
+  const resetEditState = useCallback(() => {
+    setEditingCustomerId(null);
+    setEditName("");
+    setEditPhone("");
+    setEditEmail("");
+    setIsSavingEdit(false);
+  }, []);
+
+  const handleStartEdit = useCallback((customer: Customer) => {
+    setErrorMessage(null);
+    setEditingCustomerId(customer.id);
+    setEditName(customer.name);
+    setEditPhone(customer.phone);
+    setEditEmail(customer.email ?? "");
+  }, []);
+
+  const handleCancelEdit = useCallback(() => {
+    resetEditState();
+  }, [resetEditState]);
+
+  const handleSaveEdit = useCallback(
+    async (customer: Customer) => {
+      const trimmedName = editName.trim();
+      const trimmedPhone = editPhone.trim();
+      const normalizedEditEmail = normalizeEmail(editEmail);
+
+      if (!trimmedName || !trimmedPhone) {
+        setErrorMessage("Name and phone are required.");
+        return;
+      }
+
+      const updates: UpdateCustomerInput = {};
+
+      if (trimmedName !== customer.name) {
+        updates.name = trimmedName;
+      }
+
+      if (trimmedPhone !== customer.phone) {
+        updates.phone = trimmedPhone;
+      }
+
+      if (normalizedEditEmail !== customer.email) {
+        updates.email = normalizedEditEmail;
+      }
+
+      if (Object.keys(updates).length === 0) {
+        resetEditState();
+        return;
+      }
+
+      setIsSavingEdit(true);
+      setErrorMessage(null);
+
+      try {
+        const updatedCustomer = await updateCustomer(customer.id, updates);
+        setCustomers((prev) =>
+          prev.map((item) =>
+            item.id === updatedCustomer.id ? updatedCustomer : item
+          )
+        );
+        resetEditState();
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Unable to update customer.";
+        setErrorMessage(message);
+        setIsSavingEdit(false);
+      }
+    },
+    [editEmail, editName, editPhone, resetEditState]
   );
 
   const handleWhatsApp = useCallback((phoneNumber: string) => {
@@ -186,7 +270,11 @@ export default function CustomersPageClient() {
           />
         </div>
 
-        <Button type="button" onClick={() => setShowCreateForm((prev) => !prev)}>
+        <Button
+          type="button"
+          onClick={() => setShowCreateForm((prev) => !prev)}
+          disabled={isSavingEdit}
+        >
           <Plus className="h-4 w-4" />
           New Customer
         </Button>
@@ -206,7 +294,7 @@ export default function CustomersPageClient() {
                 type="text"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-900/20"
+                className={inputClassName}
                 required
               />
             </label>
@@ -219,7 +307,7 @@ export default function CustomersPageClient() {
                 type="text"
                 value={phone}
                 onChange={(event) => setPhone(event.target.value)}
-                className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-900/20"
+                className={inputClassName}
                 required
               />
             </label>
@@ -232,7 +320,7 @@ export default function CustomersPageClient() {
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-900/20"
+                className={inputClassName}
               />
             </label>
           </div>
@@ -280,12 +368,53 @@ export default function CustomersPageClient() {
                 {filteredCustomers.map((customer) => {
                   const outstandingState = outstandingByCustomer[customer.id];
                   const outstanding = outstandingState?.amount;
+                  const isEditing = editingCustomerId === customer.id;
+                  const isAnotherRowEditing =
+                    editingCustomerId !== null && editingCustomerId !== customer.id;
 
                   return (
                     <tr key={customer.id}>
-                      <td className="px-4 py-3 font-medium text-zinc-900">{customer.name}</td>
-                      <td className="px-4 py-3 text-zinc-700">{customer.phone}</td>
-                      <td className="px-4 py-3 text-zinc-700">{customer.email || "-"}</td>
+                      <td className="px-4 py-3 font-medium text-zinc-900">
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={editName}
+                            onChange={(event) => setEditName(event.target.value)}
+                            className={inputClassName}
+                            disabled={isSavingEdit}
+                            required
+                          />
+                        ) : (
+                          customer.name
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-zinc-700">
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={editPhone}
+                            onChange={(event) => setEditPhone(event.target.value)}
+                            className={inputClassName}
+                            disabled={isSavingEdit}
+                            required
+                          />
+                        ) : (
+                          customer.phone
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-zinc-700">
+                        {isEditing ? (
+                          <input
+                            type="email"
+                            value={editEmail}
+                            onChange={(event) => setEditEmail(event.target.value)}
+                            className={inputClassName}
+                            disabled={isSavingEdit}
+                          />
+                        ) : (
+                          customer.email || "-"
+                        )}
+                      </td>
                       <td className="px-4 py-3">
                         {outstandingState?.isLoading || outstanding === undefined ? (
                           <span className="text-zinc-500">...</span>
@@ -301,20 +430,53 @@ export default function CustomersPageClient() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap items-center gap-3">
-                          <Link
-                            href={`/leads?customer_id=${customer.id}&customer_name=${encodeURIComponent(customer.name)}`}
-                            className="text-sm font-medium text-zinc-700 transition hover:text-zinc-900"
-                          >
-                            View Leads →
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={() => handleWhatsApp(customer.phone)}
-                            className="inline-flex items-center gap-1 text-sm font-medium text-zinc-700 transition hover:text-zinc-900"
-                          >
-                            <MessageCircle className="h-4 w-4" />
-                            💬 WhatsApp
-                          </button>
+                          {isEditing ? (
+                            <>
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => void handleSaveEdit(customer)}
+                                disabled={isSavingEdit}
+                              >
+                                {isSavingEdit ? "Saving..." : "Save"}
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={handleCancelEdit}
+                                disabled={isSavingEdit}
+                              >
+                                Cancel
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleStartEdit(customer)}
+                                className="inline-flex items-center gap-1 text-sm font-medium text-zinc-700 transition hover:text-zinc-900 disabled:cursor-not-allowed disabled:text-zinc-400"
+                                disabled={isAnotherRowEditing || isSavingEdit}
+                              >
+                                <Pencil className="h-4 w-4" />
+                                Edit
+                              </button>
+                              <Link
+                                href={`/leads?customer_id=${customer.id}&customer_name=${encodeURIComponent(customer.name)}`}
+                                className="text-sm font-medium text-zinc-700 transition hover:text-zinc-900"
+                              >
+                                View Leads -&gt;
+                              </Link>
+                              <button
+                                type="button"
+                                onClick={() => handleWhatsApp(customer.phone)}
+                                className="inline-flex items-center gap-1 text-sm font-medium text-zinc-700 transition hover:text-zinc-900"
+                              >
+                                <MessageCircle className="h-4 w-4" />
+                                WhatsApp
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>

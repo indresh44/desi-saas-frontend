@@ -9,6 +9,7 @@ export const API_ENDPOINTS = {
   customersSearch: "/api/v1/customers/search",
   customersByPhone: "/api/v1/customers/by-phone",
   customers: "/api/v1/customers",
+  customerById: (id: string) => `/api/v1/customers/${id}`,
   whatsappConversations: "/api/v1/whatsapp/conversations",
   whatsappMessages: "/api/v1/whatsapp/conversations",
   whatsappSendText: "/api/v1/whatsapp/messages/text",
@@ -24,4 +25,5 @@ export const API_ENDPOINTS = {
   catalogItems: "/api/v1/catalog-items",
   meetings: "/api/v1/meetings",
   customerOutstanding: (id: string) => `/api/v1/customers/${id}/outstanding`,
+  invoiceById: (id: string) => `/api/v1/invoices/${id}`,
 } as const;

@@ -8,6 +8,7 @@ import {
   InvoiceItem,
   Payment,
   PaymentAttachment,
+  UpdateInvoiceInput,
 } from "@/lib/types/invoice";
 
 type InvoiceItemApiResponse = {
@@ -117,9 +118,9 @@ function toPaymentModel(raw: PaymentApiResponse): Payment {
 }
 
 export async function fetchLeadInvoices(
-  leadId: string
+  leadId: string, includeItems = false
 ): Promise<Invoice[]> {
-  const path = withQuery(API_ENDPOINTS.invoices, { lead_id: leadId });
+  const path = withQuery(API_ENDPOINTS.invoices, { lead_id: leadId, include_items: includeItems ? "true" : undefined });
 
   const result = await apiClient<InvoiceApiResponse[]>(path, {
     method: "GET",
@@ -134,6 +135,18 @@ export async function createInvoice(
 ): Promise<Invoice> {
   const result = await apiClient<InvoiceApiResponse>(API_ENDPOINTS.invoices, {
     method: "POST",
+    body: input,
+  });
+
+  return toInvoiceModel(result.data);
+}
+
+export async function updateInvoice(
+  invoiceId: string,
+  input: UpdateInvoiceInput
+): Promise<Invoice> {
+  const result = await apiClient<InvoiceApiResponse>(API_ENDPOINTS.invoiceById(invoiceId), {
+    method: "PATCH",
     body: input,
   });
 

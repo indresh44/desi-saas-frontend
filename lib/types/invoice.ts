@@ -42,6 +42,16 @@ export interface CreateInvoiceItemInput {
   sort_order?: number;
 }
 
+export interface UpdateInvoiceItemInput {
+  catalog_item_id?: string | null;
+  name: string;
+  description?: string;
+  unit?: string;
+  quantity: number;
+  unit_price: number;
+  gst_percent: number;
+}
+
 export interface CreateInvoiceInput {
   invoice: {
     lead_id: string;
@@ -50,6 +60,14 @@ export interface CreateInvoiceInput {
     due_date: string;
   };
   items: CreateInvoiceItemInput[];
+}
+
+export interface UpdateInvoiceInput {
+  invoice: {
+    issued_date: string;
+    due_date: string;
+  };
+  items: UpdateInvoiceItemInput[];
 }
 
 export interface CustomerOutstanding {

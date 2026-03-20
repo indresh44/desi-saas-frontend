@@ -130,6 +130,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
   // Drawer / modal
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
 
   // Activity form
   const [showActivityForm, setShowActivityForm] = useState(false);
@@ -180,7 +181,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
           fetchLeadActivities(leadId),
           fetchLeadFollowUps(leadId),
           fetchLeadTasks(leadId),
-          fetchLeadInvoices(leadId),
+          fetchLeadInvoices(leadId, true),
         ]);
 
       setLead(leadsData.find((l) => l.id === leadId) ?? null);
@@ -263,9 +264,28 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
   }, [leadId]);
 
   const refreshInvoices = useCallback(async () => {
-    const data = await fetchLeadInvoices(leadId);
+    const data = await fetchLeadInvoices(leadId, true);
     setInvoices(data);
   }, [leadId]);
+
+  const handleInvoiceModalClose = useCallback(() => {
+    setIsInvoiceModalOpen(false);
+    setEditingInvoice(null);
+  }, []);
+
+  const handleInvoiceModalSuccess = useCallback(async () => {
+    await refreshInvoices();
+  }, [refreshInvoices]);
+
+  const handleCreateInvoice = useCallback(() => {
+    setEditingInvoice(null);
+    setIsInvoiceModalOpen(true);
+  }, []);
+
+  const handleEditInvoice = useCallback((invoice: Invoice) => {
+    setEditingInvoice(invoice);
+    setIsInvoiceModalOpen(true);
+  }, []);
 
   const handleMeetingStatusChange = useCallback(async () => {
     await Promise.all([refreshMeetings(), refreshActivities()]);
@@ -605,7 +625,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
               type="button"
               size="sm"
               variant="outline"
-              onClick={() => setIsInvoiceModalOpen(true)}
+              onClick={handleCreateInvoice}
             >
               <Plus className="h-3.5 w-3.5" />
               New Invoice
@@ -620,6 +640,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
                 <InvoiceCard
                   key={inv.id}
                   invoice={inv}
+                  onEdit={handleEditInvoice}
                   onPaymentRecorded={() => {
                     void refreshInvoices();
                   }}
@@ -930,8 +951,9 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
       {isInvoiceModalOpen ? (
         <CreateInvoiceModal
           leadId={leadId}
-          onCreated={() => void refreshInvoices()}
-          onClose={() => setIsInvoiceModalOpen(false)}
+          initialInvoice={editingInvoice}
+          onSuccess={() => void handleInvoiceModalSuccess()}
+          onClose={handleInvoiceModalClose}
         />
       ) : null}
     </div>

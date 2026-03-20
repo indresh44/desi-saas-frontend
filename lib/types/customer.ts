@@ -15,3 +15,9 @@ export type CreateCustomerInput = {
   phone: string;
   email?: string | null;
 };
+
+export type UpdateCustomerInput = {
+  name?: string;
+  phone?: string;
+  email?: string | null;
+};

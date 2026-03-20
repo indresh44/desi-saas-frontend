@@ -4,6 +4,7 @@ import {
   CreateCustomerInput,
   Customer,
   CustomerByPhoneResponse,
+  UpdateCustomerInput,
 } from "@/lib/types/customer";
 
 function withQuery(path: string, params: Record<string, string | undefined>) {
@@ -55,6 +56,18 @@ export async function createCustomer(
 ): Promise<Customer> {
   const result = await apiClient<Customer>(API_ENDPOINTS.customers, {
     method: "POST",
+    body: input,
+  });
+
+  return result.data;
+}
+
+export async function updateCustomer(
+  customerId: string,
+  input: UpdateCustomerInput
+): Promise<Customer> {
+  const result = await apiClient<Customer>(API_ENDPOINTS.customerById(customerId), {
+    method: "PATCH",
     body: input,
   });
 

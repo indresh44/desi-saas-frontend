@@ -6,8 +6,9 @@ import { Loader2, X } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { searchCatalogItems } from "@/lib/api/catalog-items";
-import { createInvoice } from "@/lib/api/invoices";
+import { createInvoice, updateInvoice } from "@/lib/api/invoices";
 import type { CatalogItem } from "@/lib/types/catalog-item";
+import type { Invoice, InvoiceItem } from "@/lib/types/invoice";
 
 type LineItem = {
   id: string;
@@ -88,13 +89,32 @@ function calcLineTax(item: LineItem): number {
 
 type Props = {
   leadId: string;
-  onCreated: () => void;
+  onSuccess: () => void;
   onClose: () => void;
+  initialInvoice?: Invoice | null;
 };
 
-export function CreateInvoiceModal({ leadId, onCreated, onClose }: Props) {
-  const [items, setItems] = useState<LineItem[]>([createEmptyLineItem()]);
-  const [dueDate, setDueDate] = useState("");
+function createLineItemFromInvoiceItem(item: InvoiceItem): LineItem {
+  return {
+    id: item.id || crypto.randomUUID(),
+    catalogItemId: item.catalogItemId,
+    name: item.name,
+    description: item.description,
+    unit: item.unit,
+    qty: item.quantity,
+    unit_price: item.unitPrice,
+    gstPercent: item.gstPercent,
+  };
+}
+
+export function CreateInvoiceModal({ leadId, onSuccess, onClose, initialInvoice }: Props) {
+  const isEditMode = !!initialInvoice;
+  const [items, setItems] = useState<LineItem[]>(() =>
+    initialInvoice?.items?.length
+      ? initialInvoice.items.map(createLineItemFromInvoiceItem)
+      : [createEmptyLineItem()]
+  );
+  const [dueDate, setDueDate] = useState(initialInvoice?.dueDate ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeSearchRowId, setActiveSearchRowId] = useState<string | null>(null);
@@ -109,6 +129,23 @@ export function CreateInvoiceModal({ leadId, onCreated, onClose }: Props) {
     left: number;
     width: number;
   } | null>(null);
+
+  useEffect(() => {
+    setItems(
+      initialInvoice?.items?.length
+        ? initialInvoice.items.map(createLineItemFromInvoiceItem)
+        : [createEmptyLineItem()]
+    );
+    setDueDate(initialInvoice?.dueDate ?? "");
+    setIsSubmitting(false);
+    setError(null);
+    setActiveSearchRowId(null);
+    setIsSearchOpen(false);
+    setSearchResults([]);
+    setIsSearching(false);
+    setSearchError(null);
+    setDropdownAnchor(null);
+  }, [initialInvoice]);
 
   const updateDropdownAnchor = (id: string) => {
     const cell = nameCellRefs.current[id];
@@ -282,9 +319,25 @@ export function CreateInvoiceModal({ leadId, onCreated, onClose }: Props) {
     setIsSubmitting(true);
 
     try {
-      const today = new Date().toISOString().slice(0, 10);
-      await createInvoice(
-        {
+      if (isEditMode && initialInvoice) {
+        await updateInvoice(initialInvoice.id, {
+          invoice: {
+            issued_date: initialInvoice.issuedDate,
+            due_date: parsedInput.data.dueDate,
+          },
+          items: parsedInput.data.items.map((item) => ({
+            catalog_item_id: item.catalogItemId ?? null,
+            name: item.name,
+            description: item.description || undefined,
+            unit: item.unit || "piece",
+            quantity: item.qty,
+            unit_price: item.unit_price,
+            gst_percent: item.gstPercent,
+          })),
+        });
+      } else {
+        const today = new Date().toISOString().slice(0, 10);
+        await createInvoice({
           invoice: {
             lead_id: leadId,
             status: "draft",
@@ -301,9 +354,9 @@ export function CreateInvoiceModal({ leadId, onCreated, onClose }: Props) {
             gst_percent: item.gstPercent,
             sort_order: index,
           })),
-        }
-      );
-      onCreated();
+        });
+      }
+      onSuccess();
       onClose();
     } catch (err) {
       if (
@@ -314,7 +367,7 @@ export function CreateInvoiceModal({ leadId, onCreated, onClose }: Props) {
       ) {
         setError((err as { message: string }).message);
       } else {
-        setError("Unable to create invoice.");
+        setError(isEditMode ? "Unable to update invoice." : "Unable to create invoice.");
       }
     } finally {
       setIsSubmitting(false);
@@ -333,7 +386,9 @@ export function CreateInvoiceModal({ leadId, onCreated, onClose }: Props) {
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="flex max-h-[90vh] w-full max-w-5xl flex-col rounded-xl border border-zinc-200 bg-white shadow-2xl">
           <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3">
-            <h2 className="text-base font-semibold text-zinc-900">New Invoice</h2>
+            <h2 className="text-base font-semibold text-zinc-900">
+              {isEditMode ? "Edit Invoice" : "New Invoice"}
+            </h2>
             <Button type="button" size="sm" variant="ghost" onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
@@ -509,7 +564,7 @@ export function CreateInvoiceModal({ leadId, onCreated, onClose }: Props) {
               Cancel
             </Button>
             <Button type="button" onClick={handleSubmit} disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save Invoice"}
+              {isSubmitting ? "Saving..." : isEditMode ? "Update Invoice" : "Save Invoice"}
             </Button>
           </div>
         </div>

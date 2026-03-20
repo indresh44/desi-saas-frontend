@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Loader2, Plus } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, Pencil, Plus } from "lucide-react";
 import { PaymentAttachmentPreview } from "@/components/leads/payment-attachment-preview";
 import { Button } from "@/components/ui/button";
 import { RecordPaymentModal } from "@/components/leads/record-payment-modal";
@@ -10,6 +10,7 @@ import type { Invoice, Payment, PaymentMethod } from "@/lib/types/invoice";
 
 type Props = {
   invoice: Invoice;
+  onEdit?: (invoice: Invoice) => void;
   onPaymentRecorded: () => void;
 };
 
@@ -67,7 +68,7 @@ function getPaymentMethodClass(method: PaymentMethod): string {
   return "bg-orange-100 text-orange-700";
 }
 
-export function InvoiceCard({ invoice, onPaymentRecorded }: Props) {
+export function InvoiceCard({ invoice, onEdit, onPaymentRecorded }: Props) {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoadingPayments, setIsLoadingPayments] = useState(true);
   const [paymentsError, setPaymentsError] = useState<string | null>(null);
@@ -182,6 +183,19 @@ export function InvoiceCard({ invoice, onPaymentRecorded }: Props) {
             <p className="text-lg font-semibold text-zinc-900">
               {formatRupees(totalAmount)}
             </p>
+            {invoice.status === "draft" && onEdit ? (
+              <div className="mt-2 flex justify-end">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onEdit(invoice)}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit
+                </Button>
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -225,6 +239,7 @@ export function InvoiceCard({ invoice, onPaymentRecorded }: Props) {
                   <table className="min-w-full text-left text-sm text-zinc-700">
                     <thead>
                       <tr className="border-b border-zinc-200 text-xs uppercase tracking-[0.12em] text-zinc-500">
+                        <th className="py-2 pr-3 font-medium">Name</th>
                         <th className="py-2 pr-3 font-medium">Description</th>
                         <th className="py-2 pr-3 font-medium">Qty</th>
                         <th className="py-2 pr-3 font-medium">Rate</th>
@@ -235,6 +250,7 @@ export function InvoiceCard({ invoice, onPaymentRecorded }: Props) {
                     <tbody>
                       {invoice.items.map((item) => (
                         <tr key={item.id} className="border-b border-zinc-100 last:border-b-0">
+                          <td className="py-2 pr-3 font-medium text-zinc-900">{item.name}</td>
                           <td className="py-2 pr-3">{item.description}</td>
                           <td className="py-2 pr-3">{toSafeNumber(item.quantity)}</td>
                           <td className="py-2 pr-3">{formatRupees(item.unitPrice)}</td>
