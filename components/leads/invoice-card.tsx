@@ -208,8 +208,11 @@ export function InvoiceCard({
     setShareMessage(null);
 
     try {
+      // First, ensure PDF exists (generate if needed)
       const pdfUrl = invoice.pdfUrl ?? (await getInvoicePdf(invoice.id));
-      console.log("PDF URL:", pdfUrl);
+      console.log("[InvoiceCard] PDF URL:", pdfUrl);
+
+      // Then share it
       const result = await shareInvoicePdf(
         pdfUrl,
         invoice.invoiceNumber,
@@ -217,24 +220,23 @@ export function InvoiceCard({
       );
 
       if (result === "shared") {
-        setShareMessage("Shared");
+        setShareMessage("Shared!");
       } else if (result === "downloaded") {
         setShareMessage("PDF downloaded");
+      } else if (result === "cancelled") {
+        // User cancelled — no message needed
+      } else if (result === "error") {
+        setShareMessage("Share failed — try downloading instead");
       }
-    } catch (error) {
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "message" in error &&
-        typeof (error as { message: unknown }).message === "string"
-      ) {
-        setPdfError((error as { message: string }).message);
-      } else {
-        setPdfError("Failed to share PDF.");
-      }
+    } catch (err: any) {
+      console.error("[InvoiceCard] Share failed:", err);
+      setShareMessage("Failed to generate PDF");
     } finally {
       setShareLoading(false);
     }
+
+    // Clear message after 3 seconds
+    setTimeout(() => setShareMessage(null), 3000);
   };
 
   return (

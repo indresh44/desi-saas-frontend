@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const ALLOWED_HOSTS = [".r2.dev"];
+// Security: only allow proxying from your R2 domain and known storage providers
+const ALLOWED_DOMAINS = [
+  "pub-",                         // Cloudflare R2 public bucket URLs start with pub- (e.g., pub-xxx.r2.dev)
+  ".r2.dev",                      // R2 dev domain
+  ".r2.cloudflarestorage.com",    // R2 Cloudflare Storage domain
+];
 
 function isAllowedUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
+    // Enforce HTTPS for security
     if (parsed.protocol !== "https:") return false;
-    return ALLOWED_HOSTS.some((host) => parsed.hostname.endsWith(host));
+    // Check if the URL matches allowed domains
+    return ALLOWED_DOMAINS.some((domain) => url.includes(domain));
   } catch {
     return false;
   }
@@ -23,23 +30,29 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "URL not allowed" }, { status: 403 });
   }
 
-  const response = await fetch(url);
+  try {
+    const response = await fetch(url);
 
-  if (!response.ok) {
-    return NextResponse.json(
-      { error: "Failed to fetch resource" },
-      { status: response.status }
-    );
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: "Failed to fetch PDF from storage" },
+        { status: response.status }
+      );
+    }
+
+    const pdfBuffer = await response.arrayBuffer();
+
+    return new NextResponse(pdfBuffer, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": "inline",
+        // Cache the proxied PDF for 1 hour to avoid repeated fetches
+        "Cache-Control": "private, max-age=3600",
+      },
+    });
+  } catch (error) {
+    console.error("PDF proxy error:", error);
+    return NextResponse.json({ error: "Failed to proxy PDF" }, { status: 500 });
   }
-
-  const contentType = response.headers.get("content-type") ?? "application/octet-stream";
-  const body = await response.arrayBuffer();
-
-  return new NextResponse(body, {
-    status: 200,
-    headers: {
-      "Content-Type": contentType,
-      "Cache-Control": "private, max-age=300",
-    },
-  });
 }
