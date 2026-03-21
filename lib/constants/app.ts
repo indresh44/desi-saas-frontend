@@ -1,1 +1,1 @@
-export const APP_NAME = "Desi CRM";
+export const APP_NAME = "SellnSettle";

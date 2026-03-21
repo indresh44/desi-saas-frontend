@@ -72,7 +72,7 @@ export default function RegisterPageClient() {
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold">Desi CRM</h1>
+          <h1 className="text-2xl font-bold">SellnSettle</h1>
           <p className="mt-1 text-sm text-zinc-500">Create your account</p>
         </div>
 
