@@ -1,5 +1,10 @@
 import { apiClient } from "@/lib/api/client";
+import {
+  fetchAttachments,
+  uploadAttachment as uploadEntityAttachment,
+} from "@/lib/api/attachments";
 import { API_ENDPOINTS } from "@/lib/constants/api";
+import type { AttachmentEntityType } from "@/lib/types/attachment";
 import {
   CreateInvoiceInput,
   CreatePaymentInput,
@@ -36,12 +41,6 @@ type PaymentApiResponse = {
   payment_date: string;
   reference: string | null;
   created_at: string;
-};
-
-type AttachmentUploadResponse = {
-  id: string;
-  file_url: string;
-  filename: string;
 };
 
 function withQuery(path: string, params: Record<string, string | undefined>) {
@@ -182,39 +181,15 @@ export async function fetchInvoicePayments(
 export async function fetchPaymentAttachments(
   paymentId: string
 ): Promise<PaymentAttachment[]> {
-  const path = withQuery("/api/v1/attachments", {
-    entity_type: "payment",
-    entity_id: paymentId,
-  });
-
-  const result = await apiClient<PaymentAttachment[]>(path, {
-    method: "GET",
-    cache: "no-store",
-  });
-
-  return result.data;
+  return fetchAttachments("payment", paymentId);
 }
 
 export async function uploadAttachment(
   entityType: string,
   entityId: string,
   file: File
-): Promise<AttachmentUploadResponse> {
-  const formData = new FormData();
-
-  formData.append("file", file);
-  formData.append("entity_type", entityType);
-  formData.append("entity_id", entityId);
-
-  const result = await apiClient<AttachmentUploadResponse>(
-    "/api/v1/attachments/upload",
-    {
-    method: "POST",
-    body: formData,
-    }
-  );
-
-  return result.data;
+): Promise<PaymentAttachment> {
+  return uploadEntityAttachment(entityType as AttachmentEntityType, entityId, file);
 }
 
 export async function getInvoicePdf(

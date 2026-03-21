@@ -1,0 +1,18 @@
+export type AttachmentEntityType =
+  | "lead"
+  | "payment"
+  | "catalog"
+  | "quote"
+  | "invoice"
+  | "task";
+
+export interface Attachment {
+  id: string;
+  business_id: string;
+  entity_type: AttachmentEntityType;
+  entity_id: string;
+  filename: string;
+  file_url: string;
+  file_size: number;
+  created_at: string;
+}

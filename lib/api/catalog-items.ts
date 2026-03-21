@@ -1,5 +1,12 @@
 import { apiClient } from "./client";
 import {
+  deleteAttachment,
+  fetchAttachments,
+  fetchAttachmentsBatch,
+  uploadAttachment,
+} from "./attachments";
+import type { Attachment } from "../types/attachment";
+import {
   CatalogItem,
   CatalogItemApiResponse,
   CreateCatalogItemInput,
@@ -60,6 +67,17 @@ export async function updateCatalogItem(
   return toCatalogItemModel(data);
 }
 
+export async function fetchCatalogItemById(itemId: string): Promise<CatalogItem> {
+  const { data } = await apiClient<CatalogItemApiResponse>(
+    `/api/v1/catalog-items/${itemId}`,
+    {
+      method: "GET",
+      cache: "no-store",
+    }
+  );
+  return toCatalogItemModel(data);
+}
+
 // Deactivate (soft delete) a catalog item
 export async function deactivateCatalogItem(
   itemId: string
@@ -80,4 +98,25 @@ export async function searchCatalogItems(
   query: string
 ): Promise<CatalogItem[]> {
   return fetchCatalogItems(query, true);
+}
+
+export async function fetchCatalogAttachments(itemId: string): Promise<Attachment[]> {
+  return fetchAttachments("catalog", itemId);
+}
+
+export async function fetchCatalogAttachmentsBatch(
+  itemIds: string[]
+): Promise<Record<string, Attachment[]>> {
+  return fetchAttachmentsBatch("catalog", itemIds);
+}
+
+export async function uploadCatalogAttachment(
+  itemId: string,
+  file: File
+): Promise<Attachment> {
+  return uploadAttachment("catalog", itemId, file);
+}
+
+export async function deleteCatalogAttachment(attachmentId: string): Promise<void> {
+  return deleteAttachment(attachmentId);
 }

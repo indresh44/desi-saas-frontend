@@ -4,14 +4,23 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { X } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { createCatalogItem, updateCatalogItem } from "@/lib/api/catalog-items";
+import {
+  ACCEPTED_ATTACHMENT_FILE_TYPES,
+  MAX_ATTACHMENT_FILE_SIZE_BYTES,
+} from "@/lib/api/attachments";
+import {
+  createCatalogItem,
+  updateCatalogItem,
+  uploadCatalogAttachment,
+} from "@/lib/api/catalog-items";
 import {
   CatalogItem,
   CreateCatalogItemInput,
   UpdateCatalogItemInput,
 } from "@/lib/types/catalog-item";
+import { CatalogAttachmentsManager } from "./catalog-attachments-manager";
 
 const UNIT_OPTIONS = [
   { value: "piece", label: "Piece" },
@@ -62,6 +71,8 @@ export function CatalogItemDialog({
   initialData,
 }: Props) {
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [fileError, setFileError] = useState<string | null>(null);
   const isEditMode = !!initialData;
 
   const form = useForm<FormInput, undefined, FormData>({
@@ -98,11 +109,39 @@ export function CatalogItemDialog({
         });
       }
       setSubmitError(null);
+      setPendingFiles([]);
+      setFileError(null);
     }
   }, [isOpen, initialData, form]);
 
   const unitValue = form.watch("unit");
   const isSubmitting = form.formState.isSubmitting;
+
+  const onSelectPendingFiles = (files: FileList | null) => {
+    if (!files) return;
+
+    const nextValid: File[] = [];
+    for (const file of Array.from(files)) {
+      if (!ACCEPTED_ATTACHMENT_FILE_TYPES.includes(file.type)) {
+        setFileError(`Unsupported type for ${file.name}. Only JPG, PNG, PDF allowed.`);
+        continue;
+      }
+      if (file.size > MAX_ATTACHMENT_FILE_SIZE_BYTES) {
+        setFileError(`${file.name} is larger than 10MB.`);
+        continue;
+      }
+      nextValid.push(file);
+    }
+
+    if (nextValid.length > 0) {
+      setFileError(null);
+      setPendingFiles((prev) => [...prev, ...nextValid]);
+    }
+  };
+
+  const removePendingFile = (name: string) => {
+    setPendingFiles((prev) => prev.filter((file) => file.name !== name));
+  };
 
   const onSubmit = form.handleSubmit(async (values) => {
     setSubmitError(null);
@@ -145,7 +184,12 @@ export function CatalogItemDialog({
           default_rate: values.defaultRate,
           gst_percent: values.gstPercent,
         };
-        await createCatalogItem(payload);
+        const createdItem = await createCatalogItem(payload);
+        if (pendingFiles.length > 0) {
+          for (const file of pendingFiles) {
+            await uploadCatalogAttachment(createdItem.id, file);
+          }
+        }
       }
       onSuccess();
       onClose();
@@ -322,6 +366,62 @@ export function CatalogItemDialog({
                 {isSubmitting ? "Saving..." : "Save Item"}
               </Button>
             </div>
+
+            {isEditMode && initialData ? (
+              <CatalogAttachmentsManager catalogItemId={initialData.id} />
+            ) : (
+              <div className="space-y-2 rounded-lg border border-zinc-200 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-medium text-zinc-800">Attachments</p>
+                    <p className="text-xs text-zinc-500">
+                      Select multiple JPG, PNG, or PDF files. They upload after item is created.
+                    </p>
+                  </div>
+                  <label className="inline-flex">
+                    <input
+                      type="file"
+                      className="hidden"
+                      multiple
+                      accept="image/jpeg,image/png,application/pdf"
+                      onChange={(event) => onSelectPendingFiles(event.target.files)}
+                      disabled={isSubmitting}
+                    />
+                    <span className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-zinc-200 px-3 py-1.5 text-xs text-zinc-700 hover:bg-zinc-50">
+                      <Upload className="h-3.5 w-3.5" />
+                      Add files
+                    </span>
+                  </label>
+                </div>
+
+                {fileError ? (
+                  <p className="text-xs text-red-600">{fileError}</p>
+                ) : null}
+
+                {pendingFiles.length > 0 ? (
+                  <div className="space-y-1">
+                    {pendingFiles.map((file) => (
+                      <div
+                        key={`${file.name}-${file.size}`}
+                        className="flex items-center justify-between rounded-md bg-zinc-50 px-2 py-1"
+                      >
+                        <p className="truncate text-xs text-zinc-700">{file.name}</p>
+                        <button
+                          type="button"
+                          className="text-xs text-zinc-500 hover:text-red-600"
+                          onClick={() => removePendingFile(file.name)}
+                          disabled={isSubmitting}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-zinc-500">No files selected yet.</p>
+                )}
+              </div>
+            )}
           </form>
         </div>
       </div>

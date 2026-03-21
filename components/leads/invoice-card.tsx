@@ -172,6 +172,7 @@ export function InvoiceCard({
       : invoice.status === "partial"
         ? "text-amber-600"
         : "text-zinc-500";
+  const canEditInvoice = invoice.status === "draft" && !!onEdit;
 
   const handlePaymentSuccess = () => {
     setIsRecordPaymentOpen(false);
@@ -228,9 +229,18 @@ export function InvoiceCard({
       } else if (result === "error") {
         setShareMessage("Share failed — try downloading instead");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[InvoiceCard] Share failed:", err);
-      setShareMessage("Failed to generate PDF");
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "message" in err &&
+        typeof (err as { message: unknown }).message === "string"
+      ) {
+        setShareMessage((err as { message: string }).message);
+      } else {
+        setShareMessage("Failed to generate PDF");
+      }
     } finally {
       setShareLoading(false);
     }
@@ -265,6 +275,10 @@ export function InvoiceCard({
             </p>
             <p className="text-lg font-semibold text-zinc-900">
               {formatRupees(totalAmount)}
+            </p>
+            <p className="mt-1 text-xs text-zinc-500">
+              Status: <span className="font-medium capitalize text-zinc-700">{invoice.status}</span>
+              {canEditInvoice ? " • Editable" : " • Editable only in draft"}
             </p>
 
             <div className="mt-2 flex justify-end gap-2">
@@ -304,17 +318,24 @@ export function InvoiceCard({
                 <span className="self-center text-xs text-green-600">{shareMessage}</span>
               ) : null}
 
-              {invoice.status === "draft" && onEdit ? (
+              <div className="group relative inline-flex">
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
-                  onClick={() => onEdit(invoice)}
+                  onClick={canEditInvoice && onEdit ? () => onEdit(invoice) : undefined}
+                  disabled={!canEditInvoice}
                 >
                   <Pencil className="h-3.5 w-3.5" />
                   Edit
                 </Button>
-              ) : null}
+
+                {!canEditInvoice ? (
+                  <div className="pointer-events-none absolute right-0 top-full z-20 mt-1 w-52 rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-left text-xs text-zinc-600 opacity-0 shadow transition-opacity group-hover:opacity-100">
+                    Editable only in draft mode.
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>

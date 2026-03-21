@@ -4,10 +4,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Search, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
+  deleteCatalogAttachment,
+  fetchCatalogAttachmentsBatch,
   fetchCatalogItems,
   deactivateCatalogItem,
 } from "@/lib/api/catalog-items";
+import type { Attachment } from "@/lib/types/attachment";
 import { CatalogItem } from "@/lib/types/catalog-item";
+import { AttachmentPreviewModal } from "@/components/attachments/attachment-preview-modal";
+import { AttachmentThumbnailStrip } from "@/components/attachments/attachment-thumbnail-strip";
 import { CatalogItemDialog } from "./catalog-item-dialog";
 
 function formatRupees(value: number) {
@@ -36,6 +41,9 @@ export default function CatalogPageClient() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [showInactive, setShowInactive] = useState(false);
+  const [attachmentsByItem, setAttachmentsByItem] = useState<Record<string, Attachment[]>>({});
+  const [previewItemId, setPreviewItemId] = useState<string | null>(null);
+  const [previewIndex, setPreviewIndex] = useState(0);
 
   // Dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -73,6 +81,35 @@ export default function CatalogPageClient() {
     loadItems();
   }, [loadItems]);
 
+  useEffect(() => {
+    const itemIds = items.map((item) => item.id);
+
+    if (itemIds.length === 0) {
+      setAttachmentsByItem({});
+      return;
+    }
+
+    let mounted = true;
+    const loadBatchAttachments = async () => {
+      try {
+        const grouped = await fetchCatalogAttachmentsBatch(itemIds);
+        if (mounted) {
+          setAttachmentsByItem(grouped);
+        }
+      } catch {
+        if (mounted) {
+          setAttachmentsByItem({});
+        }
+      }
+    };
+
+    void loadBatchAttachments();
+
+    return () => {
+      mounted = false;
+    };
+  }, [items]);
+
   const filteredItems = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return items;
@@ -109,6 +146,23 @@ export default function CatalogPageClient() {
         error instanceof Error ? error.message : "Unable to deactivate item.";
       setErrorMessage(message);
     }
+  };
+
+  const openPreview = (itemId: string, index: number) => {
+    setPreviewItemId(itemId);
+    setPreviewIndex(index);
+  };
+
+  const handleDeleteFromPreview = async (attachmentId: string) => {
+    if (!previewItemId) return;
+    await deleteCatalogAttachment(attachmentId);
+
+    setAttachmentsByItem((prev) => {
+      const next = { ...prev };
+      const currentList = next[previewItemId] ?? [];
+      next[previewItemId] = currentList.filter((item) => item.id !== attachmentId);
+      return next;
+    });
   };
 
   return (
@@ -180,6 +234,7 @@ export default function CatalogPageClient() {
                   <th className="px-4 py-3 font-medium">Rate</th>
                   <th className="px-4 py-3 font-medium">GST %</th>
                   <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Preview</th>
                   <th className="px-4 py-3 font-medium">Actions</th>
                 </tr>
               </thead>
@@ -224,6 +279,14 @@ export default function CatalogPageClient() {
                       )}
                     </td>
                     <td className="px-4 py-3">
+                      <AttachmentThumbnailStrip
+                        attachments={attachmentsByItem[item.id] ?? []}
+                        maxVisible={4}
+                        onSelect={(index) => openPreview(item.id, index)}
+                        emptyLabel="No attachments"
+                      />
+                    </td>
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleEdit(item)}
@@ -256,6 +319,14 @@ export default function CatalogPageClient() {
         onClose={() => setIsDialogOpen(false)}
         onSuccess={loadItems}
         initialData={editingItem}
+      />
+
+      <AttachmentPreviewModal
+        attachments={previewItemId ? attachmentsByItem[previewItemId] ?? [] : []}
+        startIndex={previewIndex}
+        isOpen={!!previewItemId}
+        onClose={() => setPreviewItemId(null)}
+        onDelete={handleDeleteFromPreview}
       />
     </section>
   );

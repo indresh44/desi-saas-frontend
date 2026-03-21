@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { fetchDashboardPaymentSummary } from "@/lib/api/dashboard";
 import { fetchTodaysFollowUps, markFollowUpDone } from "@/lib/api/followups";
 import { fetchLeads } from "@/lib/api/leads";
+import type { DashboardPaymentSummary } from "@/lib/types/dashboard";
 import { LeadFollowUp } from "@/lib/types/followup";
 import { Lead } from "@/lib/types/lead";
 
@@ -32,17 +34,13 @@ function formatShortDate(value: string) {
   });
 }
 
-function formatRupees(value: string) {
+function formatRupees(value: string | number) {
   const numericValue = Number(value);
   if (Number.isNaN(numericValue)) {
     return "-";
   }
 
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(numericValue);
+  return `₹${numericValue.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 }
 
 function getStageBadgeClass(stageId: string) {
@@ -63,21 +61,10 @@ function getStageBadgeClass(stageId: string) {
   return "bg-sky-50 text-sky-700 border-sky-200";
 }
 
-function isCurrentMonth(dateValue: string) {
-  const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) {
-    return false;
-  }
-
-  const now = new Date();
-  return (
-    date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth()
-  );
-}
-
 export default function DashboardClient() {
   const [followUps, setFollowUps] = useState<LeadFollowUp[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [paymentSummary, setPaymentSummary] = useState<DashboardPaymentSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [markingId, setMarkingId] = useState<string | null>(null);
@@ -87,13 +74,15 @@ export default function DashboardClient() {
     setError(null);
 
     try {
-      const [todaysFollowUps, allLeads] = await Promise.all([
+      const [todaysFollowUps, allLeads, summary] = await Promise.all([
         fetchTodaysFollowUps(),
         fetchLeads(),
+        fetchDashboardPaymentSummary(),
       ]);
 
       setFollowUps(todaysFollowUps);
       setLeads(allLeads);
+      setPaymentSummary(summary);
     } catch (loadError) {
       const message =
         loadError instanceof Error
@@ -130,10 +119,22 @@ export default function DashboardClient() {
     [leads]
   );
 
-  const leadsThisMonth = useMemo(
-    () => leads.filter((lead) => isCurrentMonth(lead.createdAt)).length,
-    [leads]
-  );
+  const monthComparison = useMemo(() => {
+    if (!paymentSummary) return null;
+    const last = paymentSummary.collections_last_month;
+    const current = paymentSummary.collections_this_month;
+    if (last <= 0) {
+      return null;
+    }
+
+    const deltaPercent = ((current - last) / last) * 100;
+    return {
+      value: Math.abs(deltaPercent),
+      isUp: deltaPercent >= 0,
+    };
+  }, [paymentSummary]);
+
+  const overdueInvoices = paymentSummary?.overdue_invoices ?? [];
 
   const handleMarkDone = useCallback(
     async (id: string) => {
@@ -179,26 +180,138 @@ export default function DashboardClient() {
           <p className="mt-3 text-3xl font-semibold text-zinc-900">
             {isLoading ? "..." : pendingFollowUps.length}
           </p>
+          <p className="mt-2 text-xs text-zinc-500">Don&apos;t miss these</p>
         </div>
 
         <div className="rounded-2xl border border-zinc-200 bg-white p-5">
           <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-            Total Leads
+            Collections This Month
           </p>
           <p className="mt-3 text-3xl font-semibold text-zinc-900">
-            {isLoading ? "..." : leads.length}
+            {isLoading || !paymentSummary
+              ? "..."
+              : formatRupees(paymentSummary.collections_this_month)}
           </p>
+          {monthComparison ? (
+            <p className={`mt-2 text-xs ${monthComparison.isUp ? "text-emerald-600" : "text-rose-600"}`}>
+              {monthComparison.isUp ? "↑" : "↓"} {monthComparison.value.toFixed(0)}% vs last month
+            </p>
+          ) : (
+            <p className="mt-2 text-xs text-zinc-500">Current month total</p>
+          )}
         </div>
 
         <div className="rounded-2xl border border-zinc-200 bg-white p-5">
           <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-            This Month&apos;s Leads
+            Total Outstanding
           </p>
           <p className="mt-3 text-3xl font-semibold text-zinc-900">
-            {isLoading ? "..." : leadsThisMonth}
+            {isLoading || !paymentSummary
+              ? "..."
+              : formatRupees(paymentSummary.total_outstanding)}
+          </p>
+          <p className="mt-2 text-xs text-zinc-500">
+            {isLoading || !paymentSummary
+              ? "..."
+              : `${paymentSummary.outstanding_invoice_count} invoices pending`}
           </p>
         </div>
       </div>
+
+      <section className="space-y-4">
+        <h2 className="text-lg font-semibold text-zinc-900">Overdue Payments</h2>
+
+        {isLoading ? (
+          <div className="rounded-xl border border-zinc-200 bg-white p-4">
+            <div className="h-12 animate-pulse rounded-md bg-zinc-100" />
+          </div>
+        ) : overdueInvoices.length === 0 ? (
+          <div className="rounded-xl border border-zinc-200 bg-white px-4 py-6 text-sm text-zinc-600">
+            No overdue invoices right now.
+          </div>
+        ) : (
+          <div className="rounded-xl border border-zinc-200 bg-white">
+            <ul className="divide-y divide-zinc-100">
+              {overdueInvoices.map((invoice) => {
+                const firstName = (invoice.customer_name || "Customer").trim().split(/\s+/)[0] || "Customer";
+                const digits = (invoice.customer_phone || "").replace(/\D/g, "");
+                const normalized = digits.length === 10 ? `91${digits}` : digits;
+                const whatsappMessage = `Hi ${firstName}, reminder about invoice ${invoice.invoice_number} for ₹${invoice.balance_due.toLocaleString("en-IN", {
+                  maximumFractionDigits: 0,
+                })} due on ${invoice.due_date}. Kindly clear at earliest. Thank you!`;
+                const whatsappHref = normalized
+                  ? `https://wa.me/${normalized}?text=${encodeURIComponent(whatsappMessage)}`
+                  : "#";
+
+                return (
+                  <li key={invoice.invoice_id} className="px-4 py-3">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-zinc-900">
+                          {invoice.customer_name || "Unknown Customer"}
+                        </p>
+                        <p className="text-xs text-zinc-600">{invoice.invoice_number}</p>
+                      </div>
+
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-rose-600">{formatRupees(invoice.balance_due)}</p>
+                        <p className="text-xs text-zinc-500">{invoice.days_overdue} days overdue</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {invoice.lead_id ? (
+                        <Link
+                          href={`/leads/${invoice.lead_id}`}
+                          className="inline-flex items-center rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-50"
+                        >
+                          View Invoice
+                        </Link>
+                      ) : null}
+
+                      <a
+                        href={whatsappHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`inline-flex items-center rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+                          normalized
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                            : "cursor-not-allowed border-zinc-200 bg-zinc-100 text-zinc-500"
+                        }`}
+                        aria-disabled={!normalized}
+                        onClick={(event) => {
+                          if (!normalized) {
+                            event.preventDefault();
+                          }
+                        }}
+                      >
+                        WhatsApp
+                      </a>
+
+                      <a
+                        href={invoice.customer_phone ? `tel:${invoice.customer_phone}` : "#"}
+                        className={`inline-flex items-center rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+                          invoice.customer_phone
+                            ? "border-zinc-300 text-zinc-700 hover:bg-zinc-50"
+                            : "cursor-not-allowed border-zinc-200 bg-zinc-100 text-zinc-500"
+                        }`}
+                        aria-disabled={!invoice.customer_phone}
+                        onClick={(event) => {
+                          if (!invoice.customer_phone) {
+                            event.preventDefault();
+                          }
+                        }}
+                      >
+                        Call
+                      </a>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+      </section>
 
       <section className="space-y-4">
         <h2 className="text-lg font-semibold text-zinc-900">Today&apos;s Follow-ups</h2>

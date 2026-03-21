@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AttachmentPreviewModal } from "@/components/attachments/attachment-preview-modal";
+import { AttachmentThumbnailStrip } from "@/components/attachments/attachment-thumbnail-strip";
 import { fetchPaymentAttachments } from "@/lib/api/invoices";
 import type { PaymentAttachment } from "@/lib/types/invoice";
 
@@ -8,16 +10,11 @@ type Props = {
   paymentId: string;
 };
 
-function getAttachmentExtension(attachment: PaymentAttachment): string {
-  const source = attachment.filename || attachment.file_url;
-  const cleanSource = source.split("?")[0]?.split("#")[0] ?? "";
-  const parts = cleanSource.split(".");
-  return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : "";
-}
-
 export function PaymentAttachmentPreview({ paymentId }: Props) {
   const [attachments, setAttachments] = useState<PaymentAttachment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewIndex, setPreviewIndex] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -56,48 +53,25 @@ export function PaymentAttachmentPreview({ paymentId }: Props) {
     return null;
   }
 
+  const openPreview = (index: number) => {
+    setPreviewIndex(index);
+    setIsPreviewOpen(true);
+  };
+
   return (
-    <div className="flex flex-wrap gap-2">
-      {attachments.map((attachment) => {
-        const extension = getAttachmentExtension(attachment);
-        const isImage = extension === "jpg" || extension === "jpeg" || extension === "png";
-        const isPdf = extension === "pdf";
+    <>
+      <AttachmentThumbnailStrip
+        attachments={attachments}
+        maxVisible={4}
+        onSelect={openPreview}
+      />
 
-        if (isImage) {
-          return (
-            <a
-              key={attachment.id}
-              href={attachment.file_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              title={attachment.filename}
-            >
-              <img
-                src={attachment.file_url}
-                alt={attachment.filename}
-                className="h-12 w-12 rounded border border-gray-200 object-cover transition hover:opacity-80"
-              />
-            </a>
-          );
-        }
-
-        if (isPdf) {
-          return (
-            <a
-              key={attachment.id}
-              href={attachment.file_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-600 transition hover:bg-red-100"
-            >
-              <span aria-hidden="true">📄</span>
-              <span>{attachment.filename}</span>
-            </a>
-          );
-        }
-
-        return null;
-      })}
-    </div>
+      <AttachmentPreviewModal
+        attachments={attachments}
+        startIndex={previewIndex}
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+      />
+    </>
   );
 }
