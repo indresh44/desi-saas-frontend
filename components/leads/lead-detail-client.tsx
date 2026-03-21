@@ -640,6 +640,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
                 <InvoiceCard
                   key={inv.id}
                   invoice={inv}
+                  customerName={lead.customerName ?? "Customer"}
                   onEdit={handleEditInvoice}
                   onPaymentRecorded={() => {
                     void refreshInvoices();

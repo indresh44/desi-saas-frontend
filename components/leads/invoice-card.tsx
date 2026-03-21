@@ -1,15 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Download, Loader2, Pencil, Plus, RefreshCw } from "lucide-react";
+import { ChevronDown, ChevronUp, Download, Loader2, Pencil, Plus, RefreshCw, Share2 } from "lucide-react";
 import { PaymentAttachmentPreview } from "@/components/leads/payment-attachment-preview";
 import { Button } from "@/components/ui/button";
 import { RecordPaymentModal } from "@/components/leads/record-payment-modal";
 import { fetchInvoicePayments, getInvoicePdf } from "@/lib/api/invoices";
+import { shareInvoicePdf } from "@/lib/utils/share";
 import type { Invoice, Payment, PaymentMethod } from "@/lib/types/invoice";
 
 type Props = {
   invoice: Invoice;
+  customerName?: string;
   onEdit?: (invoice: Invoice) => void;
   onPaymentRecorded: () => void;
 };
@@ -68,14 +70,21 @@ function getPaymentMethodClass(method: PaymentMethod): string {
   return "bg-orange-100 text-orange-700";
 }
 
-export function InvoiceCard({ invoice, onEdit, onPaymentRecorded }: Props) {
+export function InvoiceCard({
+  invoice,
+  customerName = "Customer",
+  onEdit,
+  onPaymentRecorded,
+}: Props) {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoadingPayments, setIsLoadingPayments] = useState(true);
   const [paymentsError, setPaymentsError] = useState<string | null>(null);
   const [showItems, setShowItems] = useState(false);
   const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [shareLoading, setShareLoading] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
+  const [shareMessage, setShareMessage] = useState<string | null>(null);
 
   const loadPayments = useCallback(async () => {
     setIsLoadingPayments(true);
@@ -108,6 +117,18 @@ export function InvoiceCard({ invoice, onEdit, onPaymentRecorded }: Props) {
   useEffect(() => {
     void loadPayments();
   }, [loadPayments]);
+
+  useEffect(() => {
+    if (!shareMessage) return;
+
+    const timeout = window.setTimeout(() => {
+      setShareMessage(null);
+    }, 2000);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [shareMessage]);
 
   const totalAmount = toSafeNumber(invoice.totalAmount);
 
@@ -181,6 +202,41 @@ export function InvoiceCard({ invoice, onEdit, onPaymentRecorded }: Props) {
     }
   };
 
+  const handleSharePdf = async () => {
+    setShareLoading(true);
+    setPdfError(null);
+    setShareMessage(null);
+
+    try {
+      const pdfUrl = invoice.pdfUrl ?? (await getInvoicePdf(invoice.id));
+      console.log("PDF URL:", pdfUrl);
+      const result = await shareInvoicePdf(
+        pdfUrl,
+        invoice.invoiceNumber,
+        customerName,
+      );
+
+      if (result === "shared") {
+        setShareMessage("Shared");
+      } else if (result === "downloaded") {
+        setShareMessage("PDF downloaded");
+      }
+    } catch (error) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "message" in error &&
+        typeof (error as { message: unknown }).message === "string"
+      ) {
+        setPdfError((error as { message: string }).message);
+      } else {
+        setPdfError("Failed to share PDF.");
+      }
+    } finally {
+      setShareLoading(false);
+    }
+  };
+
   return (
     <>
       <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
@@ -225,6 +281,26 @@ export function InvoiceCard({ invoice, onEdit, onPaymentRecorded }: Props) {
                 )}
                 PDF
               </Button>
+
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => void handleSharePdf()}
+                disabled={shareLoading}
+                title="Share invoice"
+              >
+                {shareLoading ? (
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Share2 className="h-3.5 w-3.5" />
+                )}
+                Share
+              </Button>
+
+              {shareMessage ? (
+                <span className="self-center text-xs text-green-600">{shareMessage}</span>
+              ) : null}
 
               {invoice.status === "draft" && onEdit ? (
                 <Button

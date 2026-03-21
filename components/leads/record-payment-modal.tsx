@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Camera, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createPayment, uploadAttachment } from "@/lib/api/invoices";
 import type { Invoice, PaymentMethod } from "@/lib/types/invoice";
@@ -56,39 +56,64 @@ export function RecordPaymentModal({
   const [paymentDate, setPaymentDate] = useState(getToday);
   const [reference, setReference] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const referenceLabel = useMemo(
     () => getReferenceLabel(paymentMethod),
     [paymentMethod]
   );
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] ?? null;
-
-    if (!file) {
-      setSelectedFile(null);
-      setError(null);
+  useEffect(() => {
+    if (!selectedFile || !selectedFile.type.startsWith("image/")) {
+      setPreviewUrl(null);
       return;
     }
 
+    const nextPreviewUrl = URL.createObjectURL(selectedFile);
+    setPreviewUrl(nextPreviewUrl);
+
+    return () => {
+      URL.revokeObjectURL(nextPreviewUrl);
+    };
+  }, [selectedFile]);
+
+  const handleFileSelect = (file: File | null) => {
+    setFileError(null);
+
+    if (!file) return;
+
     if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
       setSelectedFile(null);
-      setError("Receipt must be a JPG, PNG, or PDF file.");
-      event.target.value = "";
+      setFileError("Only JPG, PNG, or PDF files are allowed");
       return;
     }
 
     if (file.size > MAX_FILE_SIZE_BYTES) {
       setSelectedFile(null);
-      setError("Receipt file must be 10MB or smaller.");
-      event.target.value = "";
+      setFileError("File must be under 10MB");
       return;
     }
 
     setSelectedFile(file);
-    setError(null);
+  };
+
+  const resetFileSelection = () => {
+    setSelectedFile(null);
+    setFileError(null);
+
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = "";
+    }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const handleSubmit = async () => {
@@ -228,21 +253,84 @@ export function RecordPaymentModal({
 
             <div className="space-y-1">
               <label className="block text-sm font-medium text-zinc-700">
-                Upload Receipt (optional)
+                Receipt (optional)
               </label>
+
               <input
+                ref={cameraInputRef}
                 type="file"
-                accept="image/jpeg,image/png,application/pdf"
-                className={`${inputCls} file:mr-3 file:rounded-md file:border-0 file:bg-zinc-900 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white`}
-                onChange={handleFileChange}
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(event) => handleFileSelect(event.target.files?.[0] ?? null)}
                 disabled={isSubmitting}
               />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,application/pdf"
+                className="hidden"
+                onChange={(event) => handleFileSelect(event.target.files?.[0] ?? null)}
+                disabled={isSubmitting}
+              />
+
               {selectedFile ? (
-                <p className="text-xs text-zinc-600">{selectedFile.name}</p>
-              ) : null}
-              <p className="text-xs text-zinc-500">
-                Screenshot, photo of receipt, or PDF
-              </p>
+                <div className="mt-2 flex items-center gap-3 rounded-md bg-zinc-50 p-2">
+                  {selectedFile.type.startsWith("image/") && previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt="Receipt preview"
+                      className="h-12 w-12 rounded object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-12 w-12 items-center justify-center rounded bg-zinc-200 text-xs text-zinc-600">
+                      PDF
+                    </div>
+                  )}
+
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm text-zinc-800">{selectedFile.name}</p>
+                    <p className="text-xs text-zinc-500">
+                      {(selectedFile.size / 1024).toFixed(0)} KB
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={resetFileSelection}
+                    className="text-xs text-zinc-500 hover:text-red-600"
+                    disabled={isSubmitting}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-2 flex gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => cameraInputRef.current?.click()}
+                    disabled={isSubmitting}
+                  >
+                    <Camera className="h-4 w-4" />
+                    Take photo
+                  </Button>
+
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isSubmitting}
+                  >
+                    <Upload className="h-4 w-4" />
+                    Choose file
+                  </Button>
+                </div>
+              )}
+              {fileError ? <p className="text-xs text-red-600">{fileError}</p> : null}
+              <p className="text-xs text-zinc-500">JPG, PNG, or PDF. Max 10MB.</p>
             </div>
           </div>
 
