@@ -17,9 +17,10 @@ import { Button } from "@/components/ui/button";
 import { LeadWhatsAppChatDrawer } from "@/components/whatsapp/lead-whatsapp-chat-drawer";
 import { CreateInvoiceModal } from "@/components/leads/create-invoice-modal";
 import { InvoiceCard } from "@/components/leads/invoice-card";
+import { LeadNotes } from "@/components/leads/lead-notes";
 import { LeadMeetingsSection } from "@/components/leads/lead-meetings-section";
 import { useLookupMaps } from "@/hooks/use-lookup-maps";
-import { fetchLeads, moveLeadStage } from "@/lib/api/leads";
+import { fetchLeads, moveLeadStage, updateLeadNotes } from "@/lib/api/leads";
 import { createActivity, fetchLeadActivities } from "@/lib/api/activities";
 import { fetchMeetings } from "@/lib/api/meetings";
 import {
@@ -291,6 +292,16 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
     await Promise.all([refreshMeetings(), refreshActivities()]);
   }, [refreshActivities, refreshMeetings]);
 
+  const handleSaveNotes = useCallback(async (notes: string) => {
+    const updated = await updateLeadNotes(leadId, notes);
+    if (updated) {
+      setLead(updated);
+      return;
+    }
+
+    setLead((prev) => (prev ? { ...prev, notes } : prev));
+  }, [leadId]);
+
   // ─── Submit handlers ───────────────────────────────────────────────────────
 
   const handleActivitySubmit = async () => {
@@ -521,12 +532,13 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
             ) : null}
           </div>
 
-          {lead.notes ? (
-            <p className="rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2 text-sm text-zinc-500">
-              {lead.notes}
-            </p>
-          ) : null}
         </div>
+
+        <LeadNotes
+          leadId={leadId}
+          initialNotes={lead.notes || ""}
+          onSave={handleSaveNotes}
+        />
 
         {/* Activity Log */}
         <section className="space-y-3">

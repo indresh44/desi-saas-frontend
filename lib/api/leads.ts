@@ -134,3 +134,21 @@ export async function moveLeadStage(
 
   return toLeadModel(leadItem);
 }
+
+export async function updateLeadNotes(
+  leadId: string,
+  notes: string
+): Promise<Lead | null> {
+  const path = `${API_ENDPOINTS.leads}/${leadId}`;
+
+  const result = await apiClient<LeadApiResponseItem | null>(path, {
+    method: "PATCH",
+    body: { notes },
+  });
+
+  if (!result.data) {
+    return null;
+  }
+
+  return toLeadModel(result.data);
+}
