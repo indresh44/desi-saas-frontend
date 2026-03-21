@@ -2,8 +2,8 @@ const rawApiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export const API_BASE_URL = rawApiBaseUrl
   ? rawApiBaseUrl.replace(/\/$/, "")
-  // : "http://172.105.53.206:8000";
-  : "http://localhost:8000"
+  : "http://172.105.53.206:8000";
+  // : "http://localhost:8000"
 
 export const API_ENDPOINTS = {
   leads: "/api/v1/leads",
