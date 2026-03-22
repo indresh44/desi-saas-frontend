@@ -403,28 +403,22 @@ export default function MeetingsPageClient() {
                       className="flex flex-col gap-3 border-b border-border/30 py-3 last:border-b-0 md:flex-row md:items-start md:justify-between"
                     >
                       <div className="flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="w-[72px] shrink-0 text-sm text-muted-foreground">
+                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                          <span className="shrink-0 text-sm font-medium text-zinc-500">
                             {formatTime(meeting.scheduledAt)}
                           </span>
-                          <span className="text-sm font-medium text-zinc-900">
+                          <span className="text-sm font-semibold text-zinc-900">
                             {meeting.title}
                           </span>
-                          <span className="text-sm text-muted-foreground">
-                            - {meeting.customerName || "Unknown"}
-                          </span>
-                          {meeting.leadTitle ? (
-                            <span className="text-xs text-muted-foreground/70">
-                              · {meeting.leadTitle}
-                            </span>
-                          ) : null}
                         </div>
-                        <div className="mt-0.5 flex flex-wrap items-center gap-3 md:ml-[72px]">
-                          <span className="text-xs text-muted-foreground">
-                            {meeting.durationMinutes} min
-                          </span>
+                        <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-zinc-600">
+                          <span>{meeting.customerName || "Unknown"}</span>
+                          {meeting.leadTitle ? (
+                            <span className="text-xs text-zinc-400">· {meeting.leadTitle}</span>
+                          ) : null}
+                          <span className="text-xs text-zinc-400">{meeting.durationMinutes} min</span>
                           {meeting.notes ? (
-                            <span className="max-w-[200px] truncate text-xs text-muted-foreground/70">
+                            <span className="max-w-[200px] truncate text-xs text-zinc-400">
                               {meeting.notes}
                             </span>
                           ) : null}
@@ -437,7 +431,7 @@ export default function MeetingsPageClient() {
                             <button
                               type="button"
                               onClick={() => void updateMeetingStatus(meeting.id, "completed")}
-                              className="text-xs text-green-600 hover:underline disabled:opacity-50"
+                              className="inline-flex min-h-[44px] items-center rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-100 disabled:opacity-50"
                               disabled={isMutating}
                             >
                               ✓ Done
@@ -445,7 +439,7 @@ export default function MeetingsPageClient() {
                             <button
                               type="button"
                               onClick={() => void updateMeetingStatus(meeting.id, "cancelled")}
-                              className="text-xs text-muted-foreground hover:underline disabled:opacity-50"
+                              className="inline-flex min-h-[44px] items-center rounded-lg border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 disabled:opacity-50"
                               disabled={isMutating}
                             >
                               Cancel
@@ -453,7 +447,7 @@ export default function MeetingsPageClient() {
                             <button
                               type="button"
                               onClick={() => void updateMeetingStatus(meeting.id, "no_show")}
-                              className="text-xs text-red-500 hover:underline disabled:opacity-50"
+                              className="inline-flex min-h-[44px] items-center rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-100 disabled:opacity-50"
                               disabled={isMutating}
                             >
                               No show
@@ -463,17 +457,18 @@ export default function MeetingsPageClient() {
                                 href={whatsappHref}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex items-center gap-1 text-xs text-green-600 hover:underline"
+                                className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-100"
                               >
-                                <MessageCircle className="h-3.5 w-3.5" />
+                                <MessageCircle className="h-4 w-4" />
                                 WhatsApp
                               </a>
                             ) : null}
                             <button
                               type="button"
                               onClick={() => void handleDelete(meeting.id)}
-                              className="text-xs text-muted-foreground/50 hover:text-red-500 disabled:opacity-50"
+                              className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-red-500 disabled:opacity-50"
                               disabled={isMutating}
+                              aria-label="Delete meeting"
                             >
                               ✕
                             </button>

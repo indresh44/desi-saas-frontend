@@ -10,12 +10,17 @@ import {
 } from "@/lib/constants/navigation";
 import { cn } from "@/lib/utils";
 
-export function AppSidebar() {
+type AppSidebarProps = {
+  isOpen?: boolean;
+  onClose?: () => void;
+};
+
+function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
   return (
-    <aside className="hidden w-60 shrink-0 border-r border-zinc-200 bg-white md:flex md:flex-col">
+    <>
       <nav className="flex-1 space-y-1 p-3">
         {SIDEBAR_NAV_ITEMS.map((item) => {
           const Icon = item.icon;
@@ -27,8 +32,9 @@ export function AppSidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={onLinkClick}
               className={cn(
-                "flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors",
+                "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm transition-colors",
                 isActive
                   ? "bg-zinc-100 text-zinc-900"
                   : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
@@ -52,8 +58,9 @@ export function AppSidebar() {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={onLinkClick}
                 className={cn(
-                  "flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors",
+                  "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm transition-colors",
                   isActive
                     ? "bg-zinc-100 text-zinc-900"
                     : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
@@ -80,6 +87,38 @@ export function AppSidebar() {
           Logout
         </Button>
       </div>
-    </aside>
+    </>
+  );
+}
+
+export function AppSidebar({ isOpen = false, onClose }: AppSidebarProps) {
+  return (
+    <>
+      {/* ── Desktop sidebar (always visible ≥768px) ── */}
+      <aside className="hidden w-60 shrink-0 border-r border-zinc-200 bg-white md:flex md:flex-col">
+        <SidebarNav />
+      </aside>
+
+      {/* ── Mobile overlay sidebar (<768px) ── */}
+      {/* Backdrop */}
+      {isOpen ? (
+        <button
+          type="button"
+          aria-label="Close navigation"
+          className="fixed inset-0 z-40 bg-zinc-900/50 md:hidden"
+          onClick={onClose}
+        />
+      ) : null}
+
+      {/* Drawer panel */}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-zinc-200 bg-white transition-transform duration-300 ease-in-out md:hidden",
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <SidebarNav onLinkClick={onClose} />
+      </aside>
+    </>
   );
 }

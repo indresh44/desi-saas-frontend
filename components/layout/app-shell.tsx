@@ -1,4 +1,6 @@
-import { ReactNode } from "react";
+"use client";
+
+import { ReactNode, useState } from "react";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 
@@ -7,14 +9,16 @@ type AppShellProps = {
 };
 
 export function AppShell({ children }: AppShellProps) {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900">
       <div className="mx-auto flex min-h-screen w-full max-w-[1600px]">
-        <AppSidebar />
+        <AppSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
         <div className="flex min-h-screen min-w-0 flex-1 flex-col">
-          <AppHeader />
-          <main className="flex-1 p-4 md:p-6">{children}</main>
+          <AppHeader onMenuClick={() => setIsSidebarOpen(true)} />
+          <main className="flex-1 px-4 py-4 md:px-6 md:py-6">{children}</main>
         </div>
       </div>
     </div>

@@ -398,8 +398,8 @@ export function LeadsPageClient() {
 
       {/* Search + Stage filter */}
       {!isLoading && !errorMessage ? (
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative min-w-48 flex-1">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="relative w-full sm:min-w-48 sm:flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
             <input
               type="text"
@@ -409,7 +409,7 @@ export function LeadsPageClient() {
               className="w-full rounded-lg border border-zinc-200 bg-white py-2 pl-9 pr-3 text-sm text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/20"
             />
           </div>
-          <div className="relative min-w-56 flex-1">
+          <div className="relative w-full sm:min-w-56 sm:flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
             <input
               type="text"
@@ -463,7 +463,7 @@ export function LeadsPageClient() {
             value={stageFilter}
             onChange={(e) => setStageFilter(e.target.value)}
             disabled={isLoadingStages}
-            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-900/20"
+            className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 sm:w-auto"
           >
             <option value="all">All Stages</option>
             {stageOptions.map((stage) => (

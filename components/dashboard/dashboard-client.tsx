@@ -358,7 +358,7 @@ export default function DashboardClient() {
                   type="button"
                   onClick={() => handleMarkDone(followUp.id)}
                   disabled={markingId === followUp.id}
-                  className="mt-4 inline-flex items-center rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-4 inline-flex min-h-[44px] items-center rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {markingId === followUp.id ? "Updating..." : "✓ Done"}
                 </button>

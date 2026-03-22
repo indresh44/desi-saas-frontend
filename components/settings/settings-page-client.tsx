@@ -389,7 +389,7 @@ export default function SettingsPageClient() {
           <h2 className="text-base font-semibold text-zinc-900">Business Profile</h2>
         </div>
 
-        <div className="mb-5 flex items-center gap-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+        <div className="mb-5 flex flex-wrap items-start gap-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
           <div className="h-16 w-16 overflow-hidden rounded-lg border border-zinc-200 bg-white">
             {settings.logoUrl ? (
               <Image src={settings.logoUrl} alt="Business logo" width={64} height={64} className="h-16 w-16 object-cover" />
@@ -574,7 +574,7 @@ export default function SettingsPageClient() {
         ) : null}
 
         <div className="mt-4 flex justify-end">
-          <Button type="button" onClick={() => void handleSaveProfile()} disabled={isSavingProfile}>
+          <Button type="button" className="w-full sm:w-auto" onClick={() => void handleSaveProfile()} disabled={isSavingProfile}>
             {isSavingProfile ? "Saving..." : "Save Profile"}
           </Button>
         </div>
@@ -709,7 +709,7 @@ export default function SettingsPageClient() {
         ) : null}
 
         <div className="mt-4 flex justify-end">
-          <Button type="button" onClick={() => void handleSaveInvoice()} disabled={isSavingInvoice}>
+          <Button type="button" className="w-full sm:w-auto" onClick={() => void handleSaveInvoice()} disabled={isSavingInvoice}>
             {isSavingInvoice ? "Saving..." : "Save Settings"}
           </Button>
         </div>

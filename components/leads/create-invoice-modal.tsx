@@ -123,7 +123,7 @@ export function CreateInvoiceModal({ leadId, onSuccess, onClose, initialInvoice 
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const blurTimeoutRef = useRef<number | null>(null);
-  const nameCellRefs = useRef<Record<string, HTMLTableCellElement | null>>({});
+  const nameCellRefs = useRef<Record<string, HTMLElement | null>>({});
   const [dropdownAnchor, setDropdownAnchor] = useState<{
     top: number;
     left: number;
@@ -383,8 +383,8 @@ export function CreateInvoiceModal({ leadId, onSuccess, onClose, initialInvoice 
         onClick={onClose}
       />
 
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="flex max-h-[90vh] w-full max-w-5xl flex-col rounded-xl border border-zinc-200 bg-white shadow-2xl">
+      <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
+        <div className="flex max-h-[95vh] w-full flex-col rounded-t-xl border border-zinc-200 bg-white shadow-2xl sm:max-h-[90vh] sm:max-w-5xl sm:rounded-xl">
           <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3">
             <h2 className="text-base font-semibold text-zinc-900">
               {isEditMode ? "Edit Invoice" : "New Invoice"}
@@ -401,7 +401,113 @@ export function CreateInvoiceModal({ leadId, onSuccess, onClose, initialInvoice 
               </div>
             ) : null}
 
-            <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
+            {/* ── Mobile: stacked cards (< sm) ── */}
+            <div className="space-y-3 sm:hidden">
+              {items.map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 space-y-2"
+                >
+                  {/* Name */}
+                  <div>
+                    <label className="text-xs font-medium text-zinc-500">Item Name</label>
+                    <div
+                      ref={(el) => { nameCellRefs.current[item.id] = el; }}
+                    >
+                      <input
+                        className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/20"
+                        placeholder="Search or type..."
+                        value={item.name}
+                        onChange={(event) => handleNameChange(item.id, event.target.value)}
+                        onFocus={() => handleNameFocus(item.id)}
+                        onBlur={handleNameBlur}
+                        onKeyDown={(event) => {
+                          if (event.key === "Escape") setIsSearchOpen(false);
+                        }}
+                      />
+                      {item.catalogItemId ? (
+                        <span className="mt-0.5 block text-xs text-zinc-400">from catalog</span>
+                      ) : null}
+                    </div>
+                  </div>
+                  {/* Description */}
+                  <div>
+                    <label className="text-xs font-medium text-zinc-500">Description</label>
+                    <input
+                      className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/20"
+                      placeholder="-"
+                      value={item.description}
+                      onChange={(event) => updateItem(item.id, { description: event.target.value })}
+                    />
+                  </div>
+                  {/* Unit / Qty / Rate / GST row */}
+                  <div className="grid grid-cols-4 gap-2">
+                    <div>
+                      <label className="text-xs font-medium text-zinc-500">Unit</label>
+                      <input
+                        className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/20"
+                        placeholder="-"
+                        value={item.unit}
+                        onChange={(event) => updateItem(item.id, { unit: event.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-zinc-500">Qty</label>
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/20"
+                        value={item.qty}
+                        onChange={(event) => updateItem(item.id, { qty: Number(event.target.value) || 0 })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-zinc-500">Rate ₹</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/20"
+                        value={item.unit_price || ""}
+                        onChange={(event) => updateItem(item.id, { unit_price: Number(event.target.value) || 0 })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-zinc-500">GST %</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="28"
+                        step="1"
+                        className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/20"
+                        value={item.gstPercent}
+                        onChange={(event) => updateItem(item.id, { gstPercent: Number(event.target.value) || 0 })}
+                      />
+                    </div>
+                  </div>
+                  {/* Total + remove */}
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-sm font-semibold text-zinc-900">
+                      Total: ₹{roundAmount(calcLineTotal(item)).toLocaleString("en-IN")}
+                    </span>
+                    {items.length > 1 ? (
+                      <button
+                        type="button"
+                        onClick={() => removeItem(item.id)}
+                        className="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-400 hover:bg-red-50 hover:text-red-500"
+                        aria-label="Remove line item"
+                      >
+                        ×
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* ── Desktop: table (≥ sm) ── */}
+            <div className="hidden sm:block overflow-x-auto rounded-xl border border-zinc-200 bg-white">
               <table className="min-w-full border-collapse text-sm">
                 <thead>
                   <tr className="border-b border-border/70 text-xs text-muted-foreground">

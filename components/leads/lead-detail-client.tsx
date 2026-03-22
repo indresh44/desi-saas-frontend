@@ -488,7 +488,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
                 setSelectedStageId(nextStageId);
                 void handleStageChange(nextStageId);
               }}
-              className="w-44 rounded-lg border border-zinc-200 px-3 py-2 text-xs font-medium text-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-900/20"
+              className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-xs font-medium text-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 sm:w-44"
               disabled={isLoadingStages || isMovingStage || stageOptions.length === 0}
             >
               <option value="">
@@ -675,19 +675,19 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
           <p className="text-xs text-zinc-500">
             {lead.customerPhone ?? "Phone not available"}
           </p>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="flex-1 gap-1.5"
+              className="w-full gap-1.5"
               onClick={() => setIsChatOpen(true)}
             >
               <MessageCircle className="h-3.5 w-3.5" />
               WhatsApp
             </Button>
             {lead.customerPhone ? (
-              <a href={`tel:${lead.customerPhone}`} className="flex-1">
+              <a href={`tel:${lead.customerPhone}`} className="w-full sm:flex-1">
                 <Button
                   type="button"
                   variant="outline"
@@ -703,7 +703,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="flex-1 gap-1.5"
+                className="w-full gap-1.5"
                 disabled
                 title="Phone not available"
               >

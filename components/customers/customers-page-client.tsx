@@ -258,8 +258,8 @@ export default function CustomersPageClient() {
         </div>
       ) : null}
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative min-w-52 flex-1">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="relative w-full sm:min-w-52 sm:flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
           <input
             type="text"
@@ -274,6 +274,7 @@ export default function CustomersPageClient() {
           type="button"
           onClick={() => setShowCreateForm((prev) => !prev)}
           disabled={isSavingEdit}
+          className="w-full sm:w-auto"
         >
           <Plus className="h-4 w-4" />
           New Customer
@@ -285,7 +286,7 @@ export default function CustomersPageClient() {
           onSubmit={handleCreateCustomer}
           className="rounded-xl border border-zinc-200 bg-white p-4"
         >
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-3">
             <label className="space-y-1">
               <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
                 Name
@@ -353,138 +354,256 @@ export default function CustomersPageClient() {
             No customers yet. They are created automatically when you add a lead.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Name</th>
-                  <th className="px-4 py-3 font-medium">Phone</th>
-                  <th className="px-4 py-3 font-medium">Email</th>
-                  <th className="px-4 py-3 font-medium">Outstanding</th>
-                  <th className="px-4 py-3 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100">
-                {filteredCustomers.map((customer) => {
-                  const outstandingState = outstandingByCustomer[customer.id];
-                  const outstanding = outstandingState?.amount;
-                  const isEditing = editingCustomerId === customer.id;
-                  const isAnotherRowEditing =
-                    editingCustomerId !== null && editingCustomerId !== customer.id;
+          <>
+            {/* ── Mobile card list (< md) ── */}
+            <ul className="divide-y divide-zinc-100 md:hidden">
+              {filteredCustomers.map((customer) => {
+                const outstandingState = outstandingByCustomer[customer.id];
+                const outstanding = outstandingState?.amount;
+                const isEditing = editingCustomerId === customer.id;
+                const isAnotherRowEditing =
+                  editingCustomerId !== null && editingCustomerId !== customer.id;
 
-                  return (
-                    <tr key={customer.id}>
-                      <td className="px-4 py-3 font-medium text-zinc-900">
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={editName}
-                            onChange={(event) => setEditName(event.target.value)}
-                            className={inputClassName}
+                return (
+                  <li key={customer.id} className="px-4 py-4">
+                    {isEditing ? (
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          value={editName}
+                          onChange={(event) => setEditName(event.target.value)}
+                          className={inputClassName}
+                          disabled={isSavingEdit}
+                          placeholder="Name"
+                          required
+                        />
+                        <input
+                          type="text"
+                          value={editPhone}
+                          onChange={(event) => setEditPhone(event.target.value)}
+                          className={inputClassName}
+                          disabled={isSavingEdit}
+                          placeholder="Phone"
+                          required
+                        />
+                        <input
+                          type="email"
+                          value={editEmail}
+                          onChange={(event) => setEditEmail(event.target.value)}
+                          className={inputClassName}
+                          disabled={isSavingEdit}
+                          placeholder="Email"
+                        />
+                        <div className="flex gap-2 pt-1">
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => void handleSaveEdit(customer)}
                             disabled={isSavingEdit}
-                            required
-                          />
-                        ) : (
-                          customer.name
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-zinc-700">
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={editPhone}
-                            onChange={(event) => setEditPhone(event.target.value)}
-                            className={inputClassName}
+                          >
+                            {isSavingEdit ? "Saving..." : "Save"}
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="flex-1"
+                            onClick={handleCancelEdit}
                             disabled={isSavingEdit}
-                            required
-                          />
-                        ) : (
-                          customer.phone
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-zinc-700">
-                        {isEditing ? (
-                          <input
-                            type="email"
-                            value={editEmail}
-                            onChange={(event) => setEditEmail(event.target.value)}
-                            className={inputClassName}
-                            disabled={isSavingEdit}
-                          />
-                        ) : (
-                          customer.email || "-"
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {outstandingState?.isLoading || outstanding === undefined ? (
-                          <span className="text-zinc-500">...</span>
-                        ) : outstanding === null ? (
-                          <span className="text-zinc-500">-</span>
-                        ) : outstanding > 0 ? (
-                          <span className="font-medium text-red-600">
-                            {formatRupees(outstanding)}
-                          </span>
-                        ) : (
-                          <span className="font-medium text-green-600">✓ Clear</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap items-center gap-3">
-                          {isEditing ? (
-                            <>
-                              <Button
-                                type="button"
-                                size="sm"
-                                onClick={() => void handleSaveEdit(customer)}
-                                disabled={isSavingEdit}
-                              >
-                                {isSavingEdit ? "Saving..." : "Save"}
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                onClick={handleCancelEdit}
-                                disabled={isSavingEdit}
-                              >
-                                Cancel
-                              </Button>
-                            </>
-                          ) : (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => handleStartEdit(customer)}
-                                className="inline-flex items-center gap-1 text-sm font-medium text-zinc-700 transition hover:text-zinc-900 disabled:cursor-not-allowed disabled:text-zinc-400"
-                                disabled={isAnotherRowEditing || isSavingEdit}
-                              >
-                                <Pencil className="h-4 w-4" />
-                                Edit
-                              </button>
-                              <Link
-                                href={`/leads?customer_id=${customer.id}&customer_name=${encodeURIComponent(customer.name)}`}
-                                className="text-sm font-medium text-zinc-700 transition hover:text-zinc-900"
-                              >
-                                View Leads -&gt;
-                              </Link>
-                              <button
-                                type="button"
-                                onClick={() => handleWhatsApp(customer.phone)}
-                                className="inline-flex items-center gap-1 text-sm font-medium text-zinc-700 transition hover:text-zinc-900"
-                              >
-                                <MessageCircle className="h-4 w-4" />
-                                WhatsApp
-                              </button>
-                            </>
-                          )}
+                          >
+                            Cancel
+                          </Button>
                         </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-semibold text-zinc-900">{customer.name}</p>
+                            <p className="mt-0.5 text-sm text-zinc-600">{customer.phone}</p>
+                            {customer.email ? (
+                              <p className="text-xs text-zinc-500">{customer.email}</p>
+                            ) : null}
+                          </div>
+                          <div className="text-right">
+                            {outstandingState?.isLoading || outstanding === undefined ? (
+                              <span className="text-sm text-zinc-500">...</span>
+                            ) : outstanding === null ? (
+                              <span className="text-sm text-zinc-500">-</span>
+                            ) : outstanding > 0 ? (
+                              <span className="text-sm font-semibold text-red-600">
+                                {formatRupees(outstanding)}
+                              </span>
+                            ) : (
+                              <span className="text-sm font-medium text-green-600">✓ Clear</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            onClick={() => handleStartEdit(customer)}
+                            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:text-zinc-400"
+                            disabled={isAnotherRowEditing || isSavingEdit}
+                          >
+                            Edit
+                          </button>
+                          <Link
+                            href={`/leads?customer_id=${customer.id}&customer_name=${encodeURIComponent(customer.name)}`}
+                            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+                          >
+                            View Leads →
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => handleWhatsApp(customer.phone)}
+                            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100"
+                          >
+                            WhatsApp
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+
+            {/* ── Desktop table (≥ md) ── */}
+            <div className="hidden overflow-x-auto md:block">
+              <table className="min-w-full text-sm">
+                <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Name</th>
+                    <th className="px-4 py-3 font-medium">Phone</th>
+                    <th className="px-4 py-3 font-medium">Email</th>
+                    <th className="px-4 py-3 font-medium">Outstanding</th>
+                    <th className="px-4 py-3 font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {filteredCustomers.map((customer) => {
+                    const outstandingState = outstandingByCustomer[customer.id];
+                    const outstanding = outstandingState?.amount;
+                    const isEditing = editingCustomerId === customer.id;
+                    const isAnotherRowEditing =
+                      editingCustomerId !== null && editingCustomerId !== customer.id;
+
+                    return (
+                      <tr key={customer.id}>
+                        <td className="px-4 py-3 font-medium text-zinc-900">
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={editName}
+                              onChange={(event) => setEditName(event.target.value)}
+                              className={inputClassName}
+                              disabled={isSavingEdit}
+                              required
+                            />
+                          ) : (
+                            customer.name
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-zinc-700">
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={editPhone}
+                              onChange={(event) => setEditPhone(event.target.value)}
+                              className={inputClassName}
+                              disabled={isSavingEdit}
+                              required
+                            />
+                          ) : (
+                            customer.phone
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-zinc-700">
+                          {isEditing ? (
+                            <input
+                              type="email"
+                              value={editEmail}
+                              onChange={(event) => setEditEmail(event.target.value)}
+                              className={inputClassName}
+                              disabled={isSavingEdit}
+                            />
+                          ) : (
+                            customer.email || "-"
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {outstandingState?.isLoading || outstanding === undefined ? (
+                            <span className="text-zinc-500">...</span>
+                          ) : outstanding === null ? (
+                            <span className="text-zinc-500">-</span>
+                          ) : outstanding > 0 ? (
+                            <span className="font-medium text-red-600">
+                              {formatRupees(outstanding)}
+                            </span>
+                          ) : (
+                            <span className="font-medium text-green-600">✓ Clear</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-wrap items-center gap-3">
+                            {isEditing ? (
+                              <>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onClick={() => void handleSaveEdit(customer)}
+                                  disabled={isSavingEdit}
+                                >
+                                  {isSavingEdit ? "Saving..." : "Save"}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={handleCancelEdit}
+                                  disabled={isSavingEdit}
+                                >
+                                  Cancel
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleStartEdit(customer)}
+                                  className="inline-flex items-center gap-1 text-sm font-medium text-zinc-700 transition hover:text-zinc-900 disabled:cursor-not-allowed disabled:text-zinc-400"
+                                  disabled={isAnotherRowEditing || isSavingEdit}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                  Edit
+                                </button>
+                                <Link
+                                  href={`/leads?customer_id=${customer.id}&customer_name=${encodeURIComponent(customer.name)}`}
+                                  className="text-sm font-medium text-zinc-700 transition hover:text-zinc-900"
+                                >
+                                  View Leads -&gt;
+                                </Link>
+                                <button
+                                  type="button"
+                                  onClick={() => handleWhatsApp(customer.phone)}
+                                  className="inline-flex items-center gap-1 text-sm font-medium text-zinc-700 transition hover:text-zinc-900"
+                                >
+                                  <MessageCircle className="h-4 w-4" />
+                                  WhatsApp
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </section>

@@ -188,8 +188,8 @@ export default function CatalogPageClient() {
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative min-w-52 flex-1">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="relative w-full sm:min-w-52 sm:flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
           <input
             type="text"
@@ -225,92 +225,163 @@ export default function CatalogPageClient() {
               : "No items in your catalog yet. Add your first item to get started."}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Name</th>
-                  <th className="px-4 py-3 font-medium">Unit</th>
-                  <th className="px-4 py-3 font-medium">Rate</th>
-                  <th className="px-4 py-3 font-medium">GST %</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Preview</th>
-                  <th className="px-4 py-3 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100">
-                {filteredItems.map((item) => (
-                  <tr
-                    key={item.id}
-                    className={
-                      !item.isActive ? "bg-zinc-50 opacity-60" : undefined
-                    }
-                  >
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-zinc-900">
-                        {item.name}
-                      </div>
-                      {item.description && (
-                        <div className="text-xs text-zinc-500">
-                          {item.description}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-zinc-700">
+          <>
+            {/* ── Mobile card list (< md) ── */}
+            <ul className="divide-y divide-zinc-100 md:hidden">
+              {filteredItems.map((item) => (
+                <li
+                  key={item.id}
+                  className={`px-4 py-4 ${!item.isActive ? "opacity-60" : ""}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-zinc-900">{item.name}</p>
+                      {item.description ? (
+                        <p className="mt-0.5 text-xs text-zinc-500">{item.description}</p>
+                      ) : null}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                        onClick={() => handleEdit(item)}
+                        className="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-600"
+                        title="Edit"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      {item.isActive ? (
+                        <button
+                          onClick={() => handleDeactivate(item)}
+                          className="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-400 hover:text-red-600"
+                          title="Deactivate"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-zinc-600">
+                    <span>
                       {item.unit === "custom"
                         ? item.customUnit
                         : UNIT_LABELS[item.unit] || item.unit}
-                    </td>
-                    <td className="px-4 py-3 text-zinc-700">
-                      {formatRupees(item.defaultRate)}
-                    </td>
-                    <td className="px-4 py-3 text-zinc-700">
-                      {item.gstPercent}%
-                    </td>
-                    <td className="px-4 py-3">
-                      {item.isActive ? (
-                        <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                          Active
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-800">
-                          Inactive
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
+                    </span>
+                    <span>·</span>
+                    <span className="font-medium text-zinc-900">{formatRupees(item.defaultRate)}</span>
+                    <span>·</span>
+                    <span>GST {item.gstPercent}%</span>
+                    <span>·</span>
+                    {item.isActive ? (
+                      <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                        Active
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-800">
+                        Inactive
+                      </span>
+                    )}
+                  </div>
+                  {(attachmentsByItem[item.id] ?? []).length > 0 ? (
+                    <div className="mt-2">
                       <AttachmentThumbnailStrip
                         attachments={attachmentsByItem[item.id] ?? []}
                         maxVisible={4}
                         onSelect={(index) => openPreview(item.id, index)}
                         emptyLabel="No attachments"
                       />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleEdit(item)}
-                          className="text-zinc-400 hover:text-zinc-600"
-                          title="Edit"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        {item.isActive && (
-                          <button
-                            onClick={() => handleDeactivate(item)}
-                            className="text-zinc-400 hover:text-red-600"
-                            title="Deactivate"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
+                    </div>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+
+            {/* ── Desktop table (≥ md) ── */}
+            <div className="hidden overflow-x-auto md:block">
+              <table className="min-w-full text-sm">
+                <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Name</th>
+                    <th className="px-4 py-3 font-medium">Unit</th>
+                    <th className="px-4 py-3 font-medium">Rate</th>
+                    <th className="px-4 py-3 font-medium">GST %</th>
+                    <th className="px-4 py-3 font-medium">Status</th>
+                    <th className="px-4 py-3 font-medium">Preview</th>
+                    <th className="px-4 py-3 font-medium">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {filteredItems.map((item) => (
+                    <tr
+                      key={item.id}
+                      className={
+                        !item.isActive ? "bg-zinc-50 opacity-60" : undefined
+                      }
+                    >
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-zinc-900">
+                          {item.name}
+                        </div>
+                        {item.description && (
+                          <div className="text-xs text-zinc-500">
+                            {item.description}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-zinc-700">
+                        {item.unit === "custom"
+                          ? item.customUnit
+                          : UNIT_LABELS[item.unit] || item.unit}
+                      </td>
+                      <td className="px-4 py-3 text-zinc-700">
+                        {formatRupees(item.defaultRate)}
+                      </td>
+                      <td className="px-4 py-3 text-zinc-700">
+                        {item.gstPercent}%
+                      </td>
+                      <td className="px-4 py-3">
+                        {item.isActive ? (
+                          <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                            Active
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-800">
+                            Inactive
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <AttachmentThumbnailStrip
+                          attachments={attachmentsByItem[item.id] ?? []}
+                          maxVisible={4}
+                          onSelect={(index) => openPreview(item.id, index)}
+                          emptyLabel="No attachments"
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleEdit(item)}
+                            className="text-zinc-400 hover:text-zinc-600"
+                            title="Edit"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          {item.isActive && (
+                            <button
+                              onClick={() => handleDeactivate(item)}
+                              className="text-zinc-400 hover:text-red-600"
+                              title="Deactivate"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
