@@ -1036,6 +1036,26 @@
   opacity: 0.6;
 }
 
+@media (max-width: 768px) {
+  .landing-page .pipeline-flow {
+    flex-direction: column;
+    align-items: center;
+    flex-wrap: nowrap;
+    row-gap: 0.45rem;
+  }
+
+  .landing-page .pipe-arrow {
+    padding: 0;
+    line-height: 1;
+    font-size: 0;
+  }
+
+  .landing-page .pipe-arrow::before {
+    content: "↓";
+    font-size: 1.1rem;
+  }
+}
+
 .landing-page .features-outer {
   background: var(--bg);
   padding: 90px 5%;
