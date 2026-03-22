@@ -27,5 +27,7 @@ export const API_ENDPOINTS = {
   meetings: "/api/v1/meetings",
   dashboardPaymentSummary: "/api/v1/dashboard/payment-summary",
   customerOutstanding: (id: string) => `/api/v1/customers/${id}/outstanding`,
+  customerSummary: (id: string) => `/api/v1/customers/${id}/summary`,
   invoiceById: (id: string) => `/api/v1/invoices/${id}`,
+  invoiceItemsById: (id: string) => `/api/v1/invoices/${id}/items`,
 } as const;

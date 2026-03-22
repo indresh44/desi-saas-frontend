@@ -22,13 +22,20 @@ export interface Invoice {
   businessId: string;
   leadId: string | null;
   bookingId: string | null;
+  quoteId?: string | null;
   invoiceNumber: string;
   pdfUrl: string | null;
+  subtotal?: number;
+  taxTotal?: number;
   totalAmount: number;
+  amountPaid?: number;
   status: InvoiceStatus;
   issuedDate: string;
   dueDate: string;
   createdAt: string;
+  customerName?: string | null;
+  customerPhone?: string | null;
+  leadTitle?: string | null;
   items?: InvoiceItem[];
 }
 
@@ -37,13 +44,20 @@ export interface InvoiceApiResponse {
   business_id: string;
   lead_id: string | null;
   booking_id: string | null;
+  quote_id?: string | null;
   invoice_number: string;
   pdf_url: string | null;
+  subtotal?: number;
+  tax_total?: number;
   total_amount: number;
+  amount_paid?: number;
   status: InvoiceStatus;
   issued_date: string;
   due_date: string;
   created_at: string;
+  customer_name?: string | null;
+  customer_phone?: string | null;
+  lead_title?: string | null;
   items?: {
     id: string;
     invoice_id: string;
@@ -59,6 +73,32 @@ export interface InvoiceApiResponse {
     amount?: number;
     sort_order?: number;
   }[];
+}
+
+export interface InvoiceListSummaryApiResponse {
+  total_outstanding: number;
+  outstanding_count: number;
+}
+
+export interface InvoiceListApiResponse {
+  items: InvoiceApiResponse[];
+  total: number;
+  limit: number;
+  offset: number;
+  summary: InvoiceListSummaryApiResponse;
+}
+
+export interface InvoiceListSummary {
+  totalOutstanding: number;
+  outstandingCount: number;
+}
+
+export interface InvoiceListResult {
+  items: Invoice[];
+  total: number;
+  limit: number;
+  offset: number;
+  summary: InvoiceListSummary;
 }
 
 export interface CreateInvoiceItemInput {

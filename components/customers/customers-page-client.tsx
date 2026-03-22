@@ -450,10 +450,10 @@ export default function CustomersPageClient() {
                             Edit
                           </button>
                           <Link
-                            href={`/leads?customer_id=${customer.id}&customer_name=${encodeURIComponent(customer.name)}`}
+                            href={`/customers/${customer.id}`}
                             className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
                           >
-                            View Leads →
+                            View Details →
                           </Link>
                           <button
                             type="button"
@@ -580,10 +580,10 @@ export default function CustomersPageClient() {
                                   Edit
                                 </button>
                                 <Link
-                                  href={`/leads?customer_id=${customer.id}&customer_name=${encodeURIComponent(customer.name)}`}
+                                  href={`/customers/${customer.id}`}
                                   className="text-sm font-medium text-zinc-700 transition hover:text-zinc-900"
                                 >
-                                  View Leads -&gt;
+                                  View Details -&gt;
                                 </Link>
                                 <button
                                   type="button"

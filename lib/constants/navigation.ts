@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Calendar,
+  FileText,
   LayoutDashboard,
   Package,
   Settings,
@@ -16,6 +17,7 @@ export type SidebarNavItem = {
 export const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/leads", label: "Leads", icon: Users },
+  { href: "/invoices", label: "Invoices", icon: FileText },
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/catalog", label: "Catalog", icon: Package },
   { href: "/meetings", label: "Meetings", icon: Calendar },

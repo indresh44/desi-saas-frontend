@@ -3,7 +3,10 @@ import { API_ENDPOINTS } from "@/lib/constants/api";
 import {
   CreateCustomerInput,
   Customer,
+  CustomerApiResponse,
   CustomerByPhoneResponse,
+  CustomerSummary,
+  CustomerSummaryApiResponse,
   UpdateCustomerInput,
 } from "@/lib/types/customer";
 
@@ -20,23 +23,64 @@ function withQuery(path: string, params: Record<string, string | undefined>) {
   return query ? `${path}?${query}` : path;
 }
 
+function toCustomerModel(raw: CustomerApiResponse): Customer {
+  return {
+    id: raw.id,
+    name: raw.name,
+    phone: raw.phone,
+    email: raw.email,
+    notes: raw.notes ?? null,
+    createdAt: raw.created_at,
+  };
+}
+
+function toCustomerSummaryModel(raw: CustomerSummaryApiResponse): CustomerSummary {
+  return {
+    customer: toCustomerModel(raw.customer),
+    lifetimeValue: Number(raw.lifetime_value ?? 0),
+    totalOutstanding: Number(raw.total_outstanding ?? 0),
+    totalLeads: Number(raw.total_leads ?? 0),
+    activeLeads: Number(raw.active_leads ?? 0),
+    totalInvoices: Number(raw.total_invoices ?? 0),
+    upcomingMeetings: Number(raw.upcoming_meetings ?? 0),
+    recentActivities: raw.recent_activities.map((activity) => ({
+      type: activity.type,
+      description: activity.description,
+      date: activity.date,
+      leadTitle: activity.lead_title,
+    })),
+  };
+}
+
 export async function searchCustomers(query: string): Promise<Customer[]> {
   const path = withQuery(API_ENDPOINTS.customersSearch, { query });
-  const result = await apiClient<Customer[]>(path, {
+  const result = await apiClient<CustomerApiResponse[]>(path, {
     method: "GET",
     cache: "no-store",
   });
 
-  return result.data;
+  return result.data.map(toCustomerModel);
 }
 
 export async function fetchCustomers(): Promise<Customer[]> {
-  const result = await apiClient<Customer[]>(API_ENDPOINTS.customers, {
+  const result = await apiClient<CustomerApiResponse[]>(API_ENDPOINTS.customers, {
     method: "GET",
     cache: "no-store",
   });
 
-  return result.data;
+  return result.data.map(toCustomerModel);
+}
+
+export async function fetchCustomer(customerId: string): Promise<Customer> {
+  const result = await apiClient<CustomerApiResponse>(
+    API_ENDPOINTS.customerById(customerId),
+    {
+      method: "GET",
+      cache: "no-store",
+    }
+  );
+
+  return toCustomerModel(result.data);
 }
 
 export async function getCustomerByPhone(
@@ -54,22 +98,34 @@ export async function getCustomerByPhone(
 export async function createCustomer(
   input: CreateCustomerInput
 ): Promise<Customer> {
-  const result = await apiClient<Customer>(API_ENDPOINTS.customers, {
+  const result = await apiClient<CustomerApiResponse>(API_ENDPOINTS.customers, {
     method: "POST",
     body: input,
   });
 
-  return result.data;
+  return toCustomerModel(result.data);
 }
 
 export async function updateCustomer(
   customerId: string,
   input: UpdateCustomerInput
 ): Promise<Customer> {
-  const result = await apiClient<Customer>(API_ENDPOINTS.customerById(customerId), {
+  const result = await apiClient<CustomerApiResponse>(API_ENDPOINTS.customerById(customerId), {
     method: "PATCH",
     body: input,
   });
 
-  return result.data;
+  return toCustomerModel(result.data);
+}
+
+export async function fetchCustomerSummary(customerId: string): Promise<CustomerSummary> {
+  const result = await apiClient<CustomerSummaryApiResponse>(
+    API_ENDPOINTS.customerSummary(customerId),
+    {
+      method: "GET",
+      cache: "no-store",
+    }
+  );
+
+  return toCustomerSummaryModel(result.data);
 }
