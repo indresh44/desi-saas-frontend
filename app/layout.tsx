@@ -22,8 +22,26 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CRM Frontend",
-  description: "Minimal CRM frontend foundation",
+  title: "SellNSettle — From First Enquiry to Final Payment",
+  description: "Stop juggling WhatsApp, a diary, and billing apps. SellNSettle tracks every lead, quote, invoice, and payment in one place — made for how Indian small businesses actually work.",
+  keywords: ["CRM", "MSME", "invoicing", "lead tracking", "WhatsApp", "billing", "GST"],
+  authors: [{ name: "SellNSettle" }],
+  openGraph: {
+    type: "website",
+    url: "https://sellnsettle.com",
+    title: "SellNSettle — From First Enquiry to Final Payment",
+    description: "Stop juggling WhatsApp, a diary, and billing apps. SellNSettle tracks every lead, quote, invoice, and payment in one place — made for how Indian small businesses actually work.",
+    siteName: "SellNSettle",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SellNSettle — From First Enquiry to Final Payment",
+    description: "Stop juggling WhatsApp, a diary, and billing apps. SellNSettle tracks every lead, quote, invoice, and payment in one place — made for how Indian small businesses actually work.",
+  },
+  robots: "index, follow",
+  alternates: {
+    canonical: "https://sellnsettle.com",
+  },
 };
 
 export default function RootLayout({

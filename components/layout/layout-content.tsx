@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { useAuth } from "@/lib/auth/auth-context";
 
-const PUBLIC_ROUTES = ["/login", "/register"];
+const PUBLIC_ROUTES = ["/", "/login", "/register"];
 
 function isPublicRoute(pathname: string): boolean {
   return PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
@@ -23,10 +23,17 @@ export function LayoutContent({ children }: { children: ReactNode }) {
     );
   }
 
-  if (isPublicRoute(pathname)) {
+  // Home page: show landing for unauthenticated, otherwise let page handle it
+  if (pathname === "/" && !isAuthenticated) {
     return <>{children}</>;
   }
 
+  // Other public routes (login, register)
+  if (isPublicRoute(pathname) && pathname !== "/") {
+    return <>{children}</>;
+  }
+
+  // Protected routes: show AppShell for authenticated users
   if (isAuthenticated) {
     return <AppShell>{children}</AppShell>;
   }

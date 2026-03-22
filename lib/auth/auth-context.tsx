@@ -44,12 +44,18 @@ interface AuthContextValue {
   logout: () => Promise<void>;
 }
 
-const PUBLIC_ROUTES = ["/login", "/register"];
+const PUBLIC_ROUTES = ["/", "/login", "/register"];
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 function isPublicRoute(pathname: string): boolean {
-  return PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
+  return PUBLIC_ROUTES.some((route) => {
+    if (route === "/") {
+      return pathname === "/";
+    }
+
+    return pathname.startsWith(route);
+  });
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
