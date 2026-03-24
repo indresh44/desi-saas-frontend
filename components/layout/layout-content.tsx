@@ -8,7 +8,13 @@ import { useAuth } from "@/lib/auth/auth-context";
 const PUBLIC_ROUTES = ["/", "/login", "/register"];
 
 function isPublicRoute(pathname: string): boolean {
-  return PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
+  return PUBLIC_ROUTES.some((route) => {
+    if (route === "/") {
+      return pathname === route;
+    }
+
+    return pathname === route || pathname.startsWith(`${route}/`);
+  });
 }
 
 export function LayoutContent({ children }: { children: ReactNode }) {
