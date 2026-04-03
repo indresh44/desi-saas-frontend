@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useChatPageContext } from "@/lib/chat/chat-context";
 import { fetchDashboardPaymentSummary } from "@/lib/api/dashboard";
 import { fetchTodaysFollowUps, markFollowUpDone } from "@/lib/api/followups";
 import { fetchLeads } from "@/lib/api/leads";
@@ -68,6 +69,8 @@ export default function DashboardClient() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [markingId, setMarkingId] = useState<string | null>(null);
+
+  useChatPageContext({ type: "dashboard" });
 
   const loadDashboard = useCallback(async () => {
     setIsLoading(true);

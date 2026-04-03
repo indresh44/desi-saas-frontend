@@ -20,6 +20,7 @@ import { InvoiceCard } from "@/components/leads/invoice-card";
 import { LeadNotes } from "@/components/leads/lead-notes";
 import { LeadMeetingsSection } from "@/components/leads/lead-meetings-section";
 import { useLookupMaps } from "@/hooks/use-lookup-maps";
+import { useChatPageContext } from "@/lib/chat/chat-context";
 import { fetchLeads, moveLeadStage, updateLeadNotes } from "@/lib/api/leads";
 import { createActivity, fetchLeadActivities } from "@/lib/api/activities";
 import { fetchMeetings } from "@/lib/api/meetings";
@@ -158,6 +159,8 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
   const [isMovingStage, setIsMovingStage] = useState(false);
   const [stageMoveError, setStageMoveError] = useState<string | null>(null);
   const [stageMoveSuccess, setStageMoveSuccess] = useState<string | null>(null);
+
+  useChatPageContext({ type: "lead", id: leadId });
 
   const stageOptions = useMemo(
     () =>
