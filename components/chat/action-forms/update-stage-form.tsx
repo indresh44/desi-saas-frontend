@@ -12,6 +12,7 @@ export function UpdateStageForm({ data, onChange }: UpdateStageFormProps) {
   function update(field: string, value: unknown) {
     onChange({ ...data, [field]: value });
   }
+  console.log("Rendering UpdateStageForm with data:", data);
 
   return (
     <div className="space-y-2">

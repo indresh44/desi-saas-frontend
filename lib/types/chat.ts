@@ -78,3 +78,25 @@ export interface ChatThreadResponse {
   context_id: string | null;
   is_new?: boolean;
 }
+
+export type MentionCategory = "customer" | "item";
+
+export interface MentionCategoryOption {
+  key: MentionCategory;
+  label: string;
+  icon: string;
+}
+
+export interface MentionEntity {
+  id: string;
+  name: string;
+  subtitle?: string;
+}
+
+export interface InsertedMention {
+  id: string;
+  type: MentionCategory;
+  displayName: string;
+  startIndex: number;
+  endIndex: number;
+}
