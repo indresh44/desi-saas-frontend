@@ -8,9 +8,10 @@ import {
   useImperativeHandle,
   useState,
 } from "react";
-import { Package, Users } from "lucide-react";
+import { FileText, Package, Users } from "lucide-react";
 import { fetchCustomers, searchCustomers } from "@/lib/api/customers";
 import { fetchCatalogItems } from "@/lib/api/catalog-items";
+import { fetchInvoices } from "@/lib/api/invoices";
 import { MentionCategory, MentionEntity } from "@/lib/types/chat";
 
 interface MentionDropdownProps {
@@ -26,6 +27,7 @@ export type MentionDropdownHandle = {
 const CATEGORIES: { key: MentionCategory; label: string; icon: typeof Users }[] = [
   { key: "customer", label: "Customers", icon: Users },
   { key: "item", label: "Catalog Items", icon: Package },
+  { key: "invoice", label: "Invoices", icon: FileText },
 ];
 
 export const MentionDropdown = forwardRef<MentionDropdownHandle, MentionDropdownProps>(
@@ -51,7 +53,7 @@ export const MentionDropdown = forwardRef<MentionDropdownHandle, MentionDropdown
             name: customer.name,
             subtitle: customer.phone || customer.email || undefined,
           }));
-        } else {
+        } else if (category === "item") {
           const items = await fetchCatalogItems(search.trim() || undefined, true);
           results = items.map((item) => ({
             id: item.id,
@@ -59,6 +61,25 @@ export const MentionDropdown = forwardRef<MentionDropdownHandle, MentionDropdown
             subtitle: item.defaultRate
               ? `Rs${item.defaultRate}/${item.customUnit || item.unit || "unit"}`
               : undefined,
+          }));
+        } else {
+          const { items: invoices } = await fetchInvoices({ limit: 100, offset: 0 });
+          const filteredInvoices = search.trim()
+            ? invoices.filter((invoice) => {
+                const query = search.trim().toLowerCase();
+                return (
+                  invoice.invoiceNumber.toLowerCase().includes(query) ||
+                  (invoice.customerName ?? "").toLowerCase().includes(query)
+                );
+              })
+            : invoices;
+          const amountFormatter = new Intl.NumberFormat("en-IN");
+          results = filteredInvoices.map((invoice) => ({
+            id: invoice.id,
+            name: invoice.invoiceNumber,
+            subtitle: invoice.customerName
+              ? `${invoice.customerName} · ₹${amountFormatter.format(invoice.totalAmount)} · ${invoice.status}`
+              : `₹${amountFormatter.format(invoice.totalAmount)} · ${invoice.status}`,
           }));
         }
 

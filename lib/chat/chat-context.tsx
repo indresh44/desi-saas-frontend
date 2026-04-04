@@ -61,7 +61,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     return response.thread_id;
   }, []);
 
-  async function loadHistoryIfNeeded(threadId: string): Promise<void> {
+  async function loadHistoryIfNeeded(threadId: number): Promise<void> {
     if (historyLoaded.current.has(threadId)) {
       return;
     }
@@ -78,6 +78,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           action: msg.action ? { ...msg.action, status: "confirmed" as const } : null,
           suggestions: msg.suggestions ?? [],
           timestamp: new Date(msg.timestamp),
+          pdf: null,
         })
       );
 
@@ -186,6 +187,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           action: response.action ? { ...response.action, status: "pending" as const } : null,
           suggestions: response.suggestions,
           timestamp: new Date(),
+          pdf: response.pdf ?? null,
         };
 
         setMessages((prev) => [...prev, assistantMessage]);
@@ -242,6 +244,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           content: response.reply,
           suggestions: response.suggestions,
           timestamp: new Date(),
+          pdf: null,
         };
 
         setMessages((prev) => [...prev, confirmMessage]);

@@ -21,6 +21,11 @@ type BackendChatMessageResponse = {
   action?: BackendChatAction | null;
   suggestions: string[];
   tokens_used: number;
+  pdf?: {
+    url: string;
+    invoice_id: string;
+    invoice_number: string;
+  } | null;
 };
 
 type BackendChatHistoryResponse = {
@@ -45,6 +50,10 @@ function getDisplayLabel(actionType: string): string {
       return "Update Stage";
     case "schedule_followup":
       return "Schedule Follow-up";
+    case "record_payment":
+      return "Record Payment";
+    case "send_payment_reminder":
+      return "Send Payment Reminder";
     default:
       return actionType
         .split("_")
@@ -105,6 +114,57 @@ function normalizePrefilledData(
     };
   }
 
+  if (actionType === "create_invoice") {
+    return {
+      customer_id: raw.customer_id ?? null,
+      customer_name: raw.customer_name ?? "",
+      lead_id: raw.lead_id ?? null,
+      issued_date: raw.issued_date ?? "",
+      due_date: raw.due_date ?? "",
+      items: Array.isArray(raw.items) ? raw.items : [],
+      notes: raw.notes ?? "",
+      subtotal: raw.subtotal ?? 0,
+      tax_total: raw.tax_total ?? 0,
+      total_amount: raw.total_amount ?? 0,
+    };
+  }
+
+  if (actionType === "add_lead_note") {
+    return {
+      lead_id: raw.lead_id ?? null,
+      lead_title: raw.lead_title ?? "",
+      note: raw.note ?? "",
+    };
+  }
+
+  if (actionType === "record_payment") {
+    return {
+      invoice_id: raw.invoice_id ?? null,
+      invoice_number: raw.invoice_number ?? "",
+      customer_name: raw.customer_name ?? "",
+      amount: raw.amount ?? 0,
+      payment_method: raw.payment_method ?? "upi",
+      reference: raw.reference ?? "",
+      payment_date: raw.payment_date ?? "",
+      notes: raw.notes ?? "",
+      total_amount: raw.total_amount ?? 0,
+      amount_already_paid: raw.amount_already_paid ?? 0,
+      balance_due: raw.balance_due ?? 0,
+    };
+  }
+
+  if (actionType === "send_payment_reminder") {
+    return {
+      customer_name: raw.customer_name ?? "",
+      customer_phone: raw.customer_phone ?? "",
+      outstanding_amount: raw.outstanding_amount ?? 0,
+      invoice_numbers: raw.invoice_numbers ?? "",
+      message: raw.message ?? "",
+      tone: raw.tone ?? raw.message_tone ?? "polite",
+      whatsapp_url: raw.whatsapp_url ?? "",
+    };
+  }
+
   return raw;
 }
 
@@ -153,6 +213,67 @@ function mapConfirmPayload(payload: ChatConfirmRequest): ChatConfirmRequest {
         scheduled_date: scheduledDate,
         scheduled_at: scheduledAt,
         note: payload.confirmed_data.notes ?? "",
+      },
+    };
+  }
+
+  if (payload.action_type === "create_invoice" || payload.action_type === "confirm_create_invoice") {
+    return {
+      ...payload,
+      action_type: "confirm_create_invoice",
+      confirmed_data: {
+        customer_id: payload.confirmed_data.customer_id ?? null,
+        lead_id: payload.confirmed_data.lead_id ?? null,
+        issued_date: payload.confirmed_data.issued_date ?? null,
+        due_date: payload.confirmed_data.due_date ?? null,
+        items: payload.confirmed_data.items ?? [],
+        notes: payload.confirmed_data.notes ?? null,
+      },
+    };
+  }
+
+  if (payload.action_type === "add_lead_note" || payload.action_type === "confirm_add_lead_note") {
+    return {
+      ...payload,
+      action_type: "confirm_add_lead_note",
+      confirmed_data: {
+        lead_id: payload.confirmed_data.lead_id,
+        note: payload.confirmed_data.note ?? "",
+      },
+    };
+  }
+
+  if (payload.action_type === "record_payment" || payload.action_type === "confirm_record_payment") {
+    return {
+      ...payload,
+      action_type: "confirm_record_payment",
+      confirmed_data: {
+        invoice_id: payload.confirmed_data.invoice_id,
+        invoice_number: payload.confirmed_data.invoice_number ?? "",
+        amount: payload.confirmed_data.amount ?? 0,
+        payment_method: payload.confirmed_data.payment_method ?? "upi",
+        reference: payload.confirmed_data.reference ?? "",
+        payment_date: payload.confirmed_data.payment_date ?? "",
+        notes: payload.confirmed_data.notes ?? "",
+      },
+    };
+  }
+
+  if (
+    payload.action_type === "send_payment_reminder" ||
+    payload.action_type === "confirm_send_payment_reminder"
+  ) {
+    return {
+      ...payload,
+      action_type: "confirm_send_payment_reminder",
+      confirmed_data: {
+        customer_name: payload.confirmed_data.customer_name ?? "",
+        customer_phone: payload.confirmed_data.customer_phone ?? "",
+        outstanding_amount: payload.confirmed_data.outstanding_amount ?? 0,
+        invoice_numbers: payload.confirmed_data.invoice_numbers ?? "",
+        message: payload.confirmed_data.message ?? "",
+        tone: payload.confirmed_data.tone ?? "polite",
+        whatsapp_url: payload.confirmed_data.whatsapp_url ?? "",
       },
     };
   }

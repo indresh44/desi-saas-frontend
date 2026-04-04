@@ -2,8 +2,12 @@
 
 import { useState } from "react";
 import { Check, Loader2, X } from "lucide-react";
+import { AddLeadNoteForm } from "@/components/chat/action-forms/add-lead-note-form";
+import { CreateInvoiceForm } from "@/components/chat/action-forms/create-invoice-form";
 import { CreateLeadForm } from "@/components/chat/action-forms/create-lead-form";
+import { RecordPaymentForm } from "@/components/chat/action-forms/record-payment-form";
 import { ScheduleFollowupForm } from "@/components/chat/action-forms/schedule-followup-form";
+import { SendReminderForm } from "@/components/chat/action-forms/send-reminder-form";
 import { UpdateStageForm } from "@/components/chat/action-forms/update-stage-form";
 import { useChat } from "@/lib/chat/chat-context";
 import { ChatAction } from "@/lib/types/chat";
@@ -58,6 +62,18 @@ export function ActionCard({ action, messageId }: ActionCardProps) {
         return <UpdateStageForm data={editedData} onChange={setEditedData} />;
       case "schedule_followup":
         return <ScheduleFollowupForm data={editedData} onChange={setEditedData} />;
+      case "create_invoice":
+      case "confirm_create_invoice":
+        return <CreateInvoiceForm data={editedData} onChange={setEditedData} />;
+      case "add_lead_note":
+      case "confirm_add_lead_note":
+        return <AddLeadNoteForm data={editedData} onChange={setEditedData} />;
+      case "record_payment":
+      case "confirm_record_payment":
+        return <RecordPaymentForm data={editedData} onChange={setEditedData} />;
+      case "send_payment_reminder":
+      case "confirm_send_payment_reminder":
+        return <SendReminderForm data={editedData} onChange={setEditedData} />;
       default:
         return (
           <pre className="whitespace-pre-wrap text-xs text-zinc-600">

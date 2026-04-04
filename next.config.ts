@@ -1,7 +1,15 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ["https://19e4-2401-4900-8820-61b6-4d68-ca00-3dd0-ff52.ngrok-free.app","https://44bf-172-105-53-206.ngrok-free.app"],
+  allowedDevOrigins: [
+    "192.168.1.3",
+    "192.168.1.8",
+    "127.0.0.1",
+    "localhost",
+    "*.ngrok-free.app",
+    "192."
+  ],
   images: {
     remotePatterns: [
       {
@@ -9,6 +17,15 @@ const nextConfig: NextConfig = {
         hostname: "**.r2.dev",
       },
     ],
+  },
+  turbopack: {
+    resolveAlias: {
+      canvas: path.join(__dirname, "lib/pdf-canvas-stub.ts"),
+    },
+  },
+  webpack: (config) => {
+    config.resolve.alias.canvas = path.join(__dirname, "lib/pdf-canvas-stub.ts");
+    return config;
   },
 };
 

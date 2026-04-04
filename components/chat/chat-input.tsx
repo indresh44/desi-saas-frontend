@@ -262,7 +262,7 @@ export function ChatInput() {
         </button>
       </div>
       <p className="mt-1 px-1 text-[10px] text-zinc-400">
-        Type <kbd className="rounded border border-zinc-200 bg-zinc-50 px-1 font-mono">@</kbd> to mention customers or items
+        Type <kbd className="rounded border border-zinc-200 bg-zinc-50 px-1 font-mono">@</kbd> to mention customers, items, or invoices
       </p>
     </div>
   );

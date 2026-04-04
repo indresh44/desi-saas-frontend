@@ -1,6 +1,8 @@
 "use client";
 
 import { ActionCard } from "@/components/chat/action-card";
+import { ChatMarkdown } from "@/components/chat/chat-markdown";
+import { PdfPreviewCard } from "@/components/chat/pdf-preview-card";
 import { ChatMessage } from "@/lib/types/chat";
 
 interface ChatMessageBubbleProps {
@@ -76,10 +78,12 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
         >
           {isUser
             ? renderContentWithMentions(message.content, true)
-            : renderPlainContent(message.content)}
+            : <ChatMarkdown content={message.content} />}
         </div>
 
         {message.action && <ActionCard action={message.action} messageId={message.id} />}
+
+        {message.pdf && <PdfPreviewCard pdf={message.pdf} />}
 
         <span className={`text-[10px] ${isUser ? "text-right text-zinc-400" : "text-zinc-400"}`}>
           {message.timestamp.toLocaleTimeString("en-IN", {

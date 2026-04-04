@@ -19,6 +19,11 @@ export interface ChatMessage {
   action?: ChatAction | null;
   suggestions?: string[];
   timestamp: Date;
+  pdf?: {
+    url: string;
+    invoice_id: string;
+    invoice_number: string;
+  } | null;
 }
 
 export interface ChatMessageRequest {
@@ -39,6 +44,11 @@ export interface ChatMessageResponse {
   } | null;
   suggestions: string[];
   tokens_used: number;
+  pdf?: {
+    url: string;
+    invoice_id: string;
+    invoice_number: string;
+  } | null;
 }
 
 export interface ChatConfirmRequest {
@@ -79,7 +89,7 @@ export interface ChatThreadResponse {
   is_new?: boolean;
 }
 
-export type MentionCategory = "customer" | "item";
+export type MentionCategory = "customer" | "item" | "invoice";
 
 export interface MentionCategoryOption {
   key: MentionCategory;
