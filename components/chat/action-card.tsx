@@ -11,6 +11,7 @@ import { RecordPaymentForm } from "@/components/chat/action-forms/record-payment
 import { RescheduleFollowupForm } from "@/components/chat/action-forms/reschedule-followup-form";
 import { ScheduleFollowupForm } from "@/components/chat/action-forms/schedule-followup-form";
 import { SendReminderForm } from "@/components/chat/action-forms/send-reminder-form";
+import { UpdateInvoiceForm } from "./action-forms/update-invoice-form";
 import { UpdateStageForm } from "@/components/chat/action-forms/update-stage-form";
 import { useChat } from "@/lib/chat/chat-context";
 import { ChatAction } from "@/lib/types/chat";
@@ -74,6 +75,9 @@ export function ActionCard({ action, messageId }: ActionCardProps) {
       case "create_invoice":
       case "confirm_create_invoice":
         return <CreateInvoiceForm data={editedData} onChange={setEditedData} />;
+      case "update_invoice":
+      case "confirm_update_invoice":
+        return <UpdateInvoiceForm data={editedData} onChange={setEditedData} />;
       case "add_lead_note":
       case "confirm_add_lead_note":
         return <AddLeadNoteForm data={editedData} onChange={setEditedData} />;

@@ -58,6 +58,8 @@ function getDisplayLabel(actionType: string): string {
       return "Bulk Update Follow-ups";
     case "record_payment":
       return "Record Payment";
+    case "update_invoice":
+      return "Update Invoice";
     case "send_payment_reminder":
       return "Send Payment Reminder";
     default:
@@ -174,6 +176,24 @@ function normalizePrefilledData(
       subtotal: raw.subtotal ?? 0,
       tax_total: raw.tax_total ?? 0,
       total_amount: raw.total_amount ?? 0,
+    };
+  }
+
+  if (actionType === "update_invoice") {
+    return {
+      invoice_id: raw.invoice_id ?? null,
+      invoice_number: raw.invoice_number ?? "",
+      current_status: raw.current_status ?? "draft",
+      current_due_date: raw.current_due_date ?? "",
+      current_total: raw.current_total ?? 0,
+      changes:
+        raw.changes && typeof raw.changes === "object" && !Array.isArray(raw.changes)
+          ? (raw.changes as Record<string, unknown>)
+          : {},
+      proposed_items: Array.isArray(raw.proposed_items) ? raw.proposed_items : null,
+      proposed_subtotal: raw.proposed_subtotal ?? null,
+      proposed_tax: raw.proposed_tax ?? null,
+      proposed_total: raw.proposed_total ?? null,
     };
   }
 
@@ -314,6 +334,19 @@ function mapConfirmPayload(payload: ChatConfirmRequest): ChatConfirmRequest {
         due_date: payload.confirmed_data.due_date ?? null,
         items: payload.confirmed_data.items ?? [],
         notes: payload.confirmed_data.notes ?? null,
+      },
+    };
+  }
+
+  if (payload.action_type === "update_invoice" || payload.action_type === "confirm_update_invoice") {
+    return {
+      ...payload,
+      action_type: "confirm_update_invoice",
+      confirmed_data: {
+        invoice_id: payload.confirmed_data.invoice_id,
+        invoice_number: payload.confirmed_data.invoice_number ?? "",
+        changes: payload.confirmed_data.changes ?? {},
+        proposed_items: payload.confirmed_data.proposed_items ?? null,
       },
     };
   }
