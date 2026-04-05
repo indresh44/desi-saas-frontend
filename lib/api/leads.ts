@@ -34,11 +34,11 @@ function toCreateLeadPayload(input: CreateLeadInput) {
     customer_id: input.customerId,
     stage_id: input.stageId,
     title: input.title,
-    source: input.source,
-    service_date: input.serviceDate,
-    estimated_value: input.estimatedValue,
+    source: input.source?.trim() || null,
+    service_date: input.serviceDate?.trim() || null,
+    estimated_value: input.estimatedValue?.trim() || null,
     assigned_to: input.assignedTo ?? null,
-    notes: input.notes,
+    notes: input.notes?.trim() || null,
     business_id: input.businessId,
   };
 }

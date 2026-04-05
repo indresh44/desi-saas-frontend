@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { X } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CustomerPhoneInput } from "@/components/leads/customer-phone-input";
+import { CustomerNameInput } from "@/components/leads/customer-name-input";
 import { useLookupMaps } from "@/hooks/use-lookup-maps";
 import { createLead } from "@/lib/api/leads";
 import {
@@ -15,39 +15,43 @@ import {
 } from "@/lib/api/customers";
 import { Customer } from "@/lib/types/customer";
 
+const leadSourceOptions = [
+  "Referral",
+  "Walk-in",
+  "Instagram",
+  "WhatsApp",
+  "JustDial",
+  "IndiaMART",
+  "Website",
+  "Other",
+] as const;
+
 const createLeadSchema = z
   .object({
-    customerMode: z.enum(["existing", "new"]),
+    customerName: z.string().trim().min(1, "Customer name is required"),
     phone: z.string().trim().min(1, "Phone is required"),
-    customerName: z.string().trim().optional(),
     customerEmail: z.union([z.literal(""), z.string().email("Invalid email")]),
-    title: z.string().trim().min(1, "Title is required"),
+    title: z.string().trim().min(1, "Please describe what they need"),
     source: z.string().trim().optional(),
-    stageId: z.string().trim().optional(),
-    serviceDate: z.string().min(1, "Service date is required"),
-    estimatedValue: z.string().trim().min(1, "Estimated value is required"),
+    serviceDate: z.string().optional(),
+    estimatedValue: z
+      .string()
+      .trim()
+      .refine(
+        (value) => value === "" || /^\d+(\.\d{1,2})?$/.test(value),
+        "Enter a valid amount"
+      ),
     notes: z.string().trim().optional(),
-  })
-  .superRefine((values, ctx) => {
-    if (values.customerMode === "new" && !values.customerName?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["customerName"],
-        message: "Name is required for new customer",
-      });
-    }
   });
 
 type CreateLeadFormValues = z.infer<typeof createLeadSchema>;
 
 const defaultValues: CreateLeadFormValues = {
-  customerMode: "new",
-  phone: "",
   customerName: "",
+  phone: "",
   customerEmail: "",
   title: "",
   source: "",
-  stageId: "",
   serviceDate: "",
   estimatedValue: "",
   notes: "",
@@ -67,6 +71,7 @@ export function CreateLeadDialog({
   const { stageMap, isLoading: isLoadingStages } = useLookupMaps();
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isMoreDetailsOpen, setIsMoreDetailsOpen] = useState(false);
 
   const form = useForm<CreateLeadFormValues>({
     resolver: zodResolver(createLeadSchema),
@@ -74,11 +79,6 @@ export function CreateLeadDialog({
   });
 
   const isSubmitting = form.formState.isSubmitting;
-
-  const isExistingCustomerMode = useMemo(
-    () => !!selectedCustomer && form.watch("customerMode") === "existing",
-    [form, selectedCustomer]
-  );
 
   const stageOptions = useMemo(
     () =>
@@ -91,6 +91,25 @@ export function CreateLeadDialog({
     [stageMap]
   );
 
+  const defaultStageId = stageOptions[0]?.id ?? "";
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    setIsMoreDetailsOpen(false);
+    setSubmitError(null);
+
+    const timeoutId = window.setTimeout(() => {
+      form.setFocus("customerName");
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [form, isOpen]);
+
   const handleClose = () => {
     if (isSubmitting) {
       return;
@@ -98,27 +117,64 @@ export function CreateLeadDialog({
     form.reset(defaultValues);
     setSelectedCustomer(null);
     setSubmitError(null);
+    setIsMoreDetailsOpen(false);
     onClose();
   };
 
   const handleSelectCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);
-    form.setValue("customerMode", "existing");
-    form.setValue("phone", customer.phone);
-    form.setValue("customerName", customer.name || "");
+    form.setValue("customerName", customer.name || "", { shouldValidate: true });
+    form.setValue("phone", customer.phone, { shouldValidate: true });
     form.setValue("customerEmail", customer.email || "");
-    form.clearErrors(["customerName", "phone"]);
+    form.clearErrors(["customerName", "phone", "customerEmail"]);
   };
 
   const handleClearSelectedCustomer = () => {
     setSelectedCustomer(null);
-    form.setValue("customerMode", "new");
+  };
+
+  const handleCustomerNameChange = (nextCustomerName: string) => {
+    if (selectedCustomer && nextCustomerName !== selectedCustomer.name) {
+      setSelectedCustomer(null);
+    }
+
+    form.setValue("customerName", nextCustomerName, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
+
+  const handlePhoneChange = (nextPhone: string) => {
+    if (selectedCustomer && nextPhone !== selectedCustomer.phone) {
+      setSelectedCustomer(null);
+    }
+
+    form.setValue("phone", nextPhone, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
+
+  const handleCustomerEmailChange = (nextEmail: string) => {
+    if (selectedCustomer && nextEmail !== (selectedCustomer.email || "")) {
+      setSelectedCustomer(null);
+    }
+
+    form.setValue("customerEmail", nextEmail, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
   };
 
   const onSubmit = form.handleSubmit(async (values) => {
     setSubmitError(null);
 
     try {
+      if (!defaultStageId) {
+        setSubmitError("No pipeline stage is available yet. Please add a stage first.");
+        return;
+      }
+
       const phone = values.phone.trim();
       let customerId = selectedCustomer?.id || "";
 
@@ -128,13 +184,13 @@ export function CreateLeadDialog({
         if (byPhone.found && byPhone.customer) {
           customerId = byPhone.customer.id;
           setSelectedCustomer(byPhone.customer);
-          form.setValue("customerMode", "existing");
           form.setValue("customerName", byPhone.customer.name || "");
           form.setValue("customerEmail", byPhone.customer.email || "");
+          form.setValue("phone", byPhone.customer.phone);
         } else {
           const createdCustomer = await createCustomer(
             {
-              name: values.customerName?.trim() || "",
+              name: values.customerName.trim(),
               phone,
               email: values.customerEmail?.trim() || null,
             }
@@ -146,11 +202,11 @@ export function CreateLeadDialog({
       await createLead(
         {
           customerId,
-          stageId: values.stageId?.trim() || "",
+          stageId: defaultStageId,
           title: values.title.trim(),
           source: values.source?.trim() || "",
-          serviceDate: values.serviceDate,
-          estimatedValue: values.estimatedValue.trim(),
+          serviceDate: values.serviceDate?.trim() || null,
+          estimatedValue: values.estimatedValue.trim() || null,
           assignedTo: null,
           notes: values.notes?.trim() || "",
           businessId: "",
@@ -181,149 +237,183 @@ export function CreateLeadDialog({
     <>
       <button
         type="button"
-        aria-label="Close create lead dialog"
+        aria-label="Close new enquiry dialog"
         className="fixed inset-0 z-30 bg-zinc-900/30"
         onClick={handleClose}
       />
 
-      <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
-        <div className="w-full max-w-3xl rounded-xl border border-zinc-200 bg-white shadow-2xl">
-          <div className="flex items-start justify-between border-b border-zinc-200 px-4 py-3">
+      <div className="fixed inset-0 z-40 flex items-end justify-center md:items-center md:p-4">
+        <div className="flex h-[100dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-zinc-200 bg-white shadow-2xl md:h-auto md:max-h-[90vh] md:max-w-2xl md:rounded-2xl">
+          <div className="flex items-start justify-between border-b border-zinc-200 px-4 py-4 md:px-5">
             <div>
-              <h2 className="text-base font-semibold text-zinc-900">Create Lead</h2>
-              <p className="text-xs text-zinc-500">Phone-first customer matching with duplicate prevention.</p>
+              <h2 className="text-base font-semibold text-zinc-900">New Enquiry</h2>
+              <p className="text-sm text-zinc-500">
+                Add the essentials now. Fill the rest only if needed.
+              </p>
             </div>
             <Button type="button" size="sm" variant="ghost" onClick={handleClose}>
               <X className="h-4 w-4" />
             </Button>
           </div>
 
-          <form onSubmit={onSubmit} className="grid gap-3 p-4 md:grid-cols-2">
-            <div className="md:col-span-2">
-              <CustomerPhoneInput
-                phone={form.watch("phone")}
-                selectedCustomer={selectedCustomer}
-                disabled={isSubmitting}
-                onPhoneChange={(nextPhone) => {
-                  form.setValue("phone", nextPhone, { shouldValidate: true });
-                }}
-                onSelectCustomer={handleSelectCustomer}
-                onClearSelection={handleClearSelectedCustomer}
-              />
-              {form.formState.errors.phone?.message ? (
-                <p className="mt-1 text-xs text-red-600">
-                  {form.formState.errors.phone.message}
-                </p>
-              ) : null}
-              {!selectedCustomer ? (
-                <p className="mt-1 text-xs text-zinc-500">
-                  No selected customer means a new customer will be created after phone verification.
-                </p>
-              ) : null}
-            </div>
-
-            <Field
-              label="Customer Name"
-              error={form.formState.errors.customerName?.message}
-              input={
-                <input
-                  {...form.register("customerName")}
-                  className={inputClassName}
-                  disabled={isExistingCustomerMode || isSubmitting}
-                />
-              }
-            />
-
-            <Field
-              label="Customer Email"
-              error={form.formState.errors.customerEmail?.message}
-              input={
-                <input
-                  {...form.register("customerEmail")}
-                  className={inputClassName}
-                  disabled={isExistingCustomerMode || isSubmitting}
-                />
-              }
-            />
-
-            <Field
-              label="Title"
-              error={form.formState.errors.title?.message}
-              input={<input {...form.register("title")} className={inputClassName} />}
-            />
-
-            <Field
-              label="Source"
-              error={form.formState.errors.source?.message}
-              input={<input {...form.register("source")} className={inputClassName} />}
-            />
-
-            <Field
-              label="Stage ID"
-              error={form.formState.errors.stageId?.message}
-              input={
-                <select
-                  {...form.register("stageId")}
-                  className={inputClassName}
-                  disabled={isLoadingStages || isSubmitting}
-                >
-                  <option value="">
-                    {isLoadingStages ? "Loading stages..." : "Select stage"}
-                  </option>
-                  {stageOptions.map((stage) => (
-                    <option key={stage.id} value={stage.id}>
-                      {stage.name}
-                    </option>
-                  ))}
-                </select>
-              }
-            />
-
-            <Field
-              label="Service Date"
-              error={form.formState.errors.serviceDate?.message}
-              input={<input type="date" {...form.register("serviceDate")} className={inputClassName} />}
-            />
-
-            <Field
-              label="Estimated Value"
-              error={form.formState.errors.estimatedValue?.message}
-              input={
-                <input
-                  type="number"
-                  step="0.01"
-                  {...form.register("estimatedValue")}
-                  className={inputClassName}
-                />
-              }
-            />
-
-            <div className="md:col-span-2">
-              <Field
-                label="Notes"
-                error={form.formState.errors.notes?.message}
-                input={
-                  <textarea
-                    rows={3}
-                    {...form.register("notes")}
-                    className={`${inputClassName} resize-y`}
+          <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
+            <div className="min-h-0 flex-1 overflow-y-auto p-4 md:p-5">
+              <div className="space-y-4">
+                <div>
+                  <CustomerNameInput
+                    value={form.watch("customerName")}
+                    selectedCustomer={selectedCustomer}
+                    disabled={isSubmitting}
+                    autoFocus
+                    onValueChange={handleCustomerNameChange}
+                    onSelectCustomer={handleSelectCustomer}
+                    onClearSelection={handleClearSelectedCustomer}
                   />
-                }
-              />
+                  {form.formState.errors.customerName?.message ? (
+                    <p className="mt-1 text-xs text-red-600">
+                      {form.formState.errors.customerName.message}
+                    </p>
+                  ) : null}
+                </div>
+
+                <Field
+                  label="Customer Phone"
+                  error={form.formState.errors.phone?.message}
+                  input={
+                    <input
+                      type="tel"
+                      value={form.watch("phone")}
+                      onChange={(event) => handlePhoneChange(event.target.value)}
+                      className={inputClassName}
+                      placeholder="e.g., 9876543210"
+                      autoComplete="tel"
+                    />
+                  }
+                />
+
+                <Field
+                  label="What do they need?"
+                  error={form.formState.errors.title?.message}
+                  input={
+                    <input
+                      {...form.register("title")}
+                      className={inputClassName}
+                      placeholder="e.g., Modular kitchen for new flat"
+                    />
+                  }
+                />
+
+                <Field
+                  label="Estimated Value ₹"
+                  error={form.formState.errors.estimatedValue?.message}
+                  input={
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      step="0.01"
+                      {...form.register("estimatedValue")}
+                      className={inputClassName}
+                      placeholder="e.g., 350000"
+                    />
+                  }
+                />
+
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-left text-sm font-medium text-zinc-700 transition hover:border-zinc-300 hover:bg-zinc-100"
+                  onClick={() => setIsMoreDetailsOpen((current) => !current)}
+                >
+                  <span>More details</span>
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform ${
+                      isMoreDetailsOpen ? "rotate-180" : "rotate-0"
+                    }`}
+                  />
+                </button>
+
+                <div
+                  className={`grid overflow-hidden transition-all duration-200 ease-out ${
+                    isMoreDetailsOpen
+                      ? "grid-rows-[1fr] opacity-100"
+                      : "grid-rows-[0fr] opacity-0"
+                  }`}
+                >
+                  <div className="overflow-hidden">
+                    <div className="grid gap-4 rounded-xl border border-zinc-200 bg-zinc-50/60 p-3 md:grid-cols-2">
+                      <Field
+                        label="Source"
+                        error={form.formState.errors.source?.message}
+                        input={
+                          <select {...form.register("source")} className={inputClassName}>
+                            <option value="">Select source</option>
+                            {leadSourceOptions.map((source) => (
+                              <option key={source} value={source}>
+                                {source}
+                              </option>
+                            ))}
+                          </select>
+                        }
+                      />
+
+                      <Field
+                        label="Customer Email"
+                        error={form.formState.errors.customerEmail?.message}
+                        input={
+                          <input
+                            type="email"
+                            value={form.watch("customerEmail")}
+                            onChange={(event) => handleCustomerEmailChange(event.target.value)}
+                            className={inputClassName}
+                            placeholder="name@example.com"
+                            autoComplete="email"
+                          />
+                        }
+                      />
+
+                      <Field
+                        label="Service / Delivery Date"
+                        error={form.formState.errors.serviceDate?.message}
+                        input={
+                          <input
+                            type="date"
+                            {...form.register("serviceDate")}
+                            className={inputClassName}
+                          />
+                        }
+                      />
+
+                      <div className="md:col-span-2">
+                        <Field
+                          label="Notes"
+                          error={form.formState.errors.notes?.message}
+                          input={
+                            <textarea
+                              rows={3}
+                              {...form.register("notes")}
+                              className={`${inputClassName} resize-y`}
+                              placeholder="Any initial notes..."
+                            />
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {submitError ? (
+                  <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    {submitError}
+                  </div>
+                ) : null}
+              </div>
             </div>
 
-            {submitError ? (
-              <div className="md:col-span-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                {submitError}
-              </div>
-            ) : null}
-
-            <div className="flex items-center gap-2 md:col-span-2">
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Save Lead"}
-              </Button>
+            <div className="flex items-center justify-end gap-2 border-t border-zinc-200 bg-white px-4 py-3 md:px-5">
               <Button type="button" variant="outline" disabled={isSubmitting} onClick={handleClose}>
                 Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting || isLoadingStages || !defaultStageId}>
+                {isSubmitting ? "Saving..." : "Save"}
               </Button>
             </div>
           </form>
