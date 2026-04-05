@@ -18,25 +18,20 @@ import { LeadWhatsAppChatDrawer } from "@/components/whatsapp/lead-whatsapp-chat
 import { CreateInvoiceModal } from "@/components/leads/create-invoice-modal";
 import { InvoiceCard } from "@/components/leads/invoice-card";
 import { LeadNotes } from "@/components/leads/lead-notes";
-import { LeadMeetingsSection } from "@/components/leads/lead-meetings-section";
 import { useLookupMaps } from "@/hooks/use-lookup-maps";
 import { useChatPageContext } from "@/lib/chat/chat-context";
 import { fetchLeads, moveLeadStage, updateLeadNotes } from "@/lib/api/leads";
 import { createActivity, fetchLeadActivities } from "@/lib/api/activities";
-import { fetchMeetings } from "@/lib/api/meetings";
 import {
   createFollowUp,
   fetchLeadFollowUps,
   markFollowUpDone,
 } from "@/lib/api/followups";
-import { createTask, fetchLeadTasks, updateTask } from "@/lib/api/tasks";
 import { fetchLeadInvoices } from "@/lib/api/invoices";
 import type { Lead } from "@/lib/types/lead";
 import type { ActivityType, LeadActivity } from "@/lib/types/activity";
 import type { LeadFollowUp } from "@/lib/types/followup";
-import type { Task } from "@/lib/types/task";
 import type { Invoice } from "@/lib/types/invoice";
-import type { Meeting } from "@/lib/types/meeting";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -122,12 +117,9 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
   const [lead, setLead] = useState<Lead | null>(null);
   const [activities, setActivities] = useState<LeadActivity[]>([]);
   const [followUps, setFollowUps] = useState<LeadFollowUp[]>([]);
-  const [meetings, setMeetings] = useState<Meeting[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [meetingsLoading, setMeetingsLoading] = useState(false);
 
   // Drawer / modal
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -147,14 +139,6 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
   const [followUpNote, setFollowUpNote] = useState("");
   const [followUpSubmitting, setFollowUpSubmitting] = useState(false);
   const [followUpError, setFollowUpError] = useState<string | null>(null);
-
-  // Task form
-  const [showTaskForm, setShowTaskForm] = useState(false);
-  const [taskTitle, setTaskTitle] = useState("");
-  const [taskDueDate, setTaskDueDate] = useState("");
-  const [taskPriority, setTaskPriority] = useState("2");
-  const [taskSubmitting, setTaskSubmitting] = useState(false);
-  const [taskError, setTaskError] = useState<string | null>(null);
   const [selectedStageId, setSelectedStageId] = useState("");
   const [isMovingStage, setIsMovingStage] = useState(false);
   const [stageMoveError, setStageMoveError] = useState<string | null>(null);
@@ -179,12 +163,11 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
     setIsLoading(true);
     setLoadError(null);
     try {
-      const [leadsData, activitiesData, followUpsData, tasksData, invoicesData] =
+      const [leadsData, activitiesData, followUpsData, invoicesData] =
         await Promise.all([
           fetchLeads(),
           fetchLeadActivities(leadId),
           fetchLeadFollowUps(leadId),
-          fetchLeadTasks(leadId),
           fetchLeadInvoices(leadId, true),
         ]);
 
@@ -201,7 +184,6 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
             new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
         )
       );
-      setTasks(tasksData);
       setInvoices(invoicesData);
     } catch (err) {
       setLoadError(extractErrorMessage(err, "Unable to load lead details."));
@@ -219,28 +201,6 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
       setSelectedStageId(lead.stageId);
     }
   }, [lead]);
-
-  const refreshMeetings = useCallback(async () => {
-    setMeetingsLoading(true);
-    try {
-      const { meetings: meetingData } = await fetchMeetings(
-        {
-          lead_id: leadId,
-          from_date: "2020-01-01",
-          limit: 50,
-        }
-      );
-      setMeetings(meetingData);
-    } catch {
-      // keep lead detail usable even if meetings fail to load
-    } finally {
-      setMeetingsLoading(false);
-    }
-  }, [leadId]);
-
-  useEffect(() => {
-    void refreshMeetings();
-  }, [refreshMeetings]);
 
   const refreshActivities = useCallback(async () => {
     const data = await fetchLeadActivities(leadId);
@@ -260,11 +220,6 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
           new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
       )
     );
-  }, [leadId]);
-
-  const refreshTasks = useCallback(async () => {
-    const data = await fetchLeadTasks(leadId);
-    setTasks(data);
   }, [leadId]);
 
   const refreshInvoices = useCallback(async () => {
@@ -290,10 +245,6 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
     setEditingInvoice(invoice);
     setIsInvoiceModalOpen(true);
   }, []);
-
-  const handleMeetingStatusChange = useCallback(async () => {
-    await Promise.all([refreshMeetings(), refreshActivities()]);
-  }, [refreshActivities, refreshMeetings]);
 
   const handleSaveNotes = useCallback(async (notes: string) => {
     const updated = await updateLeadNotes(leadId, notes);
@@ -346,47 +297,12 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
     }
   };
 
-  const handleTaskSubmit = async () => {
-    if (!lead || !taskTitle.trim()) return;
-    setTaskSubmitting(true);
-    setTaskError(null);
-    try {
-      const input = {
-        lead_id: leadId,
-        title: taskTitle.trim(),
-        assigned_to: lead.assignedTo,
-        priority: parseInt(taskPriority, 10) || 2,
-        status: "pending" as const,
-        ...(taskDueDate ? { due_date: taskDueDate } : {}),
-      };
-      await createTask(input);
-      setTaskTitle("");
-      setTaskDueDate("");
-      setTaskPriority("2");
-      setShowTaskForm(false);
-      await refreshTasks();
-    } catch (err) {
-      setTaskError(extractErrorMessage(err, "Unable to create task."));
-    } finally {
-      setTaskSubmitting(false);
-    }
-  };
-
   const handleMarkDone = async (id: string) => {
     try {
       await markFollowUpDone(id, {});
       await refreshFollowUps();
     } catch {
       // silently ignore — list will reflect server state on next refresh
-    }
-  };
-
-  const handleTaskDone = async (id: string) => {
-    try {
-      await updateTask(id, { status: "done" });
-      await refreshTasks();
-    } catch {
-      // silently ignore
     }
   };
 
@@ -826,6 +742,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
           )}
         </section>
 
+        {/*
         <LeadMeetingsSection
           meetings={meetings}
           isLoading={meetingsLoading}
@@ -836,7 +753,6 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
           onStatusChange={handleMeetingStatusChange}
         />
 
-        {/* Tasks */}
         <section className="space-y-3 rounded-xl border border-zinc-200 bg-white p-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-zinc-900">Tasks</h2>
@@ -955,6 +871,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
             </div>
           )}
         </section>
+        */}
       </div>
 
       {/* ══ Drawer / Modal ════════════════════════════════════════════════════ */}
