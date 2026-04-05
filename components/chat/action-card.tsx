@@ -3,9 +3,12 @@
 import { useState } from "react";
 import { Check, Loader2, X } from "lucide-react";
 import { AddLeadNoteForm } from "@/components/chat/action-forms/add-lead-note-form";
+import { BulkFollowupForm } from "@/components/chat/action-forms/bulk-followup-form";
+import { CompleteFollowupForm } from "@/components/chat/action-forms/complete-followup-form";
 import { CreateInvoiceForm } from "@/components/chat/action-forms/create-invoice-form";
 import { CreateLeadForm } from "@/components/chat/action-forms/create-lead-form";
 import { RecordPaymentForm } from "@/components/chat/action-forms/record-payment-form";
+import { RescheduleFollowupForm } from "@/components/chat/action-forms/reschedule-followup-form";
 import { ScheduleFollowupForm } from "@/components/chat/action-forms/schedule-followup-form";
 import { SendReminderForm } from "@/components/chat/action-forms/send-reminder-form";
 import { UpdateStageForm } from "@/components/chat/action-forms/update-stage-form";
@@ -62,6 +65,12 @@ export function ActionCard({ action, messageId }: ActionCardProps) {
         return <UpdateStageForm data={editedData} onChange={setEditedData} />;
       case "schedule_followup":
         return <ScheduleFollowupForm data={editedData} onChange={setEditedData} />;
+      case "complete_followup":
+        return <CompleteFollowupForm data={editedData} onChange={setEditedData} />;
+      case "reschedule_followup":
+        return <RescheduleFollowupForm data={editedData} onChange={setEditedData} />;
+      case "bulk_update_followups":
+        return <BulkFollowupForm data={editedData} onChange={setEditedData} />;
       case "create_invoice":
       case "confirm_create_invoice":
         return <CreateInvoiceForm data={editedData} onChange={setEditedData} />;

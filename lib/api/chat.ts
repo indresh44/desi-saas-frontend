@@ -50,6 +50,12 @@ function getDisplayLabel(actionType: string): string {
       return "Update Stage";
     case "schedule_followup":
       return "Schedule Follow-up";
+    case "complete_followup":
+      return "Complete Follow-up";
+    case "reschedule_followup":
+      return "Reschedule Follow-up";
+    case "bulk_update_followups":
+      return "Bulk Update Follow-ups";
     case "record_payment":
       return "Record Payment";
     case "send_payment_reminder":
@@ -111,6 +117,48 @@ function normalizePrefilledData(
       scheduled_date: raw.scheduled_date ?? datePart ?? "",
       scheduled_time: raw.scheduled_time ?? timePart ?? "",
       notes: raw.notes ?? raw.note ?? "",
+    };
+  }
+
+  if (actionType === "complete_followup") {
+    return {
+      followup_id: raw.followup_id ?? null,
+      lead_id: raw.lead_id ?? null,
+      lead_title: raw.lead_title ?? "",
+      customer_name: raw.customer_name ?? "",
+      scheduled_at: raw.scheduled_at ?? "",
+      followup_type: raw.followup_type ?? "call",
+      outcome_note: raw.outcome_note ?? "",
+      new_status: raw.new_status ?? "completed",
+    };
+  }
+
+  if (actionType === "reschedule_followup") {
+    return {
+      followup_id: raw.followup_id ?? null,
+      lead_id: raw.lead_id ?? null,
+      lead_title: raw.lead_title ?? "",
+      customer_name: raw.customer_name ?? "",
+      original_date: raw.original_date ?? "",
+      new_date: raw.new_date ?? "",
+      new_time: raw.new_time ?? "",
+      reason: raw.reason ?? "",
+      followup_type: raw.followup_type ?? "call",
+    };
+  }
+
+  if (actionType === "bulk_update_followups") {
+    return {
+      action: raw.action ?? "complete",
+      action_label: raw.action_label ?? raw.action ?? "complete",
+      filter_type: raw.filter_type ?? "today",
+      filter_label: raw.filter_label ?? "",
+      count: raw.count ?? 0,
+      followups: Array.isArray(raw.followups) ? raw.followups : [],
+      followup_ids: Array.isArray(raw.followup_ids) ? raw.followup_ids : [],
+      reschedule_to_date: raw.reschedule_to_date ?? "",
+      reschedule_to_time: raw.reschedule_to_time ?? "",
+      note: raw.note ?? "",
     };
   }
 
@@ -213,6 +261,44 @@ function mapConfirmPayload(payload: ChatConfirmRequest): ChatConfirmRequest {
         scheduled_date: scheduledDate,
         scheduled_at: scheduledAt,
         note: payload.confirmed_data.notes ?? "",
+      },
+    };
+  }
+
+  if (payload.action_type === "complete_followup") {
+    return {
+      ...payload,
+      action_type: "confirm_complete_followup",
+      confirmed_data: {
+        followup_id: payload.confirmed_data.followup_id,
+        outcome_note: payload.confirmed_data.outcome_note ?? "",
+      },
+    };
+  }
+
+  if (payload.action_type === "reschedule_followup") {
+    return {
+      ...payload,
+      action_type: "confirm_reschedule_followup",
+      confirmed_data: {
+        followup_id: payload.confirmed_data.followup_id,
+        new_date: payload.confirmed_data.new_date ?? "",
+        new_time: payload.confirmed_data.new_time ?? "",
+        reason: payload.confirmed_data.reason ?? "",
+      },
+    };
+  }
+
+  if (payload.action_type === "bulk_update_followups") {
+    return {
+      ...payload,
+      action_type: "confirm_bulk_update_followups",
+      confirmed_data: {
+        action: payload.confirmed_data.action ?? "complete",
+        followup_ids: payload.confirmed_data.followup_ids ?? [],
+        note: payload.confirmed_data.note ?? "",
+        reschedule_to_date: payload.confirmed_data.reschedule_to_date ?? "",
+        reschedule_to_time: payload.confirmed_data.reschedule_to_time ?? "",
       },
     };
   }
