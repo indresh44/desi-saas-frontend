@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import sellNSettleIcon from "@/app/sellnsettle-icon.png";
 
 /* ═══════════════════════════════════════════════════════
    SellNSettle Landing Page — v2
@@ -271,7 +273,10 @@ function DemoChat({ messages }: { messages: DemoMsg[] }) {
             <p style={{ fontSize: 20, fontWeight: 900, fontFamily: FH, paddingTop: 8 }}>{m.text}</p>
           </div>
         );
-        if (m.from === "card" && m.card) return (
+        if (m.from === "card" && m.card) {
+          const card = m.card;
+
+          return (
           <div key={i} style={{ marginLeft: 64 }}>
             <div style={{
               background: "#fff", border: `4px solid ${C.navy}`,
@@ -282,14 +287,14 @@ function DemoChat({ messages }: { messages: DemoMsg[] }) {
                 display: "flex", justifyContent: "space-between", alignItems: "center",
                 marginBottom: 16, borderBottom: `2px solid ${C.navy}`, paddingBottom: 10,
               }}>
-                <span style={{ fontSize: 24, fontWeight: 900, fontStyle: "italic", fontFamily: FH, letterSpacing: -1 }}>{m.card.label}</span>
-                <span style={{ fontSize: 11, fontWeight: 900, background: C.navy, color: "#fff", padding: "4px 10px" }}>{m.card.id}</span>
+                <span style={{ fontSize: 24, fontWeight: 900, fontStyle: "italic", fontFamily: FH, letterSpacing: -1 }}>{card.label}</span>
+                <span style={{ fontSize: 11, fontWeight: 900, background: C.navy, color: "#fff", padding: "4px 10px" }}>{card.id}</span>
               </div>
-              {m.card.lines.map((line, j) => (
+              {card.lines.map((line, j) => (
                 <div key={j} style={{
                   display: "flex", justifyContent: "space-between",
                   padding: "10px 0",
-                  borderBottom: j < m.card.lines.length - 1 ? `1px dashed ${C.navy}44` : `2px dashed ${C.navy}`,
+                  borderBottom: j < card.lines.length - 1 ? `1px dashed ${C.navy}44` : `2px dashed ${C.navy}`,
                 }}>
                   <span style={{ fontWeight: 700, fontSize: 15 }}>{line.item} {line.qty && <span style={{ color: `${C.navy}88` }}>{line.qty}</span>}</span>
                   <span style={{ fontWeight: 900, fontFamily: FH }}>{line.amt}</span>
@@ -297,23 +302,27 @@ function DemoChat({ messages }: { messages: DemoMsg[] }) {
               ))}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 14 }}>
                 <span style={{ fontWeight: 900, fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: `${C.navy}88` }}>
-                  {m.card.due ? `Due: ${m.card.due}` : "Total"}
+                  {card.due ? `Due: ${card.due}` : "Total"}
                 </span>
-                <span style={{ fontWeight: 900, fontSize: "clamp(28px, 4vw, 44px)", color: C.coral, fontFamily: FH }}>{m.card.total}</span>
+                <span style={{ fontWeight: 900, fontSize: "clamp(28px, 4vw, 44px)", color: C.coral, fontFamily: FH }}>{card.total}</span>
               </div>
             </div>
           </div>
-        );
-        if (m.from === "card" && m.list) return (
+          );
+        }
+        if (m.from === "card" && m.list) {
+          const list = m.list;
+
+          return (
           <div key={i} style={{ marginLeft: 64 }}>
             <div style={{
               background: "#fff", border: `4px solid ${C.navy}`,
               borderRadius: 24, boxShadow: shadow(8, 8, C.teal), overflow: "hidden",
             }}>
-              {m.list.map((item, j) => (
+              {list.map((item, j) => (
                 <div key={j} style={{
                   display: "flex", alignItems: "center", gap: 16, padding: "16px 24px",
-                  borderBottom: j < m.list!.length - 1 ? `2px solid ${C.gray}` : "none",
+                  borderBottom: j < list.length - 1 ? `2px solid ${C.gray}` : "none",
                 }}>
                   <div style={{
                     width: 14, height: 14, borderRadius: "50%",
@@ -328,7 +337,8 @@ function DemoChat({ messages }: { messages: DemoMsg[] }) {
               ))}
             </div>
           </div>
-        );
+          );
+        }
         if (m.from === "chips") return (
           <div key={i} style={{ display: "flex", gap: 10, flexWrap: "wrap", marginLeft: 64 }}>
             {m.chips!.map((c, j) => (
@@ -417,8 +427,15 @@ export default function LandingPageClient() {
         boxShadow: shadow(8, 8, C.coral), padding: "14px 28px",
         display: "flex", justifyContent: "space-between", alignItems: "center",
       }}>
-        <div style={{ fontSize: 22, fontWeight: 900, color: C.navy, display: "flex", alignItems: "center", gap: 8, fontFamily: FH }}>
-          <Icon name="token" style={{ color: C.coral, fontSize: 28 }} /> SellNSettle
+        <div style={{ fontSize: 22, fontWeight: 900, color:'#E8862E', display: "flex", alignItems: "center", gap: 8, fontFamily: FH }}>
+          <Image
+            src={sellNSettleIcon}
+            alt="SellNSettle"
+            width={30}
+            height={30}
+            style={{ flexShrink: 0 }}
+          />
+          SellNSettle
         </div>
         <div className="hidden md:flex" style={{ gap: 28, alignItems: "center" }}>
           {["Features", "Comparison", "Pricing"].map((l) => (
@@ -765,8 +782,15 @@ export default function LandingPageClient() {
       <footer style={{ padding: "72px 32px", borderTop: `8px solid ${C.navy}`, background: C.gray }}>
         <div className="grid grid-cols-1 md:grid-cols-12" style={{ maxWidth: 1200, margin: "0 auto", gap: 48 }}>
           <div className="md:col-span-5">
-            <div style={{ fontSize: 32, fontWeight: 900, color: C.navy, marginBottom: 24, display: "flex", alignItems: "center", gap: 10, fontFamily: FH }}>
-              <Icon name="token" style={{ color: C.coral, fontSize: 40 }} /> SellNSettle
+            <div style={{ fontSize: 32, fontWeight: 900, color: '#E8862E', marginBottom: 24, display: "flex", alignItems: "center", gap: 10, fontFamily: FH }}>
+              <Image
+                src={sellNSettleIcon}
+                alt="SellNSettle"
+                width={40}
+                height={40}
+                style={{ flexShrink: 0 }}
+              />
+              SellNSettle
             </div>
             <p style={{ fontSize: 17, color: `${C.navy}aa`, fontWeight: 700, maxWidth: 320, marginBottom: 28, lineHeight: 1.5 }}>
               Empowering India&apos;s small businesses with intelligent conversation-first technology.
