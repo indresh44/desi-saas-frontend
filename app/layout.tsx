@@ -21,24 +21,30 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// ── Default metadata for all pages (landing page overrides in its own page.tsx) ──
 export const metadata: Metadata = {
-  title: "SellNSettle — From First Enquiry to Final Payment",
-  description: "Stop juggling WhatsApp, a diary, and billing apps. SellNSettle tracks every lead, quote, invoice, and payment in one place — made for how Indian small businesses actually work.",
-  keywords: ["CRM", "MSME", "invoicing", "lead tracking", "WhatsApp", "billing", "GST"],
+  metadataBase: new URL("https://sellnsettle.com"),
+  title: {
+    default: "SellNSettle — Chat-First CRM for Indian Small Businesses",
+    template: "%s | SellNSettle",
+  },
+  description:
+    "Track enquiries, send invoices, collect payments — just by chatting in Hindi, English, or Hinglish. Built for Indian MSMEs.",
+  keywords: ["CRM", "MSME", "invoicing", "India", "small business", "AI"],
   authors: [{ name: "SellNSettle" }],
   openGraph: {
     type: "website",
     url: "https://sellnsettle.com",
-    title: "SellNSettle — From First Enquiry to Final Payment",
-    description: "Stop juggling WhatsApp, a diary, and billing apps. SellNSettle tracks every lead, quote, invoice, and payment in one place — made for how Indian small businesses actually work.",
     siteName: "SellNSettle",
+    locale: "en_IN",
   },
   twitter: {
     card: "summary_large_image",
-    title: "SellNSettle — From First Enquiry to Final Payment",
-    description: "Stop juggling WhatsApp, a diary, and billing apps. SellNSettle tracks every lead, quote, invoice, and payment in one place — made for how Indian small businesses actually work.",
   },
-  robots: "index, follow",
+  robots: {
+    index: true,
+    follow: true,
+  },
   alternates: {
     canonical: "https://sellnsettle.com",
   },

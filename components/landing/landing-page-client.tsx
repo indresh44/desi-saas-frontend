@@ -1,409 +1,792 @@
 "use client";
 
-import { useEffect } from "react";
-import { DM_Sans, Instrument_Serif } from "next/font/google";
+import { useState, useEffect } from "react";
+import Link from "next/link";
 
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  style: ["normal", "italic"],
-  display: "swap",
-});
+/* ═══════════════════════════════════════════════════════
+   SellNSettle Landing Page — v2
+   Neobrutalist: thick borders, offset shadows,
+   coral + teal + gold + navy
+   ═══════════════════════════════════════════════════════ */
 
-const instrumentSerif = Instrument_Serif({
-  subsets: ["latin"],
-  weight: ["400"],
-  style: ["normal", "italic"],
-  variable: "--font-instrument-serif",
-  display: "swap",
-});
+const C = {
+  coral: "#FF6B6B",
+  teal: "#2EC4B6",
+  gold: "#d4af37",
+  navy: "#0a192f",
+  gray: "#F8F9FA",
+} as const;
 
-export default function LandingPageClient() {
+const shadow = (x: number, y: number, color: string) =>
+  `${x}px ${y}px 0px 0px ${color}`;
+
+const FH = "var(--font-plus-jakarta)";
+
+// ── Icon helper ──
+function Icon({ name, style }: { name: string; style?: React.CSSProperties }) {
+  return (
+    <span
+      className="material-symbols-outlined"
+      style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 24, ...style }}
+    >
+      {name}
+    </span>
+  );
+}
+
+/* ═══════════════════════════════════════
+   HERO CHAT — Animated with @mention,
+   confirmation, invoice card, share chips
+   ═══════════════════════════════════════ */
+
+interface HeroChatStep {
+  type: "user" | "typing" | "confirm" | "invoice" | "chips";
+  delay: number;
+}
+
+const HERO_STEPS: HeroChatStep[] = [
+  { type: "user", delay: 400 },
+  { type: "typing", delay: 1500 },
+  { type: "confirm", delay: 2200 },
+  { type: "invoice", delay: 3800 },
+  { type: "chips", delay: 4200 },
+];
+
+function HeroChat() {
+  const [v, setV] = useState(0);
+  const [cycle, setCycle] = useState(0);
+
   useEffect(() => {
-    const nav = document.getElementById("nav");
-    const onScroll = () => nav?.classList.toggle("scrolled", window.scrollY > 10);
-
-    onScroll();
-    window.addEventListener("scroll", onScroll);
-
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("visible");
-          }
-        });
-      },
-      { threshold: 0.1 }
+    setV(0);
+    const timers = HERO_STEPS.map((s, i) =>
+      setTimeout(() => setV(i + 1), s.delay)
     );
-
-    const revealEls = document.querySelectorAll(".landing-page .reveal");
-    revealEls.forEach((el) => io.observe(el));
-
-    const featCards = document.querySelectorAll(".landing-page .feat-card.reveal");
-    featCards.forEach((card, i) => {
-      (card as HTMLElement).style.transitionDelay = `${(i % 3) * 75}ms`;
-    });
-
+    const replay = setTimeout(() => setCycle((c) => c + 1), 8500);
     return () => {
-      window.removeEventListener("scroll", onScroll);
-      io.disconnect();
+      timers.forEach(clearTimeout);
+      clearTimeout(replay);
     };
-  }, []);
+  }, [cycle]);
 
   return (
-    <div className={`landing-page ${dmSans.className} ${instrumentSerif.variable}`}>
-      <nav id="nav">
-        <a href="#" className="nav-logo">
-          <div className="nav-logo-mark">
-            <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-              <path d="M3 4C3 3.45 3.45 3 4 3H14C14.55 3 15 3.45 15 4V6C15 6.55 14.55 7 14 7H4C3.45 7 3 6.55 3 6V4Z" />
-              <path d="M3 9C3 8.45 3.45 8 4 8H10C10.55 8 11 8.45 11 9V10C11 10.55 10.55 11 10 11H4C3.45 11 3 10.55 3 10V9Z" />
-              <circle cx="13.5" cy="13.5" r="2.5" />
-            </svg>
+    <div style={{ flex: 1, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 8, overflow: "hidden" }}>
+      {/* User message with @mention */}
+      {v >= 1 && (
+        <div style={{ display: "flex", justifyContent: "flex-end", animation: "popIn 0.3s ease" }}>
+          <div style={{
+            background: C.navy, color: "#fff",
+            padding: "8px 12px", borderRadius: "14px 14px 4px 14px",
+            fontSize: 11, lineHeight: 1.45, fontWeight: 500, maxWidth: "88%",
+            border: `2px solid ${C.navy}`,
+          }}>
+            <span style={{ color: C.gold }}>@Rajesh</span> ka invoice banao, modular kitchen ₹2.5L qty 10, due: 28 April
           </div>
-          <span className="nav-logo-text">SellNSettle</span>
-        </a>
-        <ul className="nav-links">
-          <li>
-            <a href="#features">Features</a>
-          </li>
-          <li>
-            <a href="#compare">Why us</a>
-          </li>
-          <li>
-            <a href="#how">How it works</a>
-          </li>
-          <li>
-            <a href="/login">Sign in</a>
-          </li>
-          <li>
-            <a href="/register" className="nav-cta">
-              Start free
-            </a>
-          </li>
-        </ul>
+        </div>
+      )}
+
+      {/* Typing indicator */}
+      {v === 2 && (
+        <div style={{ display: "flex", gap: 4, paddingLeft: 4, animation: "popIn 0.25s ease" }}>
+          {[0, 1, 2].map((i) => (
+            <div key={i} style={{
+              width: 6, height: 6, borderRadius: "50%", background: "#ccc",
+              animation: `dotPulse 1.2s ease ${i * 0.15}s infinite`,
+            }} />
+          ))}
+        </div>
+      )}
+
+      {/* Confirmation action */}
+      {v >= 3 && (
+        <div style={{ animation: "popIn 0.3s ease" }}>
+          <div style={{
+            background: C.gray, border: `2px solid ${C.navy}`,
+            borderRadius: "12px 12px 12px 4px", padding: "8px 10px",
+            fontSize: 10, lineHeight: 1.4, color: C.navy, fontWeight: 600,
+          }}>
+            Create invoice for <strong>Rajesh Kumar</strong>?
+            <div style={{ display: "flex", gap: 4, marginTop: 6 }}>
+              <div style={{
+                background: C.teal, color: "#fff", borderRadius: 6,
+                padding: "3px 10px", fontSize: 9, fontWeight: 800,
+                border: `1.5px solid ${C.navy}`,
+              }}>✓ Confirm</div>
+              <div style={{
+                background: "#fff", borderRadius: 6,
+                padding: "3px 10px", fontSize: 9, fontWeight: 700,
+                border: `1.5px solid ${C.navy}`, color: C.navy,
+              }}>Edit</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Invoice card with items, qty, total, due date */}
+      {v >= 4 && (
+        <div style={{ animation: "popIn 0.35s ease" }}>
+          <div style={{
+            background: "#fff", border: `3px solid ${C.navy}`,
+            borderRadius: 12, padding: "10px 12px",
+            boxShadow: shadow(3, 3, C.gold),
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+              <span style={{ fontSize: 8, fontWeight: 900, color: C.coral, letterSpacing: 1 }}>INVOICE</span>
+              <span style={{ fontSize: 8, fontWeight: 900, fontFamily: "monospace", color: C.teal }}>#INV-042</span>
+            </div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: C.navy, marginBottom: 2 }}>Rajesh Kumar</div>
+            <div style={{
+              borderTop: `1.5px dashed ${C.navy}33`, marginTop: 4, paddingTop: 4,
+              display: "flex", justifyContent: "space-between", fontSize: 9, color: `${C.navy}cc`,
+            }}>
+              <span>Modular Kitchen × 10</span>
+              <span style={{ fontWeight: 800, color: C.navy }}>₹25,00,000</span>
+            </div>
+            <div style={{
+              borderTop: `1.5px solid ${C.navy}`, marginTop: 6, paddingTop: 5,
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+            }}>
+              <span style={{ fontSize: 8, color: `${C.navy}88` }}>Due: 28 Apr</span>
+              <span style={{ fontSize: 14, fontWeight: 900, color: C.navy }}>₹25,00,000</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share + WhatsApp chips */}
+      {v >= 5 && (
+        <div style={{ display: "flex", gap: 5, animation: "popIn 0.3s ease" }}>
+          <div style={{
+            background: "#fff", border: `2px solid ${C.navy}`,
+            borderRadius: 100, padding: "4px 12px",
+            fontSize: 10, fontWeight: 800, color: C.navy,
+            display: "flex", alignItems: "center", gap: 4,
+          }}>
+            <Icon name="share" style={{ fontSize: 12 }} /> Share
+          </div>
+          <div style={{
+            background: "#25D366", border: `2px solid ${C.navy}`,
+            borderRadius: 100, padding: "4px 12px",
+            fontSize: 10, fontWeight: 800, color: "#fff",
+            display: "flex", alignItems: "center", gap: 4,
+          }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492l4.624-1.467A11.932 11.932 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818c-2.168 0-4.19-.588-5.932-1.61l-.424-.253-2.744.871.882-2.68-.278-.442A9.77 9.77 0 012.182 12c0-5.423 4.395-9.818 9.818-9.818 5.423 0 9.818 4.395 9.818 9.818 0 5.423-4.395 9.818-9.818 9.818z"/></svg>
+            WhatsApp
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   DEMO SECTION — 3 Functional Tabs
+   ═══════════════════════════════════════ */
+
+interface DemoMsg {
+  from: "user" | "ai" | "card" | "chips";
+  text?: string;
+  card?: { label: string; id: string; lines: { item: string; qty: string; amt: string }[]; total: string; due?: string };
+  chips?: string[];
+  list?: { dot: string; name: string; note: string }[];
+}
+
+const DEMO_TABS: { key: string; label: string; messages: DemoMsg[] }[] = [
+  {
+    key: "invoice",
+    label: "Invoice banao",
+    messages: [
+      { from: "user", text: "@Anjali ke liye invoice banao — @Modular Kitchen ×2, @Hettich Hardware ×4" },
+      { from: "ai", text: "Invoice #043 ready! GST included 👇" },
+      {
+        from: "card",
+        card: {
+          label: "INVOICE", id: "#INV-043",
+          lines: [
+            { item: "Modular Kitchen", qty: "×2", amt: "₹2,50,000" },
+            { item: "Hettich Hardware", qty: "×4", amt: "₹92,000" },
+          ],
+          total: "₹3,42,000", due: "30 Apr 2026",
+        },
+      },
+      { from: "chips", chips: ["✓ Confirm", "Edit items", "PDF →", "WhatsApp"] },
+    ],
+  },
+  {
+    key: "followup",
+    label: "Aaj ke follow-ups",
+    messages: [
+      { from: "user", text: "Aaj ke pending follow-ups dikhao" },
+      { from: "ai", text: "Today's 3 follow-ups:" },
+      {
+        from: "card",
+        list: [
+          { dot: "#EF4444", name: "Rajesh Sharma", note: "Modular Kitchen · 2 days overdue" },
+          { dot: "#F59E0B", name: "Neha Gupta", note: "Coaching Package · due today" },
+          { dot: "#22C55E", name: "Amit Patel", note: "Wedding Shoot · on track" },
+        ],
+      },
+      { from: "chips", chips: ["Mark Rajesh done", "Reschedule Neha", "View all"] },
+    ],
+  },
+  {
+    key: "payment",
+    label: "₹50,000 payment record",
+    messages: [
+      { from: "user", text: "₹50,000 payment aaya @Rajesh se, UPI pe, INV-042 ke liye" },
+      { from: "ai", text: "Payment recorded! ✅ Invoice status updated." },
+      {
+        from: "card",
+        card: {
+          label: "PAYMENT", id: "INV-042",
+          lines: [{ item: "UPI · Rajesh Sharma", qty: "", amt: "₹50,000" }],
+          total: "₹50,000",
+        },
+      },
+      { from: "chips", chips: ["Send receipt", "Outstanding check", "History"] },
+    ],
+  },
+];
+
+function DemoChat({ messages }: { messages: DemoMsg[] }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {messages.map((m, i) => {
+        if (m.from === "user") return (
+          <div key={i} style={{ display: "flex", justifyContent: "flex-end" }}>
+            <div style={{
+              background: C.gray, border: `4px solid ${C.navy}`,
+              padding: "14px 24px", borderRadius: "24px 24px 4px 24px",
+              fontWeight: 700, fontSize: 16, fontStyle: "italic", maxWidth: "78%",
+            }}>&ldquo;{m.text}&rdquo;</div>
+          </div>
+        );
+        if (m.from === "ai") return (
+          <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: "50%",
+              background: C.coral, border: `4px solid ${C.navy}`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0, boxShadow: shadow(4, 4, C.navy),
+            }}><Icon name="smart_toy" style={{ color: "#fff", fontSize: 24 }} /></div>
+            <p style={{ fontSize: 20, fontWeight: 900, fontFamily: FH, paddingTop: 8 }}>{m.text}</p>
+          </div>
+        );
+        if (m.from === "card" && m.card) return (
+          <div key={i} style={{ marginLeft: 64 }}>
+            <div style={{
+              background: "#fff", border: `4px solid ${C.navy}`,
+              padding: "clamp(20px, 3vw, 32px)", borderRadius: 24,
+              boxShadow: shadow(8, 8, C.gold),
+            }}>
+              <div style={{
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                marginBottom: 16, borderBottom: `2px solid ${C.navy}`, paddingBottom: 10,
+              }}>
+                <span style={{ fontSize: 24, fontWeight: 900, fontStyle: "italic", fontFamily: FH, letterSpacing: -1 }}>{m.card.label}</span>
+                <span style={{ fontSize: 11, fontWeight: 900, background: C.navy, color: "#fff", padding: "4px 10px" }}>{m.card.id}</span>
+              </div>
+              {m.card.lines.map((line, j) => (
+                <div key={j} style={{
+                  display: "flex", justifyContent: "space-between",
+                  padding: "10px 0",
+                  borderBottom: j < m.card.lines.length - 1 ? `1px dashed ${C.navy}44` : `2px dashed ${C.navy}`,
+                }}>
+                  <span style={{ fontWeight: 700, fontSize: 15 }}>{line.item} {line.qty && <span style={{ color: `${C.navy}88` }}>{line.qty}</span>}</span>
+                  <span style={{ fontWeight: 900, fontFamily: FH }}>{line.amt}</span>
+                </div>
+              ))}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 14 }}>
+                <span style={{ fontWeight: 900, fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: `${C.navy}88` }}>
+                  {m.card.due ? `Due: ${m.card.due}` : "Total"}
+                </span>
+                <span style={{ fontWeight: 900, fontSize: "clamp(28px, 4vw, 44px)", color: C.coral, fontFamily: FH }}>{m.card.total}</span>
+              </div>
+            </div>
+          </div>
+        );
+        if (m.from === "card" && m.list) return (
+          <div key={i} style={{ marginLeft: 64 }}>
+            <div style={{
+              background: "#fff", border: `4px solid ${C.navy}`,
+              borderRadius: 24, boxShadow: shadow(8, 8, C.teal), overflow: "hidden",
+            }}>
+              {m.list.map((item, j) => (
+                <div key={j} style={{
+                  display: "flex", alignItems: "center", gap: 16, padding: "16px 24px",
+                  borderBottom: j < m.list!.length - 1 ? `2px solid ${C.gray}` : "none",
+                }}>
+                  <div style={{
+                    width: 14, height: 14, borderRadius: "50%",
+                    background: item.dot, border: `2px solid ${C.navy}`,
+                    boxShadow: `0 0 8px ${item.dot}44`, flexShrink: 0,
+                  }} />
+                  <div>
+                    <p style={{ fontWeight: 900, fontSize: 17, fontFamily: FH }}>{item.name}</p>
+                    <p style={{ fontSize: 13, color: `${C.navy}88`, fontWeight: 600 }}>{item.note}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+        if (m.from === "chips") return (
+          <div key={i} style={{ display: "flex", gap: 10, flexWrap: "wrap", marginLeft: 64 }}>
+            {m.chips!.map((c, j) => (
+              <button key={j} style={{
+                background: j === 0 ? C.teal : "#fff",
+                color: j === 0 ? "#fff" : C.navy,
+                padding: "12px 22px", borderRadius: 100,
+                fontWeight: 900, border: `4px solid ${C.navy}`,
+                boxShadow: j === 0 ? shadow(4, 4, C.navy) : "none",
+                fontSize: 14, cursor: "pointer", fontFamily: FH,
+              }}>{c}</button>
+            ))}
+          </div>
+        );
+        return null;
+      })}
+    </div>
+  );
+}
+
+function DemoSection() {
+  const [activeTab, setActiveTab] = useState("invoice");
+  const active = DEMO_TABS.find((t) => t.key === activeTab)!;
+
+  return (
+    <div className="flex flex-col lg:flex-row" style={{ maxWidth: 1200, margin: "0 auto", alignItems: "flex-start", gap: 56 }}>
+      <div className="w-full lg:w-1/3">
+        <h2 style={{ fontFamily: FH, fontSize: 48, fontWeight: 900, color: C.navy, marginBottom: 40, lineHeight: 1 }}>
+          See It <br /><span style={{ color: C.coral, fontStyle: "italic", fontSize: 38 }}>IN ACTION</span>
+        </h2>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {DEMO_TABS.map((tab) => (
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
+              width: "100%", textAlign: "left", padding: "18px 20px",
+              border: `4px solid ${C.navy}`,
+              background: activeTab === tab.key ? C.gold : "#fff",
+              fontWeight: 900, fontSize: 18, fontFamily: FH, cursor: "pointer",
+              boxShadow: activeTab === tab.key ? shadow(6, 6, C.navy) : "none",
+              transition: "all 0.2s ease",
+              transform: activeTab === tab.key ? "translate(-2px, -2px)" : "none",
+            }}>{tab.label}</button>
+          ))}
+        </div>
+      </div>
+      <div className="w-full lg:w-2/3" style={{ position: "relative" }}>
+        <div aria-hidden="true" style={{
+          position: "absolute", inset: -40,
+          background: `${C.coral}15`,
+          borderRadius: "40% 60% 70% 30% / 40% 50% 60% 50%",
+          zIndex: 0, transform: "rotate(12deg)",
+        }} />
+        <div style={{
+          position: "relative", zIndex: 1,
+          background: "#fff", border: `8px solid ${C.navy}`,
+          padding: "clamp(24px, 4vw, 48px)", borderRadius: 40,
+          boxShadow: shadow(20, 20, C.teal), minHeight: 400,
+        }}>
+          <DemoChat messages={active.messages} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   MAIN PAGE
+   ═══════════════════════════════════════ */
+
+export default function LandingPageClient() {
+  return (
+    <div style={{ background: "#fff", color: C.navy, overflowX: "hidden", minHeight: "100vh" }}>
+      {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+      <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@400,0" rel="stylesheet" />
+      <style>{`
+        @keyframes popIn { from{opacity:0;transform:translateY(8px) scale(.96)} to{opacity:1;transform:translateY(0) scale(1)} }
+        @keyframes dotPulse { 0%,80%,100%{transform:scale(.6);opacity:.3}40%{transform:scale(1);opacity:1} }
+        @keyframes blobPulse { 0%,100%{transform:scale(1);opacity:.2}50%{transform:scale(1.05);opacity:.3} }
+      `}</style>
+
+      {/* ═══ NAV ═══ */}
+      <nav style={{
+        position: "fixed", top: 24, left: "50%", transform: "translateX(-50%)",
+        width: "90%", maxWidth: 1100, zIndex: 50,
+        background: "rgba(255,255,255,0.92)", backdropFilter: "blur(16px)",
+        border: `4px solid ${C.navy}`, borderRadius: 100,
+        boxShadow: shadow(8, 8, C.coral), padding: "14px 28px",
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+      }}>
+        <div style={{ fontSize: 22, fontWeight: 900, color: C.navy, display: "flex", alignItems: "center", gap: 8, fontFamily: FH }}>
+          <Icon name="token" style={{ color: C.coral, fontSize: 28 }} /> SellNSettle
+        </div>
+        <div className="hidden md:flex" style={{ gap: 28, alignItems: "center" }}>
+          {["Features", "Comparison", "Pricing"].map((l) => (
+            <a key={l} href={`#${l.toLowerCase()}`} style={{ color: C.navy, fontWeight: 700, textDecoration: "none", fontSize: 14 }}>{l}</a>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <Link href="/login" style={{ fontWeight: 700, color: C.navy, fontSize: 14, textDecoration: "none" }}>Login</Link>
+          <Link href="/register" style={{
+            background: C.gold, color: C.navy, padding: "9px 20px", borderRadius: 100,
+            fontWeight: 900, fontSize: 14, border: `2px solid ${C.navy}`,
+            boxShadow: shadow(4, 4, C.navy), fontFamily: FH, textDecoration: "none",
+          }}>Start Free</Link>
+        </div>
       </nav>
 
-      <div className="hero-wrap">
-        <div className="hero">
-          <div className="hero-copy">
-            <div className="hero-badge">
-              <span className="badge-dot"></span>
-              Built for Indian MSMEs
+      <main style={{ paddingTop: 140 }}>
+
+        {/* ═══ HERO ═══ */}
+        <section style={{ padding: "0 32px 100px", position: "relative" }} aria-label="Hero">
+          <div className="flex flex-col lg:flex-row" style={{ maxWidth: 1200, margin: "0 auto", gap: 48, alignItems: "center" }}>
+            <div className="w-full lg:w-3/5" style={{ zIndex: 20 }}>
+              {/* CHANGED #7: no "first" claim */}
+              <div style={{
+                display: "inline-block", padding: "8px 16px", marginBottom: 24,
+                fontSize: 11, fontWeight: 900, letterSpacing: 3, textTransform: "uppercase",
+                color: "#fff", background: C.teal,
+                border: `2px solid ${C.navy}`, boxShadow: shadow(4, 4, C.navy), fontFamily: FH,
+              }}>🤖 AI-Powered Business Diary for Bharat</div>
+
+              <h1 style={{
+                fontFamily: FH, fontSize: "clamp(48px, 8vw, 110px)",
+                fontWeight: 900, letterSpacing: -3, lineHeight: 0.92, marginBottom: 32, color: C.navy,
+              }}>
+                Apni business diary, <span style={{ color: C.coral }}>ab AI</span>{" "}
+                <span style={{ color: C.gold, fontStyle: "italic" }}>ke saath</span>
+              </h1>
+
+              <p style={{ fontSize: 20, color: `${C.navy}cc`, marginBottom: 36, maxWidth: 480, lineHeight: 1.6, fontWeight: 600 }}>
+                Track enquiries, send invoices, collect payments — just by chatting. In{" "}
+                <span style={{ textDecoration: "underline", textDecorationColor: C.teal, textDecorationThickness: 4, textUnderlineOffset: 4 }}>Hindi, English, ya Hinglish.</span>
+              </p>
+
+              <Link href="/register" style={{
+                background: C.coral, color: "#fff", padding: "20px 40px", borderRadius: 16,
+                fontWeight: 900, fontSize: 22, border: `4px solid ${C.navy}`,
+                boxShadow: shadow(10, 10, C.navy), fontFamily: FH,
+                display: "inline-block", textDecoration: "none",
+              }}>Start free — no card needed</Link>
             </div>
-            <h1 className="hero-headline">
-              From first enquiry
-              <br />
-              to <em>final payment</em>
-            </h1>
-            <p className="hero-sub">
-              Stop juggling WhatsApp, a diary, and billing apps. SellNSettle tracks every lead, quote, invoice, and payment in one place — made for how Indian small businesses actually work.
-            </p>
-            <div className="hero-actions">
-              <a href="/register" className="btn-primary">
-                Start for free →
-              </a>
-              <a href="#how" className="btn-ghost">
-                See how it works
-              </a>
-            </div>
-            <div className="hero-trust">
-              <span>✓ No credit card needed</span>
-              <span className="trust-sep">·</span>
-              <span>✓ Setup in 60 seconds</span>
-              <span className="trust-sep">·</span>
-              <span>✓ Works on mobile</span>
+
+            {/* Phone with animated chat */}
+            <div className="w-full lg:w-2/5" style={{ position: "relative", zIndex: 10 }}>
+              <div aria-hidden="true" style={{
+                position: "absolute", top: -60, right: -60, width: 280, height: 280,
+                background: `${C.gold}33`,
+                borderRadius: "40% 60% 70% 30% / 40% 50% 60% 50%",
+                zIndex: 0, animation: "blobPulse 4s ease infinite",
+              }} />
+              <div className="mx-auto lg:-ml-10" style={{
+                position: "relative", zIndex: 1, width: "100%", maxWidth: 320,
+                aspectRatio: "9/19", background: C.navy, borderRadius: 44, padding: 8,
+                boxShadow: shadow(24, 24, C.teal), border: `4px solid ${C.navy}`,
+                transform: "rotate(-6deg) scale(1.1)",
+              }}>
+                <div style={{ width: "100%", height: "100%", background: "#fff", borderRadius: 36, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                  <div style={{
+                    padding: "24px 16px 12px", borderBottom: `4px solid ${C.navy}`,
+                    display: "flex", alignItems: "center", gap: 10, background: C.gray,
+                  }}>
+                    <div style={{
+                      width: 36, height: 36, borderRadius: "50%", background: C.coral,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      border: `2px solid ${C.navy}`, boxShadow: shadow(2, 2, C.navy),
+                    }}><Icon name="smart_toy" style={{ color: "#fff", fontSize: 18 }} /></div>
+                    <div>
+                      <p style={{ fontWeight: 900, fontSize: 13, color: C.navy, fontFamily: FH }}>AI Assistant</p>
+                      <p style={{ fontSize: 8, color: C.teal, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase" }}>Active Now</p>
+                    </div>
+                  </div>
+                  <HeroChat />
+                </div>
+              </div>
             </div>
           </div>
+        </section>
 
-          <div className="hero-visual">
-            <div className="phone-wrap">
-              <div className="phone-frame">
-                <div className="phone-notch"></div>
-                <div className="phone-screen">
-                  <div className="app-topbar">
-                    <div>
-                      <div className="app-topbar-title">SellNSettle</div>
-                      <div className="app-topbar-sub">Your workspace</div>
-                    </div>
-                    <div className="app-topbar-logout">Logout</div>
-                  </div>
+        {/* ═══ PAIN — with skew (#2) ═══ */}
+        <section aria-label="Common problems" style={{ padding: "100px 32px", background: C.gray, transform: "skewY(-2deg)" }}>
+          <div style={{ transform: "skewY(2deg)", maxWidth: 1200, margin: "0 auto", padding: "40px 0" }}>
+            <div style={{ marginBottom: 64 }}>
+              <h2 style={{ fontFamily: FH, fontSize: "clamp(40px, 7vw, 90px)", fontWeight: 900, color: C.navy, letterSpacing: -2, marginBottom: 16, lineHeight: 1 }}>
+                Sound <span style={{ color: C.teal, fontStyle: "italic" }}>Familiar?</span>
+              </h2>
+              <p style={{ fontSize: 20, color: `${C.navy}99`, fontWeight: 700, maxWidth: 520 }}>The daily chaos of manual management is holding your business back.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4" style={{ gap: 24 }}>
+              {[
+                { icon: "menu_book", color: C.coral, sc: C.coral, title: "Notebook mein likha par dhundna mushkil...", desc: "Enquiry details scattered across 10 pages. Never there when you need them.", mt: 0 , rot: "1.25deg"},
+                { icon: "event_busy", color: C.teal, sc: C.teal, title: "Follow-up bhool gaye, lead chala gaya...", desc: "Missed a ₹2 lakh lead because you forgot to check your diary.", mt: 32 , rot: "1.25deg"},
+                { icon: "timer", color: C.gold, sc: C.gold, title: "Invoice banane mein itna time lagta hai...", desc: "Manually calculating totals and taxes when you could be working.", mt: 0 , rot: "1.25deg"},
+                { icon: "volunteer_activism", color: C.navy, sc: C.navy, title: "Payment yaad dilana awkward...", desc: "Asking for money feels difficult. Let our AI handle the reminders.", mt: 32 , rot: "1.25deg"},
+              ].map((p, i) => (
+                <div key={i} className="hover:-translate-y-2 transition-transform" style={{
+                  background: "#fff", padding: 36, border: `4px solid ${C.navy}`,
+                  boxShadow: shadow(8, 8, p.sc), marginTop: p.mt,
+                  transform: `rotate(${p.rot})`,
+                }}>
+                  <Icon name={p.icon} style={{ color: p.color, fontSize: 52, marginBottom: 24, display: "block" }} />
+                  <h3 style={{ fontWeight: 900, fontSize: 20, marginBottom: 12, lineHeight: 1.2, fontFamily: FH }}>{p.title}</h3>
+                  <p style={{ color: `${C.navy}aa`, fontWeight: 500, fontSize: 14, lineHeight: 1.5 }}>{p.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
-                  <div className="app-dash-title">
-                    <div className="app-dash-h">Dashboard</div>
-                    <div className="app-dash-sub">Quick snapshot of what needs attention today.</div>
-                  </div>
+        {/* ═══ DEMO — 3 functional tabs (#3) ═══ */}
+        <section aria-label="Product demo" style={{ padding: "100px 32px", overflow: "hidden" }}>
+          <DemoSection />
+        </section>
 
-                  <div className="app-stats">
-                    <div className="app-stat-card">
-                      <div className="app-stat-label">Follow-ups today</div>
-                      <div className="app-stat-value">3</div>
-                      <div className="app-stat-note">Don&#39;t miss these</div>
-                    </div>
-                    <div className="app-stat-card">
-                      <div className="app-stat-label">Collections this month</div>
-                      <div className="app-stat-value">₹2,18,500</div>
-                      <div className="app-stat-note">Current month total</div>
-                    </div>
-                    <div className="app-stat-card">
-                      <div className="app-stat-label">Total outstanding</div>
-                      <div className="app-stat-value">₹84,000</div>
-                      <div className="app-stat-note">2 invoices pending</div>
-                    </div>
-                  </div>
-
-                  <div className="app-scroll">
-                    <div className="app-sec-title">Overdue Payments</div>
-                    <div className="overdue-card">
-                      <div className="od-row">
-                        <div>
-                          <div className="od-name">Suresh Kumar</div>
-                          <div className="od-inv">INV-012</div>
-                        </div>
-                        <div style={{ textAlign: "right" }}>
-                          <div className="od-amount">₹42,000</div>
-                          <div className="od-days">9 days overdue</div>
-                        </div>
-                      </div>
-                      <div className="od-actions">
-                        <span className="oa">View Invoice</span>
-                        <span className="oa wa">WhatsApp</span>
-                        <span className="oa">Call</span>
-                      </div>
-                    </div>
-
-                    <div className="app-sec-title">Today&#39;s Follow-ups</div>
-                    <div className="fu-card">
-                      <div className="fu-row">
-                        <span className="fu-label">Lead · Priya Mehta</span>
-                        <span className="fu-time">10:00 am</span>
-                      </div>
-                      <div className="fu-note">Call back about full home quote</div>
-                      <span className="fu-done">✓ Done</span>
-                    </div>
-
-                    <div className="app-sec-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span>Recent Leads</span>
-                      <span style={{ fontSize: "0.44rem", color: "#0EA5A0", fontWeight: 600 }}>View All →</span>
-                    </div>
-
-                    <div className="lead-row">
-                      <div className="lr-top">
-                        <span className="lr-name">Living room renovation</span>
-                        <span className="lr-cust">Priya Mehta</span>
-                      </div>
-                      <div className="lr-meta">
-                        <span className="lr-badge b-enq">Enquiry</span>
-                        <span className="lr-amt">₹1,80,000</span>
-                        <span className="lr-date">30 Mar</span>
-                      </div>
-                    </div>
-                    <div className="lead-row">
-                      <div className="lr-top">
-                        <span className="lr-name">Office cabin interior</span>
-                        <span className="lr-cust">Amit Rathore</span>
-                      </div>
-                      <div className="lr-meta">
-                        <span className="lr-badge b-won">Won</span>
-                        <span className="lr-amt">₹65,000</span>
-                        <span className="lr-date">25 Mar</span>
-                      </div>
-                    </div>
-                    <div className="lead-row">
-                      <div className="lr-top">
-                        <span className="lr-name">Modular kitchen</span>
-                        <span className="lr-cust">Neha Joshi</span>
-                      </div>
-                      <div className="lr-meta">
-                        <span className="lr-badge b-enq">Enquiry</span>
-                        <span className="lr-amt">₹95,000</span>
-                        <span className="lr-date">23 Mar</span>
-                      </div>
-                    </div>
+        {/* ═══ FEATURES — collage ═══ */}
+        <section id="features" aria-label="Features" style={{ padding: "100px 32px", background: "#fff" }}>
+          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+            <div style={{ marginBottom: 64, position: "relative", display: "inline-block" }}>
+              <h2 style={{ fontFamily: FH, fontSize: "clamp(40px, 7vw, 90px)", fontWeight: 900, color: C.navy, letterSpacing: -2, lineHeight: 1 }}>
+                Sab kuch ek <br />
+                <span style={{ color: C.gold, fontStyle: "italic", textDecoration: "underline", textDecorationColor: C.coral, textDecorationThickness: 6, textUnderlineOffset: 6 }}>conversation</span> mein
+              </h2>
+              <div aria-hidden="true" className="hidden md:block" style={{
+                position: "absolute", top: -28, right: -80, transform: "rotate(12deg)",
+                background: C.coral, color: "#fff", padding: "8px 20px",
+                fontWeight: 900, fontSize: 16, border: `4px solid ${C.navy}`, fontFamily: FH,
+              }}>KYA MILEGA</div>
+            </div>
+            <div className="flex flex-col lg:grid" style={{ gridTemplateColumns: "repeat(12, 1fr)", gap: 20, alignItems: "start" }}>
+              <div className="lg:col-span-5" style={{ background: "#fff", border: `4px solid ${C.navy}`, padding: 36, boxShadow: shadow(10, 10, C.coral), transform: "rotate(-1deg)" }}>
+                <Icon name="chat_bubble" style={{ color: C.coral, fontSize: 48, marginBottom: 16, display: "block" }} />
+                <h3 style={{ fontWeight: 900, fontSize: 26, marginBottom: 10, fontFamily: FH }}>Bolo, ho jaayega</h3>
+                <p style={{ fontWeight: 600, fontSize: 16, lineHeight: 1.5 }}>&ldquo;Rajesh ka invoice banao&rdquo; — Hindi mein bolo, AI samjhega.</p>
+              </div>
+              <div className="lg:col-span-7" style={{ background: C.navy, color: "#fff", border: `4px solid ${C.navy}`, padding: 40, boxShadow: shadow(12, 12, C.teal), transform: "rotate(1.5deg) translateY(-16px)" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 20 }}>
+                  <Icon name="assignment" style={{ color: C.teal, fontSize: 56 }} />
+                  <div>
+                    <h3 style={{ fontWeight: 900, fontSize: 30, marginBottom: 10, fontFamily: FH }}>Pura business cycle</h3>
+                    <p style={{ fontSize: 17, fontWeight: 500, opacity: 0.8 }}>Enquiry → follow-up → quote → invoice → payment → reminder. <span style={{ color: C.gold, fontWeight: 900, fontStyle: "italic" }}>End to end.</span></p>
                   </div>
                 </div>
               </div>
-
-              <div className="float-pill fp1">
-                <span>💰</span> Invoice paid!
+              <div className="lg:col-span-6" style={{ background: "#fff", border: `4px solid ${C.navy}`, padding: 36, boxShadow: shadow(10, 10, C.gold), transform: "rotate(-2deg)" }}>
+                <Icon name="smartphone" style={{ color: C.gold, fontSize: 48, marginBottom: 16, display: "block" }} />
+                <h3 style={{ fontWeight: 900, fontSize: 26, marginBottom: 10, fontFamily: FH }}>WhatsApp pe instant share</h3>
+                <p style={{ fontWeight: 600, fontSize: 15 }}>PDF invoice ek tap mein generate. Seedha WhatsApp pe bhej do — <span style={{ color: C.coral }}>professional lage.</span></p>
               </div>
-              <div className="float-pill fp2">
-                <span>📲</span> Follow-up sent
+              <div className="lg:col-span-6" style={{ background: C.gray, border: `4px solid ${C.navy}`, padding: 28, boxShadow: shadow(10, 10, C.navy), transform: "rotate(1deg) translateX(8px)" }}>
+                <Icon name="notifications_active" style={{ color: C.navy, fontSize: 42, marginBottom: 16, display: "block" }} />
+                <h3 style={{ fontWeight: 900, fontSize: 22, marginBottom: 10, fontFamily: FH }}>Kabhi bhoologe nahi</h3>
+                <p style={{ fontWeight: 500, fontSize: 14 }}>AI follow-up yaad dilata hai. Overdue dikhaata hai. Payment pending toh alert.</p>
+              </div>
+              <div className="lg:col-span-4" style={{ background: C.teal, color: "#fff", border: `4px solid ${C.navy}`, padding: 28, boxShadow: shadow(8, 8, C.coral), transform: "rotate(-1.5deg)" }}>
+                <Icon name="alternate_email" style={{ color: "#fff", fontSize: 42, marginBottom: 10, display: "block" }} />
+                <h3 style={{ fontWeight: 900, fontSize: 20, marginBottom: 8, fontFamily: FH }}>@Mention se speed</h3>
+                <p style={{ fontWeight: 500, fontSize: 14 }}>@Rajesh @ModularKitchen type karo — AI turant samajh jayega.</p>
+              </div>
+              <div className="lg:col-span-8" style={{ background: C.gold, border: `4px solid ${C.navy}`, padding: 36, display: "flex", alignItems: "center", gap: 28, boxShadow: shadow(10, 10, C.navy), transform: "rotate(0.5deg) translateY(-8px)" }}>
+                <Icon name="bar_chart" style={{ color: C.navy, fontSize: 56, opacity: 0.3 }} />
+                <div>
+                  <h3 style={{ fontWeight: 900, fontSize: 26, marginBottom: 8, fontFamily: FH }}>Ek line mein hisaab</h3>
+                  <p style={{ fontWeight: 700, fontSize: 15 }}>&ldquo;Outstanding kitna hai?&rdquo; &ldquo;Last month se compare karo&rdquo; — poocho, AI bata dega.</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      <section className="chaos-section">
-        <div className="chaos-inner">
-          <div className="reveal">
-            <div className="section-label" style={{ color: "#5EEAD4" }}>The problem</div>
-            <h2 className="chaos-title">
-              Running your business on <em>five different apps</em>
-            </h2>
-            <p className="chaos-sub">
-              Most small business owners lose deals not because they&#39;re bad at selling — but because they lose track. An enquiry slips. An invoice goes unsent for two weeks. A payment reminder never happens.
+        {/* ═══ COMPARISON — no Vyapar name (#4), with skew ═══ */}
+        <section id="comparison" aria-label="Comparison" style={{ padding: "100px 32px", background: C.navy, color: "#fff", transform: "skewY(2deg)" }}>
+          <div style={{ transform: "skewY(-2deg)", maxWidth: 960, margin: "0 auto", padding: "40px 0" }}>
+            <div style={{ textAlign: "center", marginBottom: 64 }}>
+              <h2 style={{ fontFamily: FH, fontSize: "clamp(36px, 6vw, 72px)", fontWeight: 900, letterSpacing: -2, marginBottom: 12 }}>
+                Billing app se <span style={{ color: C.gold, fontStyle: "italic", textDecoration: "underline", textDecorationColor: C.coral }}>kaise alag?</span>
+              </h2>
+              <p style={{ fontSize: 18, fontWeight: 700, opacity: 0.5 }}>SellNSettle isn&apos;t just for billing; it&apos;s for managing your whole day.</p>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: 36 }}>
+              <div style={{ padding: 40, border: "4px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.03)", transform: "rotate(-1deg)" }}>
+                <h3 style={{ fontSize: 26, fontWeight: 900, marginBottom: 36, display: "flex", alignItems: "center", gap: 12, fontFamily: FH }}>
+                  <Icon name="description" style={{ opacity: 0.4 }} /> Generic Billing Apps
+                </h3>
+                {[
+                  { t: "Starts at Billing", d: "You have to wait until the deal is closed." },
+                  { t: "Manual Data Entry", d: "Tapping through 20 menus just to add one item." },
+                ].map((item) => (
+                  <div key={item.t} style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 24 }}>
+                    <Icon name="close" style={{ color: C.coral }} />
+                    <div>
+                      <p style={{ fontWeight: 900, fontSize: 20, marginBottom: 4, fontFamily: FH }}>{item.t}</p>
+                      <p style={{ opacity: 0.5, fontSize: 14 }}>{item.d}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ padding: 40, border: `4px solid ${C.gold}`, background: "#fff", color: C.navy, transform: "rotate(1deg)", boxShadow: shadow(15, 15, C.gold) }}>
+                <h3 style={{ fontSize: 26, fontWeight: 900, marginBottom: 36, color: C.coral, display: "flex", alignItems: "center", gap: 12, fontFamily: FH }}>
+                  <Icon name="stars" /> SellNSettle
+                </h3>
+                {[
+                  { t: "Starts at Hello", d: "Track from first enquiry to final settlement." },
+                  { t: "Chat-based Workflow", d: "Zero forms. Just tell the AI what to do." },
+                  { t: "End-to-End Automation", d: "Enquiry → Follow-up → Quote → Invoice." },
+                ].map((item) => (
+                  <div key={item.t} style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 24 }}>
+                    <Icon name="check_circle" style={{ color: C.teal, fontSize: 28 }} />
+                    <div>
+                      <p style={{ fontWeight: 900, fontSize: 20, marginBottom: 4, fontFamily: FH }}>{item.t}</p>
+                      <p style={{ color: `${C.navy}aa`, fontWeight: 700, fontSize: 14 }}>{item.d}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ═══ PERSONAS — with hover animation (#5) ═══ */}
+        <section aria-label="Target audience" style={{ padding: "100px 32px", background: "#fff" }}>
+          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+            <div style={{ marginBottom: 64 }}>
+              <h2 style={{ fontFamily: FH, fontSize: "clamp(40px, 7vw, 90px)", fontWeight: 900, color: C.navy, letterSpacing: -3, marginBottom: 8 }}>
+                Yeh <span style={{ color: C.coral }}>Kiske</span> Liye Hai?
+              </h2>
+              <p style={{ fontSize: 20, fontWeight: 900, color: `${C.navy}55` }}>Tailored for the modern Indian entrepreneur.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3" style={{ gap: 48 }}>
+              {[
+                { emoji: "🏠", bg: "#fce4ec", title: "Interior Designers", desc: "Manage multiple site enquiries, send quotes on-site, track material orders.", sc: C.coral, rot: 1, mt: 0 },
+                { emoji: "📸", bg: "#e0f2f1", title: "Photographers", desc: "Track shoot dates, send booking confirmations, collect advances automatically.", sc: C.teal, rot: -1, mt: 36 },
+                { emoji: "🎯", bg: "#fff8e1", title: "Freelancers & Coaches", desc: "Record payments instantly, send professional invoices, automate follow-ups.", sc: C.gold, rot: 2, mt: 72 },
+              ].map((p) => (
+                <div key={p.title} className="group" style={{ marginTop: p.mt }}>
+                  <div
+                    className="transition-all duration-500 ease-out group-hover:!rotate-0 group-hover:scale-[1.03] group-hover:shadow-2xl"
+                    style={{
+                      border: `8px solid ${C.navy}`,
+                      boxShadow: shadow(12, 12, p.sc),
+                      transform: `rotate(${p.rot}deg)`,
+                      overflow: "hidden", cursor: "default",
+                    }}
+                  >
+                    <div
+                      className="transition-transform duration-500 group-hover:scale-110"
+                      style={{
+                        height: 200, background: p.bg,
+                        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 64,
+                      }}
+                      role="img" aria-label={p.title}
+                    >{p.emoji}</div>
+                    <div style={{ padding: "24px 28px", background: "#fff", borderTop: `8px solid ${C.navy}` }}>
+                      <h3 style={{ fontSize: 24, fontWeight: 900, fontStyle: "italic", fontFamily: FH, marginBottom: 8 }}>{p.title}</h3>
+                      <p style={{ color: `${C.navy}aa`, fontWeight: 700, fontSize: 13, lineHeight: 1.4 }}>{p.desc}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ═══ HOW IT WORKS ═══ */}
+        <section aria-label="How it works" style={{ padding: "100px 32px", background: `${C.teal}18` }}>
+          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+            <div style={{ textAlign: "center", marginBottom: 64 }}>
+              <h2 style={{ fontFamily: FH, fontSize: 52, fontWeight: 900, fontStyle: "italic", color: C.navy, marginBottom: 8 }}>How It Works</h2>
+              <p style={{ fontSize: 20, fontWeight: 700, color: `${C.navy}99` }}>Three steps to a more organized business life.</p>
+            </div>
+            <div className="flex flex-col lg:flex-row" style={{ gap: 32 }}>
+              {[
+                { n: "1", icon: "how_to_reg", title: "Sign up", desc: "Zero paperwork. Register with your phone number in 30 seconds.", color: C.coral, sc: C.navy, rot: "-1deg" },
+                { n: "2", icon: "add_comment", title: "Add enquiry", desc: "Just chat. \"Rajesh met me for kitchen work today.\" Done.", color: C.gold, sc: C.coral, rot: "1deg" },
+                { n: "3", icon: "send_to_mobile", title: "Send invoices", desc: "Ask AI to generate and send invoices directly to WhatsApp.", color: C.teal, sc: C.teal, rot: "-2deg" },
+              ].map((s) => (
+                <div key={s.n} style={{
+                  flex: 1, background: "#fff", border: `4px solid ${C.navy}`,
+                  padding: 40, boxShadow: shadow(12, 12, s.sc), transform: `rotate(${s.rot})`,
+                }}>
+                  <div style={{
+                    width: 64, height: 64, borderRadius: "50%",
+                    background: s.color, color: "#fff", border: `4px solid ${C.navy}`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    marginBottom: 24, boxShadow: shadow(4, 4, C.navy),
+                  }}><Icon name={s.icon} style={{ fontSize: 30 }} /></div>
+                  <h3 style={{ fontSize: 30, fontWeight: 900, fontFamily: FH, marginBottom: 12 }}>{s.n}. {s.title}</h3>
+                  <p style={{ fontSize: 17, fontWeight: 700, color: `${C.navy}99`, lineHeight: 1.5 }}>{s.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ═══ CTA — removed "Join 5000+" (#6) ═══ */}
+        <section aria-label="Call to action" style={{ padding: "120px 32px" }}>
+          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+            <div style={{
+              background: C.coral, border: `12px solid ${C.navy}`, borderRadius: 56,
+              padding: "clamp(48px, 8vw, 100px)", textAlign: "center",
+              position: "relative", overflow: "hidden", boxShadow: shadow(30, 30, C.gold),
+            }}>
+              <div aria-hidden="true" style={{
+                position: "absolute", top: -80, left: -80, width: 300, height: 300,
+                background: "rgba(255,255,255,0.1)",
+                borderRadius: "40% 60% 70% 30% / 40% 50% 60% 50%", transform: "rotate(45deg)",
+              }} />
+              <div style={{ position: "relative", zIndex: 1 }}>
+                <h2 style={{
+                  fontFamily: FH, fontSize: "clamp(40px, 8vw, 100px)",
+                  fontWeight: 900, color: "#fff", letterSpacing: -3, lineHeight: 0.95, marginBottom: 48,
+                }}>
+                  Notebook <span style={{ color: C.navy }}>band</span> karo.<br />
+                  Chat <span style={{ fontStyle: "italic", fontWeight: 300, opacity: 0.8, textDecoration: "underline" }}>shuru</span> karo.
+                </h2>
+                <div className="flex flex-col sm:flex-row" style={{ justifyContent: "center", gap: 20 }}>
+                  <Link href="/register" style={{
+                    background: C.gold, color: C.navy, padding: "22px 40px", borderRadius: 16,
+                    fontWeight: 900, fontSize: "clamp(18px, 3vw, 24px)",
+                    border: `4px solid ${C.navy}`, boxShadow: shadow(10, 10, C.navy),
+                    fontFamily: FH, textDecoration: "none", display: "inline-block",
+                  }}>Start free — no card needed</Link>
+                  <button style={{
+                    background: "#fff", color: C.navy, padding: "22px 40px", borderRadius: 16,
+                    fontWeight: 900, fontSize: "clamp(18px, 3vw, 24px)",
+                    border: `4px solid ${C.navy}`, boxShadow: shadow(10, 10, C.navy),
+                    fontFamily: FH, cursor: "pointer",
+                  }}>Watch Video Demo</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {/* ═══ FOOTER ═══ */}
+      <footer style={{ padding: "72px 32px", borderTop: `8px solid ${C.navy}`, background: C.gray }}>
+        <div className="grid grid-cols-1 md:grid-cols-12" style={{ maxWidth: 1200, margin: "0 auto", gap: 48 }}>
+          <div className="md:col-span-5">
+            <div style={{ fontSize: 32, fontWeight: 900, color: C.navy, marginBottom: 24, display: "flex", alignItems: "center", gap: 10, fontFamily: FH }}>
+              <Icon name="token" style={{ color: C.coral, fontSize: 40 }} /> SellNSettle
+            </div>
+            <p style={{ fontSize: 17, color: `${C.navy}aa`, fontWeight: 700, maxWidth: 320, marginBottom: 28, lineHeight: 1.5 }}>
+              Empowering India&apos;s small businesses with intelligent conversation-first technology.
             </p>
-            <div className="chaos-stats">
-              <div>
-                <div className="cs-num">₹2L+</div>
-                <div className="cs-label">avg. revenue lost annually<br />to forgotten follow-ups</div>
-              </div>
-              <div>
-                <div className="cs-num">1 app</div>
-                <div className="cs-label">to replace all of<br />them — free to start</div>
-              </div>
+            <p style={{ fontSize: 11, color: `${C.navy}55`, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase" }}>© 2026 SellNSettle. Made in India with ❤️</p>
+          </div>
+          <div className="md:col-span-7 grid grid-cols-2 md:grid-cols-3" style={{ gap: 32 }}>
+            <div>
+              <h4 style={{ fontWeight: 900, marginBottom: 20, letterSpacing: 2, textTransform: "uppercase", fontSize: 15, borderBottom: `4px solid ${C.coral}`, display: "inline-block", paddingBottom: 4, fontFamily: FH }}>Company</h4>
+              {["Privacy Policy", "Terms of Service"].map((l) => (
+                <p key={l} style={{ color: `${C.navy}99`, fontWeight: 700, marginBottom: 12, cursor: "pointer", fontSize: 14 }}>{l}</p>
+              ))}
+            </div>
+            <div>
+              <h4 style={{ fontWeight: 900, marginBottom: 20, letterSpacing: 2, textTransform: "uppercase", fontSize: 15, borderBottom: `4px solid ${C.teal}`, display: "inline-block", paddingBottom: 4, fontFamily: FH }}>Support</h4>
+              {["Contact Us", "Help Center"].map((l) => (
+                <p key={l} style={{ color: `${C.navy}99`, fontWeight: 700, marginBottom: 12, cursor: "pointer", fontSize: 14 }}>{l}</p>
+              ))}
             </div>
           </div>
-          <div className="chaos-tools reveal">
-            <div className="chaos-tool">
-              <div className="ct-icon" style={{ background: "rgba(37,211,102,0.12)" }}>💬</div>
-              <div>
-                <div className="ct-name">WhatsApp</div>
-                <div className="ct-pain">Customer details buried in 1000 chats. No structure, no history.</div>
-              </div>
-              <span className="ct-x">✕</span>
-            </div>
-            <div className="chaos-tool">
-              <div className="ct-icon" style={{ background: "rgba(251,191,36,0.12)" }}>📒</div>
-              <div>
-                <div className="ct-name">Diary / notebook</div>
-                <div className="ct-pain">No reminders. Doesn&#39;t ping you to call a customer back.</div>
-              </div>
-              <span className="ct-x">✕</span>
-            </div>
-            <div className="chaos-tool">
-              <div className="ct-icon" style={{ background: "rgba(96,165,250,0.12)" }}>📊</div>
-              <div>
-                <div className="ct-name">Excel / Sheets</div>
-                <div className="ct-pain">No automation. Breaks on mobile. Doesn&#39;t remind you of anything.</div>
-              </div>
-              <span className="ct-x">✕</span>
-            </div>
-            <div className="chaos-tool">
-              <div className="ct-icon" style={{ background: "rgba(167,139,250,0.12)" }}>🧾</div>
-              <div>
-                <div className="ct-name">Billing-only apps</div>
-                <div className="ct-pain">Start at the invoice. Miss everything before — lead, follow-up, quote.</div>
-              </div>
-              <span className="ct-x">✕</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="pipeline-section">
-        <div className="pipeline-header centered reveal">
-          <div className="section-label">The complete journey</div>
-          <h2 className="section-title">One app. The whole cycle.</h2>
-          <p className="section-sub" style={{ maxWidth: "480px" }}>
-            Most tools start at the invoice. SellNSettle starts at the first enquiry and follows through till the payment lands.
-          </p>
-        </div>
-        <div className="pipeline-flow reveal">
-          <div className="pipe-step"><div className="pipe-bubble">📥</div><div className="pipe-name">Enquiry</div><div className="pipe-desc">Lead comes in via WhatsApp, referral, or walk-in</div></div>
-          <div className="pipe-arrow">→</div>
-          <div className="pipe-step"><div className="pipe-bubble">💬</div><div className="pipe-name">Follow-up</div><div className="pipe-desc">Track calls, meetings, notes — full history</div></div>
-          <div className="pipe-arrow">→</div>
-          <div className="pipe-step"><div className="pipe-bubble">📋</div><div className="pipe-name">Quote</div><div className="pipe-desc">Send professional quotes with line items and GST</div></div>
-          <div className="pipe-arrow">→</div>
-          <div className="pipe-step"><div className="pipe-bubble">🧾</div><div className="pipe-name">Invoice</div><div className="pipe-desc">One tap: convert quote → GST invoice PDF</div></div>
-          <div className="pipe-arrow">→</div>
-          <div className="pipe-step"><div className="pipe-bubble">✅</div><div className="pipe-name">Payment</div><div className="pipe-desc">Record UPI, cash, bank — auto-updates status</div></div>
-        </div>
-      </section>
-
-      <section id="features" className="features-outer">
-        <div className="features-inner">
-          <div className="features-head">
-            <div className="reveal"><div className="section-label">What&#39;s inside</div><h2 className="section-title">Everything a growing business needs</h2></div>
-            <p className="section-sub reveal">Not enterprise bloat. Just the features that matter for running 10–30 active deals from your phone, every day.</p>
-          </div>
-          <div className="features-grid">
-            <div className="feat-card reveal"><div className="feat-icon">📊</div><div className="feat-name">Lead Pipeline</div><div className="feat-desc">Visual pipeline with 5 stages. Move leads with one tap. Full activity timeline per lead — calls, notes, stage changes.</div></div>
-            <div className="feat-card reveal"><div className="feat-icon">👥</div><div className="feat-name">Customer Profiles</div><div className="feat-desc">Lifetime value, outstanding balance, all leads and invoices for every customer — in one place.</div></div>
-            <div className="feat-card reveal"><div className="feat-icon">🧾</div><div className="feat-name">GST Invoices</div><div className="feat-desc">GST-compliant invoice PDFs with your branding, UPI details, and bank account. Share instantly via WhatsApp.</div></div>
-            <div className="feat-card reveal"><div className="feat-icon">📦</div><div className="feat-name">Item Catalog</div><div className="feat-desc">Build your product/service library once. Typeahead auto-fills name, rate, unit, and GST% in every invoice.</div></div>
-            <div className="feat-card reveal"><div className="feat-icon">🔔</div><div className="feat-name">Follow-up Reminders</div><div className="feat-desc">Schedule follow-ups with notes and due dates. Today&#39;s dashboard shows exactly who to call and when.</div></div>
-            <div className="feat-card reveal"><div className="feat-icon">💬</div><div className="feat-name">WhatsApp Integration</div><div className="feat-desc">One-tap templates for payment reminders, meeting confirmations, and quote sharing — from your own number.</div></div>
-            <div className="feat-card reveal"><div className="feat-icon">💰</div><div className="feat-name">Payment Tracking</div><div className="feat-desc">Record UPI, cash, or bank payments. Invoice status updates automatically. Outstanding tracked per customer.</div></div>
-            <div className="feat-card reveal"><div className="feat-icon">📅</div><div className="feat-name">Meetings</div><div className="feat-desc">Schedule meetings tied to leads. Scheduled, completed, no-show — all in a clean date-grouped list.</div></div>
-            <div className="feat-card reveal"><div className="feat-icon">📱</div><div className="feat-name">Mobile-first + Dark Mode</div><div className="feat-desc">Designed for a 6-inch phone screen. Light and dark mode. Fast on slow connections.</div></div>
-          </div>
-        </div>
-      </section>
-
-      <section id="compare" className="compare-section">
-        <div className="compare-inner">
-          <div className="compare-header reveal">
-            <div className="section-label">Why SellNSettle</div>
-            <h2 className="section-title" style={{ margin: "0 auto" }}>The only tool that covers<br /><em>the entire business cycle</em></h2>
-            <p className="section-sub" style={{ margin: "0.7rem auto 0" }}>Billing apps start too late. Enterprise CRMs are too complex. SellNSettle fills the gap.</p>
-          </div>
-          <div className="compare-table reveal">
-            <div className="compare-head">
-              <div className="ch">Capability</div>
-              <div className="ch hl">SellNSettle</div>
-              <div className="ch">Billing apps</div>
-              <div className="ch">Enterprise CRMs</div>
-            </div>
-            <div className="compare-row"><div className="cc">Lead tracking &amp; pipeline</div><div className="cc hl"><span className="chk">✓</span></div><div className="cc"><span className="crs">✗</span></div><div className="cc"><span className="chk">✓</span></div></div>
-            <div className="compare-row"><div className="cc">GST invoice generation</div><div className="cc hl"><span className="chk">✓</span></div><div className="cc"><span className="chk">✓</span></div><div className="cc"><span className="crs">✗</span></div></div>
-            <div className="compare-row"><div className="cc">Follow-up reminders</div><div className="cc hl"><span className="chk">✓</span></div><div className="cc"><span className="crs">✗</span></div><div className="cc"><span className="chk">✓</span></div></div>
-            <div className="compare-row"><div className="cc">WhatsApp-native workflows</div><div className="cc hl"><span className="chk">✓</span></div><div className="cc"><span className="crs">✗</span></div><div className="cc"><span className="crs">✗</span></div></div>
-            <div className="compare-row"><div className="cc">Quote → Invoice in one tap</div><div className="cc hl"><span className="chk">✓</span></div><div className="cc">Partial</div><div className="cc"><span className="crs">✗</span></div></div>
-            <div className="compare-row"><div className="cc">Setup time</div><div className="cc hl">60 seconds</div><div className="cc">~30 min</div><div className="cc">Days–weeks</div></div>
-            <div className="compare-row"><div className="cc">Built for 1–5 person teams</div><div className="cc hl"><span className="chk">✓</span></div><div className="cc"><span className="chk">✓</span></div><div className="cc"><span className="crs">✗</span></div></div>
-            <div className="compare-row"><div className="cc">Works well on mobile</div><div className="cc hl"><span className="chk">✓</span></div><div className="cc">Partial</div><div className="cc"><span className="crs">✗</span></div></div>
-          </div>
-        </div>
-      </section>
-
-      <section id="how" className="how-outer">
-        <div className="how-inner">
-          <div className="how-header centered reveal">
-            <div className="section-label">Getting started</div>
-            <h2 className="section-title">Up and running in <em>three steps</em></h2>
-            <p className="section-sub">No complex setup. No training required. If it needs a tutorial, the design has failed.</p>
-          </div>
-          <div className="how-steps">
-            <div className="how-step reveal"><div className="how-num">1</div><div className="how-title">Set up your business</div><div className="how-desc">Add your name, logo, GSTIN, and bank/UPI details. 60 seconds. Your invoices look professional from day one.</div></div>
-            <div className="how-step reveal"><div className="how-num">2</div><div className="how-title">Add your first lead</div><div className="how-desc">Tap &quot;+ New Lead&quot;, add customer details, and you&#39;re tracking. Log a note, schedule a follow-up, move stages — all on mobile.</div></div>
-            <div className="how-step reveal"><div className="how-num">3</div><div className="how-title">Invoice &amp; collect</div><div className="how-desc">When the deal closes, create an invoice in under a minute. Share on WhatsApp. Mark payment received. Done.</div></div>
-          </div>
-        </div>
-      </section>
-
-      <section className="cta-section">
-        <div className="cta-inner reveal">
-          <h2 className="cta-title">Your business diary,<br />upgraded.</h2>
-          <p className="cta-sub">Start managing leads, invoices, and payments in one place — free, no card required.</p>
-          <a href="/register" className="btn-white">Start for free — no card needed →</a>
-          <p className="cta-note">Already have an account? <a href="/login">Sign in</a></p>
-        </div>
-      </section>
-
-      <footer>
-        <div className="footer-inner">
-          <a href="#" className="footer-logo">
-            <div className="footer-logo-mark">
-              <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 4C3 3.45 3.45 3 4 3H14C14.55 3 15 3.45 15 4V6C15 6.55 14.55 7 14 7H4C3.45 7 3 6.55 3 6V4Z" />
-                <path d="M3 9C3 8.45 3.45 8 4 8H10C10.55 8 11 8.45 11 9V10C11 10.55 10.55 11 10 11H4C3.45 11 3 10.55 3 10V9Z" />
-                <circle cx="13.5" cy="13.5" r="2.5" />
-              </svg>
-            </div>
-            <span className="footer-logo-text">SellNSettle</span>
-          </a>
-          <ul className="footer-links">
-            <li><a href="#features">Features</a></li>
-            <li><a href="mailto:hello@sellnsettle.com">Contact</a></li>
-            <li><a href="#">Privacy</a></li>
-            <li><a href="#">Terms</a></li>
-          </ul>
-          <span className="footer-copy">© 2025 SellNSettle · Made for Indian MSMEs</span>
         </div>
       </footer>
     </div>
