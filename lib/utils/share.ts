@@ -48,8 +48,16 @@ export async function shareInvoicePdf(
     const blob = await fetchPdfBlob(invoiceId);
 
     // Step 2: Try native share with actual PDF file (mobile)
+    // Copy caption to clipboard first — WhatsApp ignores the text param,
+    // so user can long-press → paste in the caption field.
     if (canNativeShare() && blob) {
       const file = new File([blob], fileName, { type: "application/pdf" });
+
+      try {
+        await navigator.clipboard.writeText(shareText);
+      } catch {
+        // clipboard write may fail silently — not critical
+      }
 
       try {
         console.log("[Share] Attempting navigator.share with PDF file");

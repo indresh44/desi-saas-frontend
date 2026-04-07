@@ -238,7 +238,7 @@ export function InvoiceCard({
       );
 
       if (result === "shared") {
-        setShareMessage("Shared!");
+        setShareMessage("Shared! Caption copied to clipboard");
       } else if (result === "downloaded") {
         setShareMessage("PDF downloaded");
       } else if (result === "cancelled") {
