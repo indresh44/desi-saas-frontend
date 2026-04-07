@@ -48,37 +48,41 @@ export async function shareInvoicePdf(
 
       if (blob) {
         const file = new File([blob], fileName, { type: "application/pdf" });
-        const fileShareData: ShareData = {
+
+        // Try file + text first
+        const fileWithText: ShareData = {
           title: `Invoice ${invoiceNumber}`,
           text: shareText,
           files: [file],
         };
-
-        if (canShareFiles(fileShareData)) {
-          console.log("[Share] canShare(file) returned true — opening share sheet");
-          await navigator.share(fileShareData);
+        if (canShareFiles(fileWithText)) {
+          console.log("[Share] canShare(file+text) — opening share sheet");
+          await navigator.share(fileWithText);
           return "shared";
         }
-        console.warn("[Share] File share not supported. Trying link share...");
+
+        // Some browsers reject file+text but accept file-only
+        const fileOnly: ShareData = { files: [file] };
+        if (canShareFiles(fileOnly)) {
+          console.log("[Share] canShare(file-only) — opening share sheet");
+          await navigator.share(fileOnly);
+          return "shared";
+        }
+
+        console.warn("[Share] File share not supported. Falling back to download...");
       }
 
-      // Try sharing just the URL (works in more browsers/devices)
-      await navigator.share({
-        title: `Invoice ${invoiceNumber}`,
-        text: shareText,
-        url: pdfUrl,
-      });
-      return "shared";
+      console.warn("[Share] Could not share PDF file — falling back to download");
     } else {
       console.log("[Share] Native share API NOT available — will download");
     }
 
-    // Step 3: Fallback — download/open the PDF
+    // Step 3: Fallback — always download the PDF (never send bare URL as text)
     if (blob) {
       console.log("[Share] Downloading proxied PDF blob");
       downloadBlob(blob, fileName);
     } else {
-      console.log("[Share] Opening PDF URL directly");
+      console.log("[Share] Opening PDF URL directly for download");
       window.open(pdfUrl, "_blank", "noopener,noreferrer");
     }
     return "downloaded";
