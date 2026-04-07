@@ -234,7 +234,7 @@ export function InvoiceCard({
       const result = await shareInvoicePdf(
         invoice.id,
         invoice.invoiceNumber,
-        customerName,
+        invoice.status,
       );
 
       if (result === "shared") {

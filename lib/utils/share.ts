@@ -35,11 +35,14 @@ async function fetchPdfBlob(invoiceId: string): Promise<Blob | null> {
 export async function shareInvoicePdf(
   invoiceId: string,
   invoiceNumber: string,
-  customerName: string,
+  status?: string,
 ): Promise<"shared" | "downloaded" | "cancelled" | "error"> {
   try {
     const fileName = `${invoiceNumber}.pdf`;
-    const shareText = `Invoice ${invoiceNumber} for ${customerName}`;
+    const isEstimate = status === "draft" || status === "sent";
+    const docLabel = isEstimate ? "Estimate" : "Invoice";
+    const statusLabel = status ? ` | Status: ${status.charAt(0).toUpperCase() + status.slice(1)}` : "";
+    const shareText = `Hi, please find your ${docLabel} ${invoiceNumber}${statusLabel}`;
 
     // Step 1: Fetch PDF blob from backend
     const blob = await fetchPdfBlob(invoiceId);

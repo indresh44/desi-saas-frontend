@@ -584,7 +584,7 @@ export function InvoiceListView({
   const handleShareInvoice = async (invoice: Invoice) => {
     setShareLoadingByInvoice((prev) => ({ ...prev, [invoice.id]: true }));
     try {
-      await shareInvoicePdf(invoice.id, invoice.invoiceNumber, invoice.customerName ?? "Customer");
+      await shareInvoicePdf(invoice.id, invoice.invoiceNumber, invoice.status);
     } finally {
       setShareLoadingByInvoice((prev) => ({ ...prev, [invoice.id]: false }));
     }
