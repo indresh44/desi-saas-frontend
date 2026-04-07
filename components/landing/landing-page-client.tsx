@@ -441,6 +441,7 @@ export default function LandingPageClient() {
           {["Features", "Comparison", "Pricing"].map((l) => (
             <a key={l} href={`#${l.toLowerCase()}`} style={{ color: C.navy, fontWeight: 700, textDecoration: "none", fontSize: 14 }}>{l}</a>
           ))}
+          <Link href="/blog" style={{ color: C.navy, fontWeight: 700, textDecoration: "none", fontSize: 14 }}>Blog</Link>
         </div>
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
           <Link href="/login" style={{ fontWeight: 700, color: C.navy, fontSize: 14, textDecoration: "none" }}>Login</Link>
