@@ -48,7 +48,11 @@ export function UpdateInvoiceForm({ data, onChange }: UpdateInvoiceFormProps) {
             {String(data.current_status ?? "draft")}
           </span>
           <ArrowRight className="h-3 w-3 text-zinc-400" />
-          <span className="rounded-full bg-blue-100 px-2 py-0.5 font-medium text-blue-700">
+          <span className={`rounded-full px-2 py-0.5 font-medium ${
+            changes.new_status === "approved"
+              ? "bg-teal-100 text-teal-700"
+              : "bg-blue-100 text-blue-700"
+          }`}>
             {String(changes.new_status)}
           </span>
         </div>

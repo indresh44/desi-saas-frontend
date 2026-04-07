@@ -1,19 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Download, Loader2, Pencil, Plus, RefreshCw, Share2 } from "lucide-react";
+import { CheckCircle, ChevronDown, ChevronUp, Download, Loader2, Pencil, Plus, RefreshCw, Share2 } from "lucide-react";
 import { PaymentAttachmentPreview } from "@/components/leads/payment-attachment-preview";
 import { Button } from "@/components/ui/button";
 import { RecordPaymentModal } from "@/components/leads/record-payment-modal";
-import { fetchInvoicePayments, getInvoicePdf } from "@/lib/api/invoices";
+import { fetchInvoicePayments, getInvoicePdf, updateInvoiceStatus } from "@/lib/api/invoices";
 import { shareInvoicePdf } from "@/lib/utils/share";
-import type { Invoice, Payment, PaymentMethod } from "@/lib/types/invoice";
+import type { Invoice, InvoiceStatus, Payment, PaymentMethod } from "@/lib/types/invoice";
 
 type Props = {
   invoice: Invoice;
   customerName?: string;
   onEdit?: (invoice: Invoice) => void;
   onPaymentRecorded: () => void;
+  onStatusChanged?: (invoice: Invoice) => void;
 };
 
 function toSafeNumber(value: unknown): number {
@@ -50,9 +51,9 @@ function formatDate(value: string): string {
 
 function getInvoiceStatusClass(status: Invoice["status"]): string {
   if (status === "paid") return "bg-green-100 text-green-700";
+  if (status === "approved") return "bg-teal-100 text-teal-700";
   if (status === "sent") return "bg-blue-100 text-blue-700";
   if (status === "partial") return "bg-amber-100 text-amber-700";
-  if (status === "overdue") return "bg-red-100 text-red-700";
   return "bg-zinc-100 text-zinc-600";
 }
 
@@ -75,6 +76,7 @@ export function InvoiceCard({
   customerName = "Customer",
   onEdit,
   onPaymentRecorded,
+  onStatusChanged,
 }: Props) {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoadingPayments, setIsLoadingPayments] = useState(true);
@@ -85,6 +87,7 @@ export function InvoiceCard({
   const [shareLoading, setShareLoading] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [shareMessage, setShareMessage] = useState<string | null>(null);
+  const [statusChanging, setStatusChanging] = useState<InvoiceStatus | null>(null);
 
   const loadPayments = useCallback(async () => {
     setIsLoadingPayments(true);
@@ -167,12 +170,31 @@ export function InvoiceCard({
   );
 
   const remainingClass =
-    invoice.status === "overdue"
-      ? "text-red-600"
-      : invoice.status === "partial"
-        ? "text-amber-600"
-        : "text-zinc-500";
+    invoice.status === "partial"
+      ? "text-amber-600"
+      : "text-zinc-500";
   const canEditInvoice = invoice.status === "draft" && !!onEdit;
+
+  const handleStatusChange = async (targetStatus: "sent" | "approved") => {
+    setStatusChanging(targetStatus as InvoiceStatus);
+    try {
+      const updated = await updateInvoiceStatus(invoice.id, targetStatus);
+      onStatusChanged?.(updated);
+    } catch (err) {
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "message" in err &&
+        typeof (err as { message: unknown }).message === "string"
+      ) {
+        setPdfError((err as { message: string }).message);
+      } else {
+        setPdfError("Failed to update status.");
+      }
+    } finally {
+      setStatusChanging(null);
+    }
+  };
 
   const handlePaymentSuccess = () => {
     setIsRecordPaymentOpen(false);
@@ -281,7 +303,26 @@ export function InvoiceCard({
               {canEditInvoice ? " • Editable" : " • Editable only in draft"}
             </p>
 
-            <div className="mt-2 flex justify-end gap-2">
+            <div className="mt-2 flex items-center justify-end gap-2">
+              {invoice.status === "draft" || invoice.status === "sent" ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void handleStatusChange("approved")}
+                  disabled={statusChanging !== null}
+                  title="Approve invoice"
+                  className="border-teal-200 text-teal-700 hover:bg-teal-50"
+                >
+                  {statusChanging === "approved" ? (
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <CheckCircle className="h-3.5 w-3.5" />
+                  )}
+                  Approve
+                </Button>
+              ) : null}
+
               <Button
                 type="button"
                 size="sm"
@@ -358,11 +399,7 @@ export function InvoiceCard({
           <div className="h-2 overflow-hidden rounded-full bg-zinc-200">
             <div
               className={`h-full rounded-full transition-[width] ${
-                invoice.status === "paid"
-                  ? "bg-green-500"
-                  : invoice.status === "overdue"
-                    ? "bg-red-500"
-                    : "bg-amber-500"
+                invoice.status === "paid" ? "bg-green-500" : "bg-amber-500"
               }`}
               style={{ width: `${progressPercent}%` }}
             />

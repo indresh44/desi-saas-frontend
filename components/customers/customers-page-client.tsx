@@ -40,10 +40,18 @@ export default function CustomersPageClient() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [gstNumber, setGstNumber] = useState("");
   const [editingCustomerId, setEditingCustomerId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [editAddress, setEditAddress] = useState("");
+  const [editCity, setEditCity] = useState("");
+  const [editState, setEditState] = useState("");
+  const [editGstNumber, setEditGstNumber] = useState("");
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [outstandingByCustomer, setOutstandingByCustomer] = useState<
     Record<string, OutstandingState>
@@ -141,11 +149,19 @@ export default function CustomersPageClient() {
           name: trimmedName,
           phone: trimmedPhone,
           email: normalizeEmail(trimmedEmail),
+          address: address.trim() || undefined,
+          city: city.trim() || undefined,
+          state: state.trim() || undefined,
+          gst_number: gstNumber.trim().toUpperCase() || undefined,
         });
 
         setName("");
         setPhone("");
         setEmail("");
+        setAddress("");
+        setCity("");
+        setState("");
+        setGstNumber("");
         setShowCreateForm(false);
         await loadCustomers();
       } catch (error) {
@@ -156,7 +172,7 @@ export default function CustomersPageClient() {
         setIsCreating(false);
       }
     },
-    [email, loadCustomers, name, phone]
+    [address, city, email, gstNumber, loadCustomers, name, phone, state]
   );
 
   const resetEditState = useCallback(() => {
@@ -164,6 +180,10 @@ export default function CustomersPageClient() {
     setEditName("");
     setEditPhone("");
     setEditEmail("");
+    setEditAddress("");
+    setEditCity("");
+    setEditState("");
+    setEditGstNumber("");
     setIsSavingEdit(false);
   }, []);
 
@@ -173,6 +193,10 @@ export default function CustomersPageClient() {
     setEditName(customer.name);
     setEditPhone(customer.phone);
     setEditEmail(customer.email ?? "");
+    setEditAddress(customer.address ?? "");
+    setEditCity(customer.city ?? "");
+    setEditState(customer.state ?? "");
+    setEditGstNumber(customer.gstNumber ?? "");
   }, []);
 
   const handleCancelEdit = useCallback(() => {
@@ -192,17 +216,17 @@ export default function CustomersPageClient() {
 
       const updates: UpdateCustomerInput = {};
 
-      if (trimmedName !== customer.name) {
-        updates.name = trimmedName;
-      }
-
-      if (trimmedPhone !== customer.phone) {
-        updates.phone = trimmedPhone;
-      }
-
-      if (normalizedEditEmail !== customer.email) {
-        updates.email = normalizedEditEmail;
-      }
+      if (trimmedName !== customer.name) updates.name = trimmedName;
+      if (trimmedPhone !== customer.phone) updates.phone = trimmedPhone;
+      if (normalizedEditEmail !== customer.email) updates.email = normalizedEditEmail;
+      const trimmedEditAddress = editAddress.trim() || null;
+      if (trimmedEditAddress !== (customer.address ?? null)) updates.address = trimmedEditAddress;
+      const trimmedEditCity = editCity.trim() || null;
+      if (trimmedEditCity !== (customer.city ?? null)) updates.city = trimmedEditCity;
+      const trimmedEditState = editState.trim() || null;
+      if (trimmedEditState !== (customer.state ?? null)) updates.state = trimmedEditState;
+      const trimmedEditGst = editGstNumber.trim().toUpperCase() || null;
+      if (trimmedEditGst !== (customer.gstNumber ?? null)) updates.gst_number = trimmedEditGst;
 
       if (Object.keys(updates).length === 0) {
         resetEditState();
@@ -227,7 +251,7 @@ export default function CustomersPageClient() {
         setIsSavingEdit(false);
       }
     },
-    [editEmail, editName, editPhone, resetEditState]
+    [editAddress, editCity, editEmail, editGstNumber, editName, editPhone, editState, resetEditState]
   );
 
   const handleWhatsApp = useCallback((phoneNumber: string) => {
@@ -324,6 +348,57 @@ export default function CustomersPageClient() {
                 className={inputClassName}
               />
             </label>
+
+            <label className="space-y-1 sm:col-span-2">
+              <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                Address
+              </span>
+              <input
+                type="text"
+                value={address}
+                onChange={(event) => setAddress(event.target.value)}
+                className={inputClassName}
+                placeholder="Street / area"
+              />
+            </label>
+
+            <label className="space-y-1">
+              <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                City
+              </span>
+              <input
+                type="text"
+                value={city}
+                onChange={(event) => setCity(event.target.value)}
+                className={inputClassName}
+              />
+            </label>
+
+            <label className="space-y-1">
+              <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                State
+              </span>
+              <input
+                type="text"
+                value={state}
+                onChange={(event) => setState(event.target.value)}
+                className={inputClassName}
+              />
+            </label>
+
+            <label className="space-y-1">
+              <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                GST Number
+              </span>
+              <input
+                type="text"
+                value={gstNumber}
+                onChange={(event) => setGstNumber(event.target.value)}
+                className={inputClassName}
+                placeholder="15-digit GSTIN"
+                maxLength={15}
+              />
+            </label>
           </div>
 
           <div className="mt-4 flex items-center gap-2">
@@ -393,6 +468,41 @@ export default function CustomersPageClient() {
                           className={inputClassName}
                           disabled={isSavingEdit}
                           placeholder="Email"
+                        />
+                        <input
+                          type="text"
+                          value={editAddress}
+                          onChange={(event) => setEditAddress(event.target.value)}
+                          className={inputClassName}
+                          disabled={isSavingEdit}
+                          placeholder="Address"
+                        />
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            value={editCity}
+                            onChange={(event) => setEditCity(event.target.value)}
+                            className={inputClassName}
+                            disabled={isSavingEdit}
+                            placeholder="City"
+                          />
+                          <input
+                            type="text"
+                            value={editState}
+                            onChange={(event) => setEditState(event.target.value)}
+                            className={inputClassName}
+                            disabled={isSavingEdit}
+                            placeholder="State"
+                          />
+                        </div>
+                        <input
+                          type="text"
+                          value={editGstNumber}
+                          onChange={(event) => setEditGstNumber(event.target.value)}
+                          className={inputClassName}
+                          disabled={isSavingEdit}
+                          placeholder="GST Number"
+                          maxLength={15}
                         />
                         <div className="flex gap-2 pt-1">
                           <Button

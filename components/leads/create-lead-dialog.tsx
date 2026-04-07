@@ -15,16 +15,15 @@ import {
 } from "@/lib/api/customers";
 import { Customer } from "@/lib/types/customer";
 
-const leadSourceOptions = [
-  "Referral",
-  "Walk-in",
-  "Instagram",
-  "WhatsApp",
-  "JustDial",
-  "IndiaMART",
-  "Website",
-  "Other",
-] as const;
+const leadSourceOptions: { value: string; label: string }[] = [
+  { value: "referral", label: "Referral" },
+  { value: "walk_in", label: "Walk-in" },
+  { value: "instagram", label: "Instagram" },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "justdial", label: "JustDial" },
+  { value: "website", label: "Website" },
+  { value: "other", label: "Other" },
+];
 
 const createLeadSchema = z
   .object({
@@ -347,8 +346,8 @@ export function CreateLeadDialog({
                           <select {...form.register("source")} className={inputClassName}>
                             <option value="">Select source</option>
                             {leadSourceOptions.map((source) => (
-                              <option key={source} value={source}>
-                                {source}
+                              <option key={source.value} value={source.value}>
+                                {source.label}
                               </option>
                             ))}
                           </select>

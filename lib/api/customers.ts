@@ -30,6 +30,10 @@ function toCustomerModel(raw: CustomerApiResponse): Customer {
     phone: raw.phone,
     email: raw.email,
     notes: raw.notes ?? null,
+    address: raw.address ?? null,
+    city: raw.city ?? null,
+    state: raw.state ?? null,
+    gstNumber: raw.gst_number ?? null,
     createdAt: raw.created_at,
   };
 }

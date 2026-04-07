@@ -237,6 +237,18 @@ export async function updateInvoice(
   return toInvoiceModel(result.data);
 }
 
+export async function updateInvoiceStatus(
+  invoiceId: string,
+  status: "sent" | "approved"
+): Promise<Invoice> {
+  const result = await apiClient<InvoiceApiResponse>(API_ENDPOINTS.invoiceById(invoiceId), {
+    method: "PATCH",
+    body: { invoice: { status } },
+  });
+
+  return toInvoiceModel(result.data);
+}
+
 export async function fetchCustomerOutstanding(
   customerId: string
 ): Promise<CustomerOutstanding> {

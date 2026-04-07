@@ -69,7 +69,7 @@ function isActiveLead(lead: Lead): boolean {
 }
 
 function isPendingInvoice(status: InvoiceStatus): boolean {
-  return status === "sent" || status === "partial" || status === "overdue";
+  return status === "sent" || status === "approved" || status === "partial";
 }
 
 export default function CustomerDetailClient({ customerId }: { customerId: string }) {
@@ -291,7 +291,7 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
           <button
             type="button"
             onClick={() => {
-              setInvoiceStatusPreset("overdue");
+              setInvoiceStatusPreset("partial");
               switchTab("invoices");
             }}
             className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-3 text-left"
@@ -410,7 +410,7 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
                           <p className="text-sm font-medium text-zinc-900">{invoice.invoiceNumber}</p>
                           <p className="text-xs text-zinc-500">{formatRupees(Number(invoice.totalAmount))}</p>
                         </div>
-                        <span className={`rounded-full px-2 py-1 text-xs font-medium capitalize ${invoice.status === "overdue" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>
+                        <span className={`rounded-full px-2 py-1 text-xs font-medium capitalize ${invoice.status === "approved" ? "bg-teal-100 text-teal-700" : "bg-amber-100 text-amber-700"}`}>
                           {invoice.status}
                         </span>
                       </div>

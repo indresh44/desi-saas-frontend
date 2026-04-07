@@ -508,8 +508,8 @@ export default function Post6Content() {
           <ChatFlowMockup lang={lang} />
           <p style={{ marginTop: 12 }}>
             {t(
-              "The AI calculates GST on the taxable amount, splits it into CGST + SGST (or IGST for inter-state), fills in the SAC code, and generates a PDF — all from a single chat message. You just share the PDF on WhatsApp.",
-              "AI taxable amount pe GST calculate karta hai, CGST + SGST mein split karta hai (inter-state ke liye IGST), SAC code fill karta hai, aur PDF generate karta hai — ek single chat message se. Aap bas PDF WhatsApp pe share karo."
+              "The AI calculates GST on the taxable amount, splits it into CGST + SGST (or IGST for inter-state), and generates a PDF — all from a single chat message. Add your SAC code in catalog items — it auto-fills on every invoice. You just share the PDF on WhatsApp.",
+              "AI taxable amount pe GST calculate karta hai, CGST + SGST mein split karta hai (inter-state ke liye IGST), aur PDF generate karta hai — ek single chat message se. Catalog items mein SAC code add karo — har invoice pe auto-fill ho jaata hai. Aap bas PDF WhatsApp pe share karo."
             )}
           </p>
           <div style={{ marginTop: 16, padding: "14px 18px", background: `${C.navy}06`, border: `3px solid ${C.navy}22`, fontSize: 14, fontWeight: 700, color: `${C.navy}bb`, lineHeight: 1.6 }}>

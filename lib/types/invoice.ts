@@ -1,4 +1,4 @@
-export type InvoiceStatus = "draft" | "sent" | "paid" | "partial" | "overdue";
+export type InvoiceStatus = "draft" | "sent" | "approved" | "partial" | "paid";
 export type PaymentMethod = "upi" | "cash" | "bank_transfer" | "card";
 
 export interface InvoiceItem {

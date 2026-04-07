@@ -432,7 +432,7 @@ export default function Post7Content() {
         {/* TIP 5 */}
         <TipCard
           number="05"
-          title={t("Invoice gayi — kaise track karein ki mili ki nahi", "Invoice sent — how to track if the client received it")}
+          title={t("Invoice share karne ke baad follow-up set karo", "Set a follow-up after sharing to make sure they saw it")}
           icon="track_changes"
           color={C.coral}
           shadowColor={C.teal}

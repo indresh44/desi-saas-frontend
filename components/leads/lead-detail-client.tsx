@@ -576,6 +576,11 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
                   onPaymentRecorded={() => {
                     void refreshInvoices();
                   }}
+                  onStatusChanged={(updated) => {
+                    setInvoices((prev) =>
+                      prev.map((i) => (i.id === updated.id ? updated : i))
+                    );
+                  }}
                 />
               ))}
             </div>

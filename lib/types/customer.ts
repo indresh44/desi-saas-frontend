@@ -4,6 +4,10 @@ export type Customer = {
   phone: string;
   email: string | null;
   notes?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  gstNumber?: string | null;
   createdAt?: string;
 };
 
@@ -13,6 +17,10 @@ export type CustomerApiResponse = {
   phone: string;
   email: string | null;
   notes?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  gst_number?: string | null;
   created_at?: string;
 };
 
@@ -26,6 +34,10 @@ export type CreateCustomerInput = {
   phone: string;
   email?: string | null;
   notes?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  gst_number?: string | null;
 };
 
 export type UpdateCustomerInput = {
@@ -33,6 +45,10 @@ export type UpdateCustomerInput = {
   phone?: string;
   email?: string | null;
   notes?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  gst_number?: string | null;
 };
 
 export type CustomerRecentActivityApiResponse = {

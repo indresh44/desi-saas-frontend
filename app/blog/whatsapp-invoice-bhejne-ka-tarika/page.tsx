@@ -54,7 +54,7 @@ const jsonLd = {
     { "@type": "HowToStep", text: "Create a professional PDF invoice with all required fields" },
     { "@type": "HowToStep", text: "Send the PDF file (not a screenshot) with a proper message" },
     { "@type": "HowToStep", text: "Include payment details on the invoice" },
-    { "@type": "HowToStep", text: "Track whether the client received it and set a follow-up" },
+    { "@type": "HowToStep", text: "Set a follow-up after sharing to make sure they saw it" },
   ],
   mainEntityOfPage:
     "https://sellnsettle.com/blog/whatsapp-invoice-bhejne-ka-tarika",

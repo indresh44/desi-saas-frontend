@@ -91,8 +91,8 @@ function BeforeAfterCRM({ lang }: { lang: Lang }) {
         </div>
         <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
           {(lang === "hi"
-            ? ["🔍 Ek jagah search karo — sab mil jaaye", "📊 Har client ka stage pata hai", "📝 Notes, calls, quotes — sab ek timeline mein", "🧾 Invoice bhi wahi se bana do", "✅ Follow-up set hai, bhoolna possible nahi"]
-            : ["🔍 One search — find everything", "📊 Every client's stage is clear", "📝 Notes, calls, quotes — all in one timeline", "🧾 Create invoices from the same place", "✅ Follow-ups are set, forgetting is impossible"]
+            ? ["🔍 Ek jagah search karo — sab mil jaaye", "📊 Har client ka stage pata hai", "📝 Notes, calls, invoices — sab ek timeline mein", "🧾 Invoice bhi wahi se bana do", "✅ Follow-up set hai, bhoolna possible nahi"]
+            : ["🔍 One search — find everything", "📊 Every client's stage is clear", "📝 Notes, calls, invoices — all in one timeline", "🧾 Create invoices from the same place", "✅ Follow-ups are set, forgetting is impossible"]
           ).map((item, i) => (
             <div key={i} style={{ fontSize: 14, fontWeight: 600, color: C.navy, lineHeight: 1.5 }}>{item}</div>
           ))}
