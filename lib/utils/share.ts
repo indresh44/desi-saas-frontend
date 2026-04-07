@@ -9,12 +9,6 @@ export function canNativeShare(): boolean {
   return typeof navigator.share === "function";
 }
 
-function canShareFiles(data: ShareData): boolean {
-  if (typeof navigator === "undefined") return false;
-  if (typeof navigator.canShare !== "function") return false;
-  return navigator.canShare(data);
-}
-
 export async function shareInvoicePdf(
   pdfUrl: string,
   invoiceNumber: string,
@@ -42,42 +36,39 @@ export async function shareInvoicePdf(
       console.warn("[Share] Proxy fetch threw error, continuing with URL fallback:", proxyError);
     }
 
-    // Step 2: Try native share (mobile)
-    if (canNativeShare()) {
-      console.log("[Share] Native share API available");
+    // Step 2: Try native share with actual PDF file (mobile)
+    if (canNativeShare() && blob) {
+      const file = new File([blob], fileName, { type: "application/pdf" });
 
-      if (blob) {
-        const file = new File([blob], fileName, { type: "application/pdf" });
-
-        // Try file + text first
-        const fileWithText: ShareData = {
+      // Try sharing file + caption text
+      try {
+        console.log("[Share] Attempting navigator.share with PDF file");
+        await navigator.share({
           title: `Invoice ${invoiceNumber}`,
           text: shareText,
           files: [file],
-        };
-        if (canShareFiles(fileWithText)) {
-          console.log("[Share] canShare(file+text) — opening share sheet");
-          await navigator.share(fileWithText);
-          return "shared";
+        });
+        return "shared";
+      } catch (fileTextErr) {
+        if ((fileTextErr as { name?: string })?.name === "AbortError") {
+          return "cancelled";
         }
-
-        // Some browsers reject file+text but accept file-only
-        const fileOnly: ShareData = { files: [file] };
-        if (canShareFiles(fileOnly)) {
-          console.log("[Share] canShare(file-only) — opening share sheet");
-          await navigator.share(fileOnly);
-          return "shared";
-        }
-
-        console.warn("[Share] File share not supported. Falling back to download...");
+        console.warn("[Share] File+text share failed, trying file-only:", fileTextErr);
       }
 
-      console.warn("[Share] Could not share PDF file — falling back to download");
-    } else {
-      console.log("[Share] Native share API NOT available — will download");
+      // Some devices reject file+text but accept file-only
+      try {
+        await navigator.share({ files: [file] });
+        return "shared";
+      } catch (fileOnlyErr) {
+        if ((fileOnlyErr as { name?: string })?.name === "AbortError") {
+          return "cancelled";
+        }
+        console.warn("[Share] File-only share also failed:", fileOnlyErr);
+      }
     }
 
-    // Step 3: Fallback — always download the PDF (never send bare URL as text)
+    // Step 3: Fallback — download the PDF
     if (blob) {
       console.log("[Share] Downloading proxied PDF blob");
       downloadBlob(blob, fileName);
