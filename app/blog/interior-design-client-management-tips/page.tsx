@@ -19,6 +19,14 @@ export const metadata: Metadata = {
     type: "article",
     publishedTime: "2026-04-10T00:00:00Z",
     authors: ["SellNSettle"],
+    images: [
+      {
+        url: "https://sellnsettle.com/og-blog.png",
+        width: 1200,
+        height: 630,
+        alt: "SellNSettle Blog",
+      },
+    ],
   },
   alternates: {
     canonical:

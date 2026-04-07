@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     // TODO: Add OG image once designed
     images: [
       {
-        url: "https://pub-868a57b0f5d74de78768fa0dccf4fb9a.r2.dev/assets/svgviewer-png-output.png",
+        url:  "https://sellnsettle.com/og-image.png",
         width: 1200,
         height: 630,
         alt: "SellNSettle — Chat-first CRM for Indian small businesses",
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     description:
       "India's first chat-first CRM. Track leads, send invoices, collect payments — just by chatting. Works in Hindi, English & Hinglish.",
     // TODO: Add Twitter image
-    images: ["https://pub-868a57b0f5d74de78768fa0dccf4fb9a.r2.dev/assets/svgviewer-png-output.png"],
+    images: ["https://sellnsettle.com/og-image.png"],
   },
   robots: {
     index: true,
