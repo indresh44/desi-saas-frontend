@@ -18,29 +18,35 @@ export async function shareInvoicePdf(
     const fileName = `${invoiceNumber}.pdf`;
     const shareText = `Invoice ${invoiceNumber} for ${customerName}`;
 
-    // Step 1: Fetch the PDF blob. Try direct R2 URL first (public bucket),
-    // then fall back to our Next.js proxy if CORS blocks it.
+    // Step 1: Fetch the PDF blob via our proxy (avoids R2 CORS issues).
+    // If proxy fails, try direct fetch as fallback.
     let blob: Blob | null = null;
+    const proxyUrl = `${API_BASE}/api/pdf-proxy?url=${encodeURIComponent(pdfUrl)}`;
+
     try {
-      console.log("[Share] Fetching PDF directly:", pdfUrl);
-      const response = await fetch(pdfUrl);
+      console.log("[Share] Fetching PDF via proxy:", proxyUrl);
+      const response = await fetch(proxyUrl);
       if (response.ok) {
         blob = await response.blob();
-        console.log("[Share] PDF fetched directly, size:", blob.size, "bytes");
+        console.log("[Share] PDF fetched via proxy, size:", blob.size, "bytes");
       } else {
-        console.warn("[Share] Direct fetch failed:", response.status);
+        console.warn("[Share] Proxy fetch failed:", response.status, response.statusText);
       }
-    } catch (directErr) {
-      console.warn("[Share] Direct fetch failed (CORS?), trying proxy:", directErr);
+    } catch (proxyErr) {
+      console.warn("[Share] Proxy fetch error:", proxyErr);
+    }
+
+    // Fallback: try fetching directly from R2 (works if CORS is configured)
+    if (!blob) {
       try {
-        const proxyUrl = `${API_BASE}/api/pdf-proxy?url=${encodeURIComponent(pdfUrl)}`;
-        const response = await fetch(proxyUrl);
+        console.log("[Share] Trying direct fetch:", pdfUrl);
+        const response = await fetch(pdfUrl);
         if (response.ok) {
           blob = await response.blob();
-          console.log("[Share] PDF fetched via proxy, size:", blob.size, "bytes");
+          console.log("[Share] PDF fetched directly, size:", blob.size, "bytes");
         }
-      } catch (proxyErr) {
-        console.warn("[Share] Proxy also failed:", proxyErr);
+      } catch (directErr) {
+        console.warn("[Share] Direct fetch also failed (CORS):", directErr);
       }
     }
 

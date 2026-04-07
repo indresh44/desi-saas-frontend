@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const runtime = "edge";
+
 // Security: only allow proxying from your R2 domain and known storage providers
 const ALLOWED_DOMAINS = [
   "pub-",                         // Cloudflare R2 public bucket URLs start with pub- (e.g., pub-xxx.r2.dev)
