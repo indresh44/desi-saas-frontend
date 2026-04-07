@@ -2,15 +2,38 @@
  * Share a file using the Web Share API (mobile) or fall back to download (desktop).
  */
 
-const API_BASE = typeof window !== "undefined" ? window.location.origin : "";
+import { API_BASE_URL } from "@/lib/constants/api";
+import { getAccessToken } from "@/lib/auth/token-store";
 
 export function canNativeShare(): boolean {
   if (typeof navigator === "undefined") return false;
   return typeof navigator.share === "function";
 }
 
+/**
+ * Fetch the PDF blob from our backend (server-to-server, no CORS issues).
+ */
+async function fetchPdfBlob(invoiceId: string): Promise<Blob | null> {
+  const token = getAccessToken();
+  const url = `${API_BASE_URL}/api/v1/invoices/${invoiceId}/pdf/download`;
+  console.log("[Share] Fetching PDF from backend:", url);
+
+  const response = await fetch(url, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+
+  if (!response.ok) {
+    console.warn("[Share] Backend PDF fetch failed:", response.status);
+    return null;
+  }
+
+  const blob = await response.blob();
+  console.log("[Share] PDF fetched, size:", blob.size, "bytes");
+  return blob;
+}
+
 export async function shareInvoicePdf(
-  pdfUrl: string,
+  invoiceId: string,
   invoiceNumber: string,
   customerName: string,
 ): Promise<"shared" | "downloaded" | "cancelled" | "error"> {
@@ -18,43 +41,13 @@ export async function shareInvoicePdf(
     const fileName = `${invoiceNumber}.pdf`;
     const shareText = `Invoice ${invoiceNumber} for ${customerName}`;
 
-    // Step 1: Fetch the PDF blob via our proxy (avoids R2 CORS issues).
-    // If proxy fails, try direct fetch as fallback.
-    let blob: Blob | null = null;
-    const proxyUrl = `${API_BASE}/api/pdf-proxy?url=${encodeURIComponent(pdfUrl)}`;
-
-    try {
-      console.log("[Share] Fetching PDF via proxy:", proxyUrl);
-      const response = await fetch(proxyUrl);
-      if (response.ok) {
-        blob = await response.blob();
-        console.log("[Share] PDF fetched via proxy, size:", blob.size, "bytes");
-      } else {
-        console.warn("[Share] Proxy fetch failed:", response.status, response.statusText);
-      }
-    } catch (proxyErr) {
-      console.warn("[Share] Proxy fetch error:", proxyErr);
-    }
-
-    // Fallback: try fetching directly from R2 (works if CORS is configured)
-    if (!blob) {
-      try {
-        console.log("[Share] Trying direct fetch:", pdfUrl);
-        const response = await fetch(pdfUrl);
-        if (response.ok) {
-          blob = await response.blob();
-          console.log("[Share] PDF fetched directly, size:", blob.size, "bytes");
-        }
-      } catch (directErr) {
-        console.warn("[Share] Direct fetch also failed (CORS):", directErr);
-      }
-    }
+    // Step 1: Fetch PDF blob from backend
+    const blob = await fetchPdfBlob(invoiceId);
 
     // Step 2: Try native share with actual PDF file (mobile)
     if (canNativeShare() && blob) {
       const file = new File([blob], fileName, { type: "application/pdf" });
 
-      // Try sharing file + caption text
       try {
         console.log("[Share] Attempting navigator.share with PDF file");
         await navigator.share({
@@ -84,29 +77,25 @@ export async function shareInvoicePdf(
 
     // Step 3: Fallback — download the PDF
     if (blob) {
-      console.log("[Share] Downloading proxied PDF blob");
+      console.log("[Share] Downloading PDF blob");
       downloadBlob(blob, fileName);
     } else {
-      console.log("[Share] Opening PDF URL directly for download");
-      window.open(pdfUrl, "_blank", "noopener,noreferrer");
+      console.error("[Share] Could not fetch PDF");
+      return "error";
     }
     return "downloaded";
 
   } catch (error) {
-    // User cancelled the share sheet
     if (
       typeof error === "object" &&
       error !== null &&
       "name" in error &&
       (error as { name: string }).name === "AbortError"
     ) {
-      console.log("[Share] User cancelled");
       return "cancelled";
     }
 
     console.error("[Share] Error:", error);
-    // Do NOT open in new tab — that was causing the problem.
-    // Just return error and let the UI handle it.
     return "error";
   }
 }

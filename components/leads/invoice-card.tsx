@@ -231,13 +231,8 @@ export function InvoiceCard({
     setShareMessage(null);
 
     try {
-      // First, ensure PDF exists (generate if needed)
-      const pdfUrl = invoice.pdfUrl ?? (await getInvoicePdf(invoice.id));
-      console.log("[InvoiceCard] PDF URL:", pdfUrl);
-
-      // Then share it
       const result = await shareInvoicePdf(
-        pdfUrl,
+        invoice.id,
         invoice.invoiceNumber,
         customerName,
       );
