@@ -18,22 +18,30 @@ export async function shareInvoicePdf(
     const fileName = `${invoiceNumber}.pdf`;
     const shareText = `Invoice ${invoiceNumber} for ${customerName}`;
 
-    // Step 1: Try to fetch the PDF through our Next.js proxy (avoids R2 CORS issues).
-    // If this fails, we still continue with URL share/open fallback.
+    // Step 1: Fetch the PDF blob. Try direct R2 URL first (public bucket),
+    // then fall back to our Next.js proxy if CORS blocks it.
     let blob: Blob | null = null;
     try {
-      const proxyUrl = `${API_BASE}/api/pdf-proxy?url=${encodeURIComponent(pdfUrl)}`;
-      console.log("[Share] Fetching PDF via proxy:", proxyUrl);
-
-      const response = await fetch(proxyUrl);
-      if (!response.ok) {
-        console.warn("[Share] Proxy fetch failed:", response.status, response.statusText);
-      } else {
+      console.log("[Share] Fetching PDF directly:", pdfUrl);
+      const response = await fetch(pdfUrl);
+      if (response.ok) {
         blob = await response.blob();
-        console.log("[Share] PDF fetched, size:", blob.size, "bytes");
+        console.log("[Share] PDF fetched directly, size:", blob.size, "bytes");
+      } else {
+        console.warn("[Share] Direct fetch failed:", response.status);
       }
-    } catch (proxyError) {
-      console.warn("[Share] Proxy fetch threw error, continuing with URL fallback:", proxyError);
+    } catch (directErr) {
+      console.warn("[Share] Direct fetch failed (CORS?), trying proxy:", directErr);
+      try {
+        const proxyUrl = `${API_BASE}/api/pdf-proxy?url=${encodeURIComponent(pdfUrl)}`;
+        const response = await fetch(proxyUrl);
+        if (response.ok) {
+          blob = await response.blob();
+          console.log("[Share] PDF fetched via proxy, size:", blob.size, "bytes");
+        }
+      } catch (proxyErr) {
+        console.warn("[Share] Proxy also failed:", proxyErr);
+      }
     }
 
     // Step 2: Try native share with actual PDF file (mobile)
