@@ -44,7 +44,8 @@ interface AuthContextValue {
   logout: () => Promise<void>;
 }
 
-const PUBLIC_ROUTES = ["/", "/login", "/register"];
+const PUBLIC_ROUTES = ["/", "/login", "/register", "/blog"];
+const AUTH_ONLY_ROUTES = ["/login", "/register"];
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
@@ -56,6 +57,12 @@ function isPublicRoute(pathname: string): boolean {
 
     return pathname.startsWith(route);
   });
+}
+
+function isAuthOnlyRoute(pathname: string): boolean {
+  return AUTH_ONLY_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  );
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -142,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       router.replace("/login");
     }
 
-    if (user && isPublicRoute(pathname)) {
+    if (user && isAuthOnlyRoute(pathname)) {
       router.replace("/");
     }
   }, [isLoading, pathname, router, user]);

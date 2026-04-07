@@ -1,0 +1,13 @@
+# SellNSettle robots.txt
+# https://sellnsettle.com/robots.txt
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /login
+Disallow: /register
+
+# Sitemap
+Sitemap: https://sellnsettle.com/sitemap.xml

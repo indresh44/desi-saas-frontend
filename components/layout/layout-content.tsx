@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { useAuth } from "@/lib/auth/auth-context";
 
-const PUBLIC_ROUTES = ["/", "/login", "/register"];
+const PUBLIC_ROUTES = ["/", "/login", "/register", "/blog"];
 
 function isPublicRoute(pathname: string): boolean {
   return PUBLIC_ROUTES.some((route) => {
