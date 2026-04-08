@@ -43,7 +43,7 @@ export function PdfPreviewCard({ pdf }: PdfPreviewCardProps) {
   const token = getAccessToken();
   const previewFile = {
     url: `${API_BASE_URL}/api/v1/invoices/${pdf.invoice_id}/pdf/download`,
-    httpHeaders: token ? { Authorization: `Bearer ${token}` } : {},
+    httpHeaders: token ? { Authorization: `Bearer ${token}` } : ({} as Record<string, string>),
   };
   const previewWidth = expanded ? 370 : 350;
 
