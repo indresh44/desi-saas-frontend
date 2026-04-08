@@ -37,7 +37,7 @@ export function MessageComposer({
         onChange={(event) => setValue(event.target.value)}
         disabled={isDisabled || isSending}
         placeholder={isDisabled ? "Messaging is blocked" : "Type a message"}
-        className="w-full resize-none rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-0 transition focus:border-zinc-500 disabled:cursor-not-allowed disabled:bg-zinc-100"
+        className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none ring-0 transition placeholder:text-muted-foreground/70 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-muted"
       />
       <Button
         type="submit"

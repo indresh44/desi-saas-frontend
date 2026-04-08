@@ -68,16 +68,16 @@ export function LeadWhatsAppChatDrawer({
     <>
       <button
         type="button"
-        className="fixed inset-0 z-40 bg-zinc-900/35"
+        className="fixed inset-0 z-40 bg-foreground/45"
         aria-label="Close chat"
         onClick={onClose}
       />
 
-      <aside className="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col border-l border-zinc-200 bg-zinc-50 shadow-2xl">
-        <header className="flex items-start justify-between border-b border-zinc-200 bg-white px-4 py-3">
+      <aside className="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col border-l border-border bg-background shadow-2xl">
+        <header className="flex items-start justify-between border-b border-border bg-card px-4 py-3">
           <div>
-            <h2 className="text-base font-semibold text-zinc-900">{headerTitle}</h2>
-            <p className="text-xs text-zinc-500">{headerSubtitle}</p>
+            <h2 className="text-base font-semibold text-primary">{headerTitle}</h2>
+            <p className="text-xs text-muted-foreground">{headerSubtitle}</p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -104,17 +104,17 @@ export function LeadWhatsAppChatDrawer({
 
         <div className="flex-1 overflow-y-auto p-4">
           {isLoading ? (
-            <div className="flex items-center gap-2 text-sm text-zinc-600">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
               Loading WhatsApp chat...
             </div>
           ) : null}
 
           {hasError ? (
-            <div className="space-y-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <div className="space-y-1 rounded-lg border border-red-300/50 bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-400">
               <p>{conversationError || messagesError}</p>
               {conversationError?.toLowerCase().includes("phone") ? (
-                <p className="text-red-500">
+                <p className="text-red-500 dark:text-red-300">
                   Please add a phone number to this lead&apos;s customer profile.
                 </p>
               ) : null}
@@ -126,9 +126,9 @@ export function LeadWhatsAppChatDrawer({
           ) : null}
         </div>
 
-        <footer className="border-t border-zinc-200 bg-white p-4">
+        <footer className="border-t border-border bg-card p-4">
           {conversation?.is_blocked ? (
-            <p className="mb-2 text-xs text-amber-700">
+            <p className="mb-2 text-xs text-amber-700 dark:text-amber-400">
               Messaging is blocked for this conversation.
             </p>
           ) : null}

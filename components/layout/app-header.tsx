@@ -1,9 +1,11 @@
 "use client";
 
-import { Menu } from "lucide-react";
+import { useState } from "react";
+import { Menu, Moon, SunMedium } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { APP_NAME } from "@/lib/constants/app";
 import { useAuth } from "@/lib/auth/auth-context";
+import { THEME_STORAGE_KEY, type Theme } from "@/lib/theme";
 
 type AppHeaderProps = {
   onMenuClick?: () => void;
@@ -11,6 +13,23 @@ type AppHeaderProps = {
 
 export function AppHeader({ onMenuClick }: AppHeaderProps) {
   const { user, business, logout } = useAuth();
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof document === "undefined") {
+      return "light";
+    }
+
+    return document.documentElement.classList.contains("dark") ? "dark" : "light";
+  });
+
+  const toggleTheme = () => {
+    const nextTheme: Theme = theme === "dark" ? "light" : "dark";
+    const root = document.documentElement;
+
+    root.classList.toggle("dark", nextTheme === "dark");
+    root.style.colorScheme = nextTheme;
+    window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+    setTheme(nextTheme);
+  };
 
   return (
     <header className="sticky top-0 z-20 border-b border-shell-border bg-shell-header-bg backdrop-blur">
@@ -37,6 +56,16 @@ export function AppHeader({ onMenuClick }: AppHeaderProps) {
         </div>
 
         <div className="flex items-center gap-3">
+          <Button
+            type="button"
+            size="icon-sm"
+            variant="outline"
+            onClick={toggleTheme}
+            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+          >
+            {theme === "dark" ? <SunMedium /> : <Moon />}
+          </Button>
           <div className="hidden text-right md:block">
             <p className="text-sm font-medium text-primary">
               {user?.name ?? "User"}

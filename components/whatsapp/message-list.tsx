@@ -31,7 +31,7 @@ function renderMessageBody(message: WhatsAppMessageRead) {
 export function MessageList({ messages }: MessageListProps) {
   if (messages.length === 0) {
     return (
-      <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-6 text-sm text-zinc-500">
+      <div className="rounded-lg border border-border bg-card px-4 py-6 text-sm text-muted-foreground">
         No messages yet.
       </div>
     );
@@ -51,8 +51,8 @@ export function MessageList({ messages }: MessageListProps) {
               className={cn(
                 "max-w-[85%] rounded-xl border px-3 py-2",
                 isOutgoing
-                  ? "border-zinc-300 bg-zinc-900 text-zinc-50"
-                  : "border-zinc-200 bg-white text-zinc-900"
+                  ? "border-primary/20 bg-primary text-primary-foreground"
+                  : "border-border bg-card text-foreground"
               )}
             >
               <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
@@ -61,7 +61,7 @@ export function MessageList({ messages }: MessageListProps) {
               <div
                 className={cn(
                   "mt-2 flex items-center gap-2 text-[11px]",
-                  isOutgoing ? "text-zinc-300" : "text-zinc-500"
+                  isOutgoing ? "text-primary-foreground/70" : "text-muted-foreground"
                 )}
               >
                 <span>{formatTime(message.created_at)}</span>

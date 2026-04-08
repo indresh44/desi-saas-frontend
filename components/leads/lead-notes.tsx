@@ -135,9 +135,9 @@ export function LeadNotes({ leadId, initialNotes, onSave }: LeadNotesProps) {
   }, []);
 
   return (
-    <section className="space-y-2 rounded-xl border border-zinc-200 bg-white p-3">
+    <section className="space-y-2 rounded-xl border bg-card p-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-zinc-900">Notes</h2>
+        <h2 className="text-sm font-semibold text-primary">Notes</h2>
         <span
           className={`text-xs transition-opacity duration-300 ${
             saveStatus === "idle" ? "opacity-0" : "opacity-100"
@@ -146,7 +146,7 @@ export function LeadNotes({ leadId, initialNotes, onSave }: LeadNotesProps) {
           data-lead-id={leadId}
         >
           {saveStatus === "saving" ? (
-            <span className="text-zinc-500">Saving...</span>
+            <span className="text-muted-foreground">Saving...</span>
           ) : null}
           {saveStatus === "saved" ? (
             <span className="text-green-600">Saved ✓</span>
@@ -165,7 +165,7 @@ export function LeadNotes({ leadId, initialNotes, onSave }: LeadNotesProps) {
           onBlur={() => {
             void handleBlur();
           }}
-          className="w-full min-h-[80px] resize-none rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm leading-relaxed text-zinc-800 outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-900/20"
+          className="w-full min-h-[96px] resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm leading-relaxed text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
           placeholder="Add notes — requirements, specs, reminders..."
         />
       ) : (
@@ -179,12 +179,12 @@ export function LeadNotes({ leadId, initialNotes, onSave }: LeadNotesProps) {
               handleClick();
             }
           }}
-          className="min-h-[44px] cursor-text rounded-md px-3 py-2 text-sm leading-relaxed transition-colors hover:bg-zinc-50"
+          className="min-h-[44px] cursor-text rounded-lg px-3 py-2 text-sm leading-relaxed transition-colors hover:bg-muted/60"
         >
           {notes ? (
-            <p className="whitespace-pre-wrap text-zinc-800">{notes}</p>
+            <p className="whitespace-pre-wrap text-foreground">{notes}</p>
           ) : (
-            <p className="italic text-zinc-400">Click to add notes...</p>
+            <p className="italic text-muted-foreground">Click to add notes...</p>
           )}
         </div>
       )}
