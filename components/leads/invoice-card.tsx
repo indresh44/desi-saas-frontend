@@ -5,8 +5,8 @@ import { CheckCircle, ChevronDown, ChevronUp, Download, Loader2, Pencil, Plus, R
 import { PaymentAttachmentPreview } from "@/components/leads/payment-attachment-preview";
 import { Button } from "@/components/ui/button";
 import { RecordPaymentModal } from "@/components/leads/record-payment-modal";
-import { fetchInvoicePayments, getInvoicePdf, updateInvoiceStatus } from "@/lib/api/invoices";
-import { shareInvoicePdf } from "@/lib/utils/share";
+import { fetchInvoicePayments, updateInvoiceStatus } from "@/lib/api/invoices";
+import { shareInvoicePdf, buildBrandedInvoiceUrl } from "@/lib/utils/share";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { Invoice, InvoiceStatus, Payment, PaymentMethod } from "@/lib/types/invoice";
 
@@ -85,7 +85,6 @@ export function InvoiceCard({
   const [paymentsError, setPaymentsError] = useState<string | null>(null);
   const [showItems, setShowItems] = useState(false);
   const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
-  const [pdfLoading, setPdfLoading] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [shareMessage, setShareMessage] = useState<string | null>(null);
@@ -204,27 +203,9 @@ export function InvoiceCard({
     onPaymentRecorded();
   };
 
-  const handleDownloadPdf = async () => {
-    setPdfLoading(true);
-    setPdfError(null);
-
-    try {
-      const pdfUrl = await getInvoicePdf(invoice.id);
-      window.open(pdfUrl, "_blank", "noopener,noreferrer");
-    } catch (error) {
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "message" in error &&
-        typeof (error as { message: unknown }).message === "string"
-      ) {
-        setPdfError((error as { message: string }).message);
-      } else {
-        setPdfError("Failed to generate PDF.");
-      }
-    } finally {
-      setPdfLoading(false);
-    }
+  const handleDownloadPdf = () => {
+    const url = buildBrandedInvoiceUrl(invoice.id, invoice.invoiceNumber);
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const handleSharePdf = async () => {
@@ -326,15 +307,10 @@ export function InvoiceCard({
                 type="button"
                 size="sm"
                 variant="outline"
-                onClick={() => void handleDownloadPdf()}
-                disabled={pdfLoading}
-                title="Download PDF"
+                onClick={() => handleDownloadPdf()}
+                title="View PDF"
               >
-                {pdfLoading ? (
-                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Download className="h-3.5 w-3.5" />
-                )}
+                <Download className="h-3.5 w-3.5" />
                 PDF
               </Button>
 

@@ -48,30 +48,8 @@ export function PdfPreviewCard({ pdf }: PdfPreviewCardProps) {
   const previewWidth = expanded ? 370 : 350;
 
   function handleDownload() {
-    window.open(pdf.url, "_blank", "noopener,noreferrer");
-  }
-
-  async function handleDownloadFile() {
-    try {
-      const response = await fetch(previewFile.url, {
-        headers: previewFile.httpHeaders,
-      });
-      if (!response.ok) {
-        window.open(pdf.url, "_blank", "noopener,noreferrer");
-        return;
-      }
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${pdf.invoice_number}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch {
-      window.open(pdf.url, "_blank", "noopener,noreferrer");
-    }
+    const url = buildBrandedInvoiceUrl(pdf.invoice_id, pdf.invoice_number);
+    window.open(url, "_blank", "noopener,noreferrer");
   }
 
   async function handleShare() {
@@ -188,7 +166,7 @@ export function PdfPreviewCard({ pdf }: PdfPreviewCardProps) {
       <div className="flex border-t border-zinc-100">
         <button
           type="button"
-          onClick={() => void handleDownloadFile()}
+          onClick={() => handleDownload()}
           className="flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50"
         >
           <Download className="h-3.5 w-3.5" />

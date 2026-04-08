@@ -13,14 +13,18 @@ export function SendReminderForm({ data, onChange }: SendReminderFormProps) {
   const customerPhone = String(data.customer_phone ?? "");
   const invoiceNumbers = String(data.invoice_numbers ?? "");
   const outstanding = Number(data.outstanding_amount ?? 0);
+  const invoiceLink = String(data.invoice_link ?? "");
 
   function buildMessage(tone: "polite" | "firm" | "urgent"): string {
+    const linkLine = invoiceLink ? `\n${invoiceLink}` : "";
+
     if (tone === "firm") {
       return (
         `Namaste ${customerName} ji,\n\n` +
         `Aapke account mein ₹${outstanding.toLocaleString("en-IN")} ka outstanding amount hai` +
         `${invoiceNumbers ? ` (Invoice: ${invoiceNumbers})` : ""}.\n\n` +
-        "Kripya jaldi se jaldi payment karein. Agar koi issue hai toh humse baat karein.\n\n" +
+        "Kripya jaldi se jaldi payment karein. Agar koi issue hai toh humse baat karein." +
+        `${linkLine}\n\n` +
         "Dhanyavaad."
       );
     }
@@ -30,7 +34,8 @@ export function SendReminderForm({ data, onChange }: SendReminderFormProps) {
         `${customerName} ji,\n\n` +
         `Aapka ₹${outstanding.toLocaleString("en-IN")} ka payment kaafi din se pending hai` +
         `${invoiceNumbers ? ` (${invoiceNumbers})` : ""}.\n\n` +
-        "Kripya aaj hi payment karein. Yeh final reminder hai.\n\n" +
+        "Kripya aaj hi payment karein. Yeh final reminder hai." +
+        `${linkLine}\n\n` +
         "Dhanyavaad."
       );
     }
@@ -39,7 +44,8 @@ export function SendReminderForm({ data, onChange }: SendReminderFormProps) {
       `Namaste ${customerName} ji,\n\n` +
       `Yeh ek friendly reminder hai ki aapka ₹${outstanding.toLocaleString("en-IN")} ka payment pending hai` +
       `${invoiceNumbers ? ` (${invoiceNumbers})` : ""}.\n\n` +
-      "Agar payment ho chuki hai toh please ignore karein.\n\n" +
+      "Agar payment ho chuki hai toh please ignore karein." +
+      `${linkLine}\n\n` +
       "Dhanyavaad!"
     );
   }

@@ -21,10 +21,9 @@ import {
   fetchInvoiceItems,
   fetchInvoicePayments,
   fetchInvoices,
-  getInvoicePdf,
   uploadAttachment,
 } from "@/lib/api/invoices";
-import { shareInvoicePdf } from "@/lib/utils/share";
+import { shareInvoicePdf, buildBrandedInvoiceUrl } from "@/lib/utils/share";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { Customer } from "@/lib/types/customer";
 import type { Invoice, InvoiceStatus, Payment, PaymentMethod } from "@/lib/types/invoice";
@@ -400,7 +399,7 @@ export function InvoiceListView({
   const [isRowLoading, setIsRowLoading] = useState<Record<string, boolean>>({});
   const [itemsByInvoice, setItemsByInvoice] = useState<Record<string, Invoice["items"]>>({});
   const [paymentsByInvoice, setPaymentsByInvoice] = useState<Record<string, Payment[]>>({});
-  const [pdfLoadingByInvoice, setPdfLoadingByInvoice] = useState<Record<string, boolean>>({});
+
   const [shareLoadingByInvoice, setShareLoadingByInvoice] = useState<Record<string, boolean>>({});
   const [showPaymentFormByInvoice, setShowPaymentFormByInvoice] = useState<Record<string, boolean>>({});
 
@@ -573,14 +572,9 @@ export function InvoiceListView({
     }));
   };
 
-  const handleDownloadPdf = async (invoiceId: string) => {
-    setPdfLoadingByInvoice((prev) => ({ ...prev, [invoiceId]: true }));
-    try {
-      const pdfUrl = await getInvoicePdf(invoiceId);
-      window.open(pdfUrl, "_blank", "noopener,noreferrer");
-    } finally {
-      setPdfLoadingByInvoice((prev) => ({ ...prev, [invoiceId]: false }));
-    }
+  const handleDownloadPdf = (invoiceId: string, invoiceNumber: string) => {
+    const url = buildBrandedInvoiceUrl(invoiceId, invoiceNumber);
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const handleShareInvoice = async (invoice: Invoice) => {
@@ -799,10 +793,9 @@ export function InvoiceListView({
                       type="button"
                       size="sm"
                       variant="outline"
-                      onClick={() => void handleDownloadPdf(invoice.id)}
-                      disabled={pdfLoadingByInvoice[invoice.id]}
+                      onClick={() => handleDownloadPdf(invoice.id, invoice.invoiceNumber)}
                     >
-                      {pdfLoadingByInvoice[invoice.id] ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                      <Download className="h-3.5 w-3.5" />
                       PDF
                     </Button>
 
