@@ -6,7 +6,7 @@ import "react-pdf/dist/Page/TextLayer.css";
 import "@/lib/pdf-worker";
 
 interface PdfPreviewPageProps {
-  file: string;
+  file: string | { url: string; httpHeaders?: Record<string, string> };
   width: number;
   onLoadSuccess: () => void;
   onLoadError: () => void;

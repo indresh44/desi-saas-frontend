@@ -1,5 +1,5 @@
 /**
- * Share a file using the Web Share API (mobile) or fall back to download (desktop).
+ * Share an invoice via native share (PDF file) or branded URL fallback.
  */
 
 import { API_BASE_URL } from "@/lib/constants/api";
@@ -11,6 +11,16 @@ export function canNativeShare(): boolean {
 }
 
 /**
+ * Build the branded public invoice URL.
+ */
+export function buildBrandedInvoiceUrl(
+  invoiceId: string,
+  invoiceNumber: string,
+): string {
+  return `https://sellnsettle.com/invoices/${invoiceId}/${invoiceNumber}.pdf`;
+}
+
+/**
  * Fetch the PDF blob from our backend (server-to-server, no CORS issues).
  */
 async function fetchPdfBlob(invoiceId: string): Promise<Blob | null> {
@@ -18,51 +28,70 @@ async function fetchPdfBlob(invoiceId: string): Promise<Blob | null> {
   const url = `${API_BASE_URL}/api/v1/invoices/${invoiceId}/pdf/download`;
   console.log("[Share] Fetching PDF from backend:", url);
 
-  const response = await fetch(url, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
+  try {
+    const response = await fetch(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
 
-  if (!response.ok) {
-    console.warn("[Share] Backend PDF fetch failed:", response.status);
+    if (!response.ok) {
+      console.warn("[Share] Backend PDF fetch failed:", response.status);
+      return null;
+    }
+
+    const blob = await response.blob();
+    console.log("[Share] PDF fetched, size:", blob.size, "bytes");
+    return blob;
+  } catch (err) {
+    console.warn("[Share] PDF fetch error:", err);
     return null;
   }
-
-  const blob = await response.blob();
-  console.log("[Share] PDF fetched, size:", blob.size, "bytes");
-  return blob;
 }
 
 export async function shareInvoicePdf(
   invoiceId: string,
   invoiceNumber: string,
   status?: string,
+  businessName?: string,
+  totalAmount?: number,
 ): Promise<"shared" | "downloaded" | "cancelled" | "error"> {
   try {
     const fileName = `${invoiceNumber}.pdf`;
     const isEstimate = status === "draft" || status === "sent";
     const docLabel = isEstimate ? "Estimate" : "Invoice";
-    const statusLabel = status ? ` | Status: ${status.charAt(0).toUpperCase() + status.slice(1)}` : "";
-    const shareText = `Hi, please find your ${docLabel} ${invoiceNumber}${statusLabel}`;
+    const brandedUrl = buildBrandedInvoiceUrl(invoiceId, invoiceNumber);
+
+    // Build share message
+    const amountStr = totalAmount != null
+      ? new Intl.NumberFormat("en-IN", {
+          style: "currency",
+          currency: "INR",
+          maximumFractionDigits: 0,
+        }).format(totalAmount)
+      : null;
+
+    const parts = [`${docLabel} ${invoiceNumber}`];
+    if (businessName) parts.push(`from ${businessName}`);
+    if (amountStr) parts.push(`— Total ${amountStr}`);
+    const shareText = `${parts.join(" ")}.\nView & download: ${brandedUrl}`;
 
     // Step 1: Fetch PDF blob from backend
     const blob = await fetchPdfBlob(invoiceId);
 
     // Step 2: Try native share with actual PDF file (mobile)
-    // Copy caption to clipboard first — WhatsApp ignores the text param,
-    // so user can long-press → paste in the caption field.
     if (canNativeShare() && blob) {
       const file = new File([blob], fileName, { type: "application/pdf" });
 
+      // Copy caption to clipboard — WhatsApp ignores text param with files
       try {
         await navigator.clipboard.writeText(shareText);
       } catch {
-        // clipboard write may fail silently — not critical
+        // not critical
       }
 
       try {
         console.log("[Share] Attempting navigator.share with PDF file");
         await navigator.share({
-          title: `Invoice ${invoiceNumber}`,
+          title: `${docLabel} ${invoiceNumber}`,
           text: shareText,
           files: [file],
         });
@@ -86,15 +115,27 @@ export async function shareInvoicePdf(
       }
     }
 
-    // Step 3: Fallback — download the PDF
-    if (blob) {
-      console.log("[Share] Downloading PDF blob");
-      downloadBlob(blob, fileName);
-    } else {
-      console.error("[Share] Could not fetch PDF");
-      return "error";
+    // Step 3: Fallback — share branded URL (with wa.me deep link)
+    if (canNativeShare()) {
+      try {
+        await navigator.share({
+          title: `${docLabel} ${invoiceNumber}`,
+          text: shareText,
+          url: brandedUrl,
+        });
+        return "shared";
+      } catch (urlErr) {
+        if ((urlErr as { name?: string })?.name === "AbortError") {
+          return "cancelled";
+        }
+        console.warn("[Share] URL share failed:", urlErr);
+      }
     }
-    return "downloaded";
+
+    // Step 4: Final fallback — open wa.me with branded URL
+    const waMessage = encodeURIComponent(shareText);
+    window.open(`https://wa.me/?text=${waMessage}`, "_blank", "noopener,noreferrer");
+    return "shared";
 
   } catch (error) {
     if (
@@ -148,13 +189,3 @@ export async function shareInvoiceLink(
   }
 }
 
-function downloadBlob(blob: Blob, filename: string): void {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}

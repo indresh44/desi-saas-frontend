@@ -25,6 +25,7 @@ import {
   uploadAttachment,
 } from "@/lib/api/invoices";
 import { shareInvoicePdf } from "@/lib/utils/share";
+import { useAuth } from "@/lib/auth/auth-context";
 import type { Customer } from "@/lib/types/customer";
 import type { Invoice, InvoiceStatus, Payment, PaymentMethod } from "@/lib/types/invoice";
 
@@ -375,6 +376,7 @@ export function InvoiceListView({
   showSummaryBar = true,
   initialStatusFilter = "all",
 }: InvoiceListViewProps) {
+  const { business } = useAuth();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [total, setTotal] = useState(0);
   const [summaryOutstanding, setSummaryOutstanding] = useState(0);
@@ -584,7 +586,13 @@ export function InvoiceListView({
   const handleShareInvoice = async (invoice: Invoice) => {
     setShareLoadingByInvoice((prev) => ({ ...prev, [invoice.id]: true }));
     try {
-      await shareInvoicePdf(invoice.id, invoice.invoiceNumber, invoice.status);
+      await shareInvoicePdf(
+        invoice.id,
+        invoice.invoiceNumber,
+        invoice.status,
+        business?.name,
+        Number(invoice.totalAmount ?? 0),
+      );
     } finally {
       setShareLoadingByInvoice((prev) => ({ ...prev, [invoice.id]: false }));
     }

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { RecordPaymentModal } from "@/components/leads/record-payment-modal";
 import { fetchInvoicePayments, getInvoicePdf, updateInvoiceStatus } from "@/lib/api/invoices";
 import { shareInvoicePdf } from "@/lib/utils/share";
+import { useAuth } from "@/lib/auth/auth-context";
 import type { Invoice, InvoiceStatus, Payment, PaymentMethod } from "@/lib/types/invoice";
 
 type Props = {
@@ -78,6 +79,7 @@ export function InvoiceCard({
   onPaymentRecorded,
   onStatusChanged,
 }: Props) {
+  const { business } = useAuth();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoadingPayments, setIsLoadingPayments] = useState(true);
   const [paymentsError, setPaymentsError] = useState<string | null>(null);
@@ -235,6 +237,8 @@ export function InvoiceCard({
         invoice.id,
         invoice.invoiceNumber,
         invoice.status,
+        business?.name,
+        toSafeNumber(invoice.totalAmount),
       );
 
       if (result === "shared") {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import dynamic from "next/dynamic";
 import {
   Download,
@@ -11,6 +11,9 @@ import {
   MessageCircle,
   Share2,
 } from "lucide-react";
+import { shareInvoicePdf, buildBrandedInvoiceUrl } from "@/lib/utils/share";
+import { API_BASE_URL } from "@/lib/constants/api";
+import { getAccessToken } from "@/lib/auth/token-store";
 
 const PdfPreviewPage = dynamic(
   () =>
@@ -36,75 +39,45 @@ export function PdfPreviewCard({ pdf }: PdfPreviewCardProps) {
   const [pdfLoading, setPdfLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
 
-  const proxyUrl = useMemo(
-    () => `/api/pdf-proxy?url=${encodeURIComponent(pdf.url)}`,
-    [pdf.url],
-  );
-
+  // Use backend endpoint for PDF preview (avoids R2 CORS)
+  const token = getAccessToken();
+  const previewFile = {
+    url: `${API_BASE_URL}/api/v1/invoices/${pdf.invoice_id}/pdf/download`,
+    httpHeaders: token ? { Authorization: `Bearer ${token}` } : {},
+  };
   const previewWidth = expanded ? 370 : 350;
 
   function handleDownload() {
-    window.open(proxyUrl, "_blank", "noopener,noreferrer");
+    window.open(pdf.url, "_blank", "noopener,noreferrer");
   }
 
-  async function fetchPdfAsFile(): Promise<File | null> {
+  async function handleDownloadFile() {
     try {
-      const response = await fetch(proxyUrl);
-      if (!response.ok) {
-        return null;
-      }
-
-      const blob = await response.blob();
-      return new File([blob], `${pdf.invoice_number}.pdf`, {
-        type: "application/pdf",
+      const response = await fetch(previewFile.url, {
+        headers: previewFile.httpHeaders,
       });
-    } catch (error) {
-      console.error("Failed to fetch PDF file:", error);
-      return null;
-    }
-  }
-
-  function canShareFiles(): boolean {
-    if (!navigator.share || !navigator.canShare) {
-      return false;
-    }
-
-    try {
-      const testFile = new File([""], "test.pdf", { type: "application/pdf" });
-      return navigator.canShare({ files: [testFile] });
+      if (!response.ok) {
+        window.open(pdf.url, "_blank", "noopener,noreferrer");
+        return;
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${pdf.invoice_number}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     } catch {
-      return false;
+      window.open(pdf.url, "_blank", "noopener,noreferrer");
     }
   }
 
   async function handleShare() {
     setIsSharing(true);
-
     try {
-      if (canShareFiles()) {
-        const file = await fetchPdfAsFile();
-        if (file) {
-          await navigator.share({
-            title: `Invoice ${pdf.invoice_number}`,
-            text: `Invoice ${pdf.invoice_number}`,
-            files: [file],
-          });
-          return;
-        }
-      }
-
-      if (navigator.share) {
-        await navigator.share({
-          title: `Invoice ${pdf.invoice_number}`,
-          text: `Please find Invoice ${pdf.invoice_number} attached.`,
-          url: pdf.url,
-        });
-      } else if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(pdf.url);
-        alert("PDF link copied to clipboard!");
-      } else {
-        window.open(pdf.url, "_blank", "noopener,noreferrer");
-      }
+      await shareInvoicePdf(pdf.invoice_id, pdf.invoice_number);
     } catch (error) {
       if ((error as Error).name !== "AbortError") {
         console.error("Share failed:", error);
@@ -116,26 +89,22 @@ export function PdfPreviewCard({ pdf }: PdfPreviewCardProps) {
 
   async function handleWhatsAppShare() {
     setIsSharing(true);
-
     try {
-      if (canShareFiles()) {
-        const file = await fetchPdfAsFile();
-        if (file) {
-          await navigator.share({
-            title: `Invoice ${pdf.invoice_number}`,
-            text: `Invoice ${pdf.invoice_number}`,
-            files: [file],
-          });
-          return;
-        }
+      const result = await shareInvoicePdf(pdf.invoice_id, pdf.invoice_number);
+      // If native share wasn't available or failed, fall back to wa.me link
+      if (result === "error") {
+        const brandedUrl = buildBrandedInvoiceUrl(pdf.invoice_id, pdf.invoice_number);
+        const message = `Hi, please find your Invoice ${pdf.invoice_number}.\n\nView & download: ${brandedUrl}`;
+        const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+        window.open(waUrl, "_blank", "noopener,noreferrer");
       }
-
-      const message = `Hi, please find your Invoice ${pdf.invoice_number}.\n\nDownload: ${pdf.url}`;
-      const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-      window.open(waUrl, "_blank", "noopener,noreferrer");
     } catch (error) {
       if ((error as Error).name !== "AbortError") {
         console.error("WhatsApp share failed:", error);
+        const brandedUrl = buildBrandedInvoiceUrl(pdf.invoice_id, pdf.invoice_number);
+        const message = `Hi, please find your Invoice ${pdf.invoice_number}.\n\nView & download: ${brandedUrl}`;
+        const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+        window.open(waUrl, "_blank", "noopener,noreferrer");
       }
     } finally {
       setIsSharing(false);
@@ -168,7 +137,7 @@ export function PdfPreviewCard({ pdf }: PdfPreviewCardProps) {
             }`}
           >
             <PdfPreviewPage
-              file={proxyUrl}
+              file={previewFile}
               width={previewWidth}
               onLoadSuccess={() => setPdfLoading(false)}
               onLoadError={() => {
@@ -219,7 +188,7 @@ export function PdfPreviewCard({ pdf }: PdfPreviewCardProps) {
       <div className="flex border-t border-zinc-100">
         <button
           type="button"
-          onClick={handleDownload}
+          onClick={() => void handleDownloadFile()}
           className="flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50"
         >
           <Download className="h-3.5 w-3.5" />
