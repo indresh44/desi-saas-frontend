@@ -58,7 +58,7 @@ export default function CustomersPageClient() {
   >({});
 
   const inputClassName =
-    "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 disabled:opacity-50";
+    "w-full rounded-lg border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50";
 
   const loadCustomers = useCallback(async () => {
     setIsLoading(true);
@@ -267,10 +267,10 @@ export default function CustomersPageClient() {
     <section className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+          <h1 className="text-2xl font-semibold tracking-tight">
             Customers
           </h1>
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-muted-foreground">
             Track customers, dues, and quick actions.
           </p>
         </div>
@@ -284,13 +284,13 @@ export default function CustomersPageClient() {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="relative w-full sm:min-w-52 sm:flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             placeholder="Search by name or phone..."
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            className="w-full rounded-lg border border-zinc-200 bg-white py-2 pl-9 pr-3 text-sm text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/20"
+            className="w-full rounded-lg border bg-card py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
 
@@ -308,11 +308,11 @@ export default function CustomersPageClient() {
       {showCreateForm ? (
         <form
           onSubmit={handleCreateCustomer}
-          className="rounded-xl border border-zinc-200 bg-white p-4"
+          className="rounded-xl border bg-card p-4"
         >
           <div className="grid gap-3 sm:grid-cols-3">
             <label className="space-y-1">
-              <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Name
               </span>
               <input
@@ -325,7 +325,7 @@ export default function CustomersPageClient() {
             </label>
 
             <label className="space-y-1">
-              <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Phone
               </span>
               <input
@@ -338,7 +338,7 @@ export default function CustomersPageClient() {
             </label>
 
             <label className="space-y-1">
-              <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Email
               </span>
               <input
@@ -350,7 +350,7 @@ export default function CustomersPageClient() {
             </label>
 
             <label className="space-y-1 sm:col-span-2">
-              <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Address
               </span>
               <input
@@ -363,7 +363,7 @@ export default function CustomersPageClient() {
             </label>
 
             <label className="space-y-1">
-              <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 City
               </span>
               <input
@@ -375,7 +375,7 @@ export default function CustomersPageClient() {
             </label>
 
             <label className="space-y-1">
-              <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 State
               </span>
               <input
@@ -387,7 +387,7 @@ export default function CustomersPageClient() {
             </label>
 
             <label className="space-y-1">
-              <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 GST Number
               </span>
               <input
@@ -417,21 +417,21 @@ export default function CustomersPageClient() {
         </form>
       ) : null}
 
-      <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+      <div className="overflow-hidden rounded-xl border bg-card">
         {isLoading ? (
           <div className="space-y-2 p-4">
-            <div className="h-10 animate-pulse rounded bg-zinc-100" />
-            <div className="h-10 animate-pulse rounded bg-zinc-100" />
-            <div className="h-10 animate-pulse rounded bg-zinc-100" />
+            <div className="h-10 animate-pulse rounded bg-muted" />
+            <div className="h-10 animate-pulse rounded bg-muted" />
+            <div className="h-10 animate-pulse rounded bg-muted" />
           </div>
         ) : filteredCustomers.length === 0 ? (
-          <div className="px-4 py-10 text-center text-sm text-zinc-600">
+          <div className="px-4 py-10 text-center text-sm text-muted-foreground">
             No customers yet. They are created automatically when you add a lead.
           </div>
         ) : (
           <>
             {/* ── Mobile card list (< md) ── */}
-            <ul className="divide-y divide-zinc-100 md:hidden">
+            <ul className="divide-y divide-border md:hidden">
               {filteredCustomers.map((customer) => {
                 const outstandingState = outstandingByCustomer[customer.id];
                 const outstanding = outstandingState?.amount;
@@ -530,17 +530,17 @@ export default function CustomersPageClient() {
                       <>
                         <div className="flex items-start justify-between gap-2">
                           <div>
-                            <p className="text-sm font-semibold text-zinc-900">{customer.name}</p>
-                            <p className="mt-0.5 text-sm text-zinc-600">{customer.phone}</p>
+                            <p className="text-sm font-semibold text-primary">{customer.name}</p>
+                            <p className="mt-0.5 text-sm text-muted-foreground">{customer.phone}</p>
                             {customer.email ? (
-                              <p className="text-xs text-zinc-500">{customer.email}</p>
+                              <p className="text-xs text-muted-foreground">{customer.email}</p>
                             ) : null}
                           </div>
                           <div className="text-right">
                             {outstandingState?.isLoading || outstanding === undefined ? (
-                              <span className="text-sm text-zinc-500">...</span>
+                              <span className="text-sm text-muted-foreground">...</span>
                             ) : outstanding === null ? (
-                              <span className="text-sm text-zinc-500">-</span>
+                              <span className="text-sm text-muted-foreground">-</span>
                             ) : outstanding > 0 ? (
                               <span className="text-sm font-semibold text-red-600">
                                 {formatRupees(outstanding)}
@@ -554,14 +554,14 @@ export default function CustomersPageClient() {
                           <button
                             type="button"
                             onClick={() => handleStartEdit(customer)}
-                            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:text-zinc-400"
+                            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium text-foreground transition hover:bg-accent disabled:cursor-not-allowed disabled:text-muted-foreground"
                             disabled={isAnotherRowEditing || isSavingEdit}
                           >
                             Edit
                           </button>
                           <Link
                             href={`/customers/${customer.id}`}
-                            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+                            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium text-foreground transition hover:bg-accent"
                           >
                             View Details →
                           </Link>
@@ -583,7 +583,7 @@ export default function CustomersPageClient() {
             {/* ── Desktop table (≥ md) ── */}
             <div className="hidden overflow-x-auto md:block">
               <table className="min-w-full text-sm">
-                <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500">
+                <thead className="bg-muted text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <tr>
                     <th className="px-4 py-3 font-medium">Name</th>
                     <th className="px-4 py-3 font-medium">Phone</th>
@@ -592,7 +592,7 @@ export default function CustomersPageClient() {
                     <th className="px-4 py-3 font-medium">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-100">
+                <tbody className="divide-y divide-border">
                   {filteredCustomers.map((customer) => {
                     const outstandingState = outstandingByCustomer[customer.id];
                     const outstanding = outstandingState?.amount;
@@ -602,7 +602,7 @@ export default function CustomersPageClient() {
 
                     return (
                       <tr key={customer.id}>
-                        <td className="px-4 py-3 font-medium text-zinc-900">
+                        <td className="px-4 py-3 font-medium text-primary">
                           {isEditing ? (
                             <input
                               type="text"
@@ -616,7 +616,7 @@ export default function CustomersPageClient() {
                             customer.name
                           )}
                         </td>
-                        <td className="px-4 py-3 text-zinc-700">
+                        <td className="px-4 py-3 text-foreground">
                           {isEditing ? (
                             <input
                               type="text"
@@ -630,7 +630,7 @@ export default function CustomersPageClient() {
                             customer.phone
                           )}
                         </td>
-                        <td className="px-4 py-3 text-zinc-700">
+                        <td className="px-4 py-3 text-foreground">
                           {isEditing ? (
                             <input
                               type="email"
@@ -645,9 +645,9 @@ export default function CustomersPageClient() {
                         </td>
                         <td className="px-4 py-3">
                           {outstandingState?.isLoading || outstanding === undefined ? (
-                            <span className="text-zinc-500">...</span>
+                            <span className="text-muted-foreground">...</span>
                           ) : outstanding === null ? (
-                            <span className="text-zinc-500">-</span>
+                            <span className="text-muted-foreground">-</span>
                           ) : outstanding > 0 ? (
                             <span className="font-medium text-red-600">
                               {formatRupees(outstanding)}
@@ -683,7 +683,7 @@ export default function CustomersPageClient() {
                                 <button
                                   type="button"
                                   onClick={() => handleStartEdit(customer)}
-                                  className="inline-flex items-center gap-1 text-sm font-medium text-zinc-700 transition hover:text-zinc-900 disabled:cursor-not-allowed disabled:text-zinc-400"
+                                  className="inline-flex items-center gap-1 text-sm font-medium text-foreground transition hover:text-foreground disabled:cursor-not-allowed disabled:text-muted-foreground"
                                   disabled={isAnotherRowEditing || isSavingEdit}
                                 >
                                   <Pencil className="h-4 w-4" />
@@ -691,14 +691,14 @@ export default function CustomersPageClient() {
                                 </button>
                                 <Link
                                   href={`/customers/${customer.id}`}
-                                  className="text-sm font-medium text-zinc-700 transition hover:text-zinc-900"
+                                  className="text-sm font-medium text-foreground transition hover:text-foreground"
                                 >
                                   View Details -&gt;
                                 </Link>
                                 <button
                                   type="button"
                                   onClick={() => handleWhatsApp(customer.phone)}
-                                  className="inline-flex items-center gap-1 text-sm font-medium text-zinc-700 transition hover:text-zinc-900"
+                                  className="inline-flex items-center gap-1 text-sm font-medium text-foreground transition hover:text-foreground"
                                 >
                                   <MessageCircle className="h-4 w-4" />
                                   WhatsApp

@@ -181,8 +181,8 @@ function FilterPill({
       onClick={onClick}
       className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
         active
-          ? "border-zinc-900 bg-zinc-900 text-white"
-          : "border-zinc-200 bg-white text-zinc-500 hover:border-zinc-400 hover:text-zinc-900"
+          ? "border-primary bg-primary text-primary-foreground"
+          : "border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
       }`}
     >
       {label}

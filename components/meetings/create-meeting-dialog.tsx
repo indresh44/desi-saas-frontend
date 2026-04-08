@@ -336,8 +336,8 @@ export function CreateMeetingDialog({
                       onClick={() => form.setValue("durationMinutes", duration, { shouldValidate: true })}
                       className={`rounded border px-2 py-1 text-xs ${
                         watchedDuration === duration
-                          ? "border-zinc-900 bg-zinc-900 text-white"
-                          : "border-zinc-200 text-zinc-500 hover:border-zinc-400"
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border text-muted-foreground hover:border-primary/40"
                       }`}
                       disabled={isSubmitting}
                     >

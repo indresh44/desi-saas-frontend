@@ -72,8 +72,8 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
         <div
           className={`rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
             isUser
-              ? "rounded-tr-sm bg-zinc-900 text-white"
-              : "rounded-tl-sm bg-zinc-100 text-zinc-800"
+              ? "rounded-tr-sm bg-primary text-primary-foreground"
+              : "rounded-tl-sm bg-secondary text-secondary-foreground"
           }`}
         >
           {isUser
@@ -85,7 +85,7 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
 
         {message.pdf && <PdfPreviewCard pdf={message.pdf} />}
 
-        <span className={`text-[10px] ${isUser ? "text-right text-zinc-400" : "text-zinc-400"}`}>
+        <span className={`text-[10px] ${isUser ? "text-right text-muted-foreground" : "text-muted-foreground"}`}>
           {message.timestamp.toLocaleTimeString("en-IN", {
             hour: "2-digit",
             minute: "2-digit",

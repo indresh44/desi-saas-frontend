@@ -36,10 +36,10 @@ function SidebarNavLink({
       className={cn(
         "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm transition-colors",
         isActive
-          ? "bg-zinc-100 text-zinc-900"
+          ? "bg-shell-sidebar-active text-shell-sidebar-active-text font-medium"
           : isMuted
-            ? "text-muted-foreground hover:bg-zinc-100 hover:text-zinc-900"
-            : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
+            ? "text-primary hover:bg-shell-sidebar-hover hover:text-foreground"
+            : "text-primary hover:bg-shell-sidebar-hover hover:text-foreground"
       )}
     >
       <Icon className="h-4 w-4" />
@@ -58,7 +58,7 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
         {SIDEBAR_NAV_GROUPS.map((group, index) => (
           <div
             key={group.key}
-            className={cn(index > 0 && "mt-2 border-t border-zinc-200 pt-2")}
+            className={cn(index > 0 && "mt-2 border-t border-shell-border pt-2")}
           >
             <div className="space-y-1">
               {group.items.map((item) => (
@@ -75,9 +75,9 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
         ))}
       </nav>
 
-      <div className="border-t border-zinc-200 p-3">
-        <p className="truncate text-sm font-medium text-zinc-800">{user?.name ?? "User"}</p>
-        <p className="truncate text-xs text-zinc-500">{user?.email ?? ""}</p>
+      <div className="border-t border-shell-border p-3">
+        <p className="truncate text-sm font-medium text-foreground">{user?.name ?? "User"}</p>
+        <p className="truncate text-xs text-muted-foreground">{user?.email ?? ""}</p>
         <Button
           type="button"
           size="sm"
@@ -96,7 +96,7 @@ export function AppSidebar({ isOpen = false, onClose }: AppSidebarProps) {
   return (
     <>
       {/* ── Desktop sidebar (always visible ≥768px) ── */}
-      <aside className="hidden w-60 shrink-0 border-r border-zinc-200 bg-white md:flex md:flex-col">
+      <aside className="hidden w-60 shrink-0 border-r border-shell-border bg-shell-sidebar-bg md:flex md:flex-col">
         <SidebarNav />
       </aside>
 
@@ -106,7 +106,7 @@ export function AppSidebar({ isOpen = false, onClose }: AppSidebarProps) {
         <button
           type="button"
           aria-label="Close navigation"
-          className="fixed inset-0 z-40 bg-zinc-900/50 md:hidden"
+          className="fixed inset-0 z-40 bg-foreground/50 md:hidden"
           onClick={onClose}
         />
       ) : null}
@@ -114,7 +114,7 @@ export function AppSidebar({ isOpen = false, onClose }: AppSidebarProps) {
       {/* Drawer panel */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-zinc-200 bg-white transition-transform duration-300 ease-in-out md:hidden",
+          "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-shell-border bg-shell-sidebar-bg transition-transform duration-300 ease-in-out md:hidden",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >

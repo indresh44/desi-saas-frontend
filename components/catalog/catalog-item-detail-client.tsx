@@ -68,28 +68,28 @@ export default function CatalogItemDetailClient({ itemId }: Props) {
   return (
     <section className="space-y-6">
       <div className="flex items-center gap-3">
-        <Link href="/catalog" className="inline-flex items-center gap-1 text-sm text-zinc-600 hover:text-zinc-900">
+        <Link href="/catalog" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" />
           Back to Catalog
         </Link>
       </div>
 
       {isLoading ? (
-        <div className="h-20 animate-pulse rounded-lg bg-zinc-100" />
+        <div className="h-20 animate-pulse rounded-lg bg-muted" />
       ) : error ? (
         <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
       ) : item ? (
         <>
-          <div className="rounded-lg border border-zinc-200 bg-white p-4">
-            <h1 className="text-xl font-semibold text-zinc-900">{item.name}</h1>
-            {item.description ? <p className="mt-1 text-sm text-zinc-600">{item.description}</p> : null}
-            <div className="mt-3 flex flex-wrap gap-2 text-xs text-zinc-600">
-              <span className="rounded-full bg-zinc-100 px-2 py-1">
+          <div className="rounded-lg border bg-card p-4">
+            <h1 className="text-xl font-semibold text-primary">{item.name}</h1>
+            {item.description ? <p className="mt-1 text-sm text-muted-foreground">{item.description}</p> : null}
+            <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
+              <span className="rounded-full bg-muted px-2 py-1">
                 Unit: {item.unit === "custom" ? item.customUnit : UNIT_LABELS[item.unit] || item.unit}
               </span>
-              <span className="rounded-full bg-zinc-100 px-2 py-1">Rate: {formatRupees(item.defaultRate)}</span>
-              <span className="rounded-full bg-zinc-100 px-2 py-1">GST: {item.gstPercent}%</span>
-              <span className="rounded-full bg-zinc-100 px-2 py-1">{item.isActive ? "Active" : "Inactive"}</span>
+              <span className="rounded-full bg-muted px-2 py-1">Rate: {formatRupees(item.defaultRate)}</span>
+              <span className="rounded-full bg-muted px-2 py-1">GST: {item.gstPercent}%</span>
+              <span className="rounded-full bg-muted px-2 py-1">{item.isActive ? "Active" : "Inactive"}</span>
             </div>
           </div>
 

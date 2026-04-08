@@ -105,8 +105,8 @@ export function SendReminderForm({ data, onChange }: SendReminderFormProps) {
               }}
               className={`rounded-full px-2.5 py-1 text-[11px] font-medium capitalize transition-colors ${
                 data.tone === tone
-                  ? "bg-zinc-900 text-white"
-                  : "border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50"
+                  ? "bg-primary text-primary-foreground"
+                  : "border border-border bg-card text-muted-foreground hover:bg-accent"
               }`}
             >
               {tone}

@@ -169,10 +169,10 @@ export default function CatalogPageClient() {
     <section className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+          <h1 className="text-2xl font-semibold tracking-tight">
             Catalog
           </h1>
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-muted-foreground">
             Items and services you sell or use regularly
           </p>
         </div>
@@ -190,36 +190,36 @@ export default function CatalogPageClient() {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="relative w-full sm:min-w-52 sm:flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             placeholder="Search items..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-zinc-200 bg-white py-2 pl-9 pr-3 text-sm text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/20"
+            className="w-full rounded-lg border bg-card py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
 
-        <label className="flex items-center gap-2 text-sm text-zinc-600">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
           <input
             type="checkbox"
             checked={showInactive}
             onChange={(e) => setShowInactive(e.target.checked)}
-            className="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
+            className="rounded border-border text-primary focus:ring-primary"
           />
           Show inactive items
         </label>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+      <div className="overflow-hidden rounded-xl border bg-card">
         {isLoading ? (
           <div className="space-y-2 p-4">
-            <div className="h-10 animate-pulse rounded bg-zinc-100" />
-            <div className="h-10 animate-pulse rounded bg-zinc-100" />
-            <div className="h-10 animate-pulse rounded bg-zinc-100" />
+            <div className="h-10 animate-pulse rounded bg-muted" />
+            <div className="h-10 animate-pulse rounded bg-muted" />
+            <div className="h-10 animate-pulse rounded bg-muted" />
           </div>
         ) : filteredItems.length === 0 ? (
-          <div className="px-4 py-10 text-center text-sm text-zinc-600">
+          <div className="px-4 py-10 text-center text-sm text-muted-foreground">
             {search
               ? `No items matching '${search}'`
               : "No items in your catalog yet. Add your first item to get started."}
@@ -227,7 +227,7 @@ export default function CatalogPageClient() {
         ) : (
           <>
             {/* ── Mobile card list (< md) ── */}
-            <ul className="divide-y divide-zinc-100 md:hidden">
+            <ul className="divide-y divide-border md:hidden">
               {filteredItems.map((item) => (
                 <li
                   key={item.id}
@@ -235,15 +235,15 @@ export default function CatalogPageClient() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium text-zinc-900">{item.name}</p>
+                      <p className="font-medium text-primary">{item.name}</p>
                       {item.description ? (
-                        <p className="mt-0.5 text-xs text-zinc-500">{item.description}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">{item.description}</p>
                       ) : null}
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <button
                         onClick={() => handleEdit(item)}
-                        className="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-600"
+                        className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground"
                         title="Edit"
                       >
                         <Pencil className="h-4 w-4" />
@@ -251,7 +251,7 @@ export default function CatalogPageClient() {
                       {item.isActive ? (
                         <button
                           onClick={() => handleDeactivate(item)}
-                          className="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-400 hover:text-red-600"
+                          className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:text-red-600"
                           title="Deactivate"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -259,14 +259,14 @@ export default function CatalogPageClient() {
                       ) : null}
                     </div>
                   </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-zinc-600">
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                     <span>
                       {item.unit === "custom"
                         ? item.customUnit
                         : UNIT_LABELS[item.unit] || item.unit}
                     </span>
                     <span>·</span>
-                    <span className="font-medium text-zinc-900">{formatRupees(item.defaultRate)}</span>
+                    <span className="font-medium text-primary">{formatRupees(item.defaultRate)}</span>
                     <span>·</span>
                     <span>GST {item.gstPercent}%</span>
                     <span>·</span>
@@ -275,7 +275,7 @@ export default function CatalogPageClient() {
                         Active
                       </span>
                     ) : (
-                      <span className="inline-flex items-center rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-800">
+                      <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
                         Inactive
                       </span>
                     )}
@@ -297,7 +297,7 @@ export default function CatalogPageClient() {
             {/* ── Desktop table (≥ md) ── */}
             <div className="hidden overflow-x-auto md:block">
               <table className="min-w-full text-sm">
-                <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500">
+                <thead className="bg-muted text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <tr>
                     <th className="px-4 py-3 font-medium">Name</th>
                     <th className="px-4 py-3 font-medium">Unit</th>
@@ -308,33 +308,33 @@ export default function CatalogPageClient() {
                     <th className="px-4 py-3 font-medium">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-100">
+                <tbody className="divide-y divide-border">
                   {filteredItems.map((item) => (
                     <tr
                       key={item.id}
                       className={
-                        !item.isActive ? "bg-zinc-50 opacity-60" : undefined
+                        !item.isActive ? "bg-muted opacity-60" : undefined
                       }
                     >
                       <td className="px-4 py-3">
-                        <div className="font-medium text-zinc-900">
+                        <div className="font-medium text-primary">
                           {item.name}
                         </div>
                         {item.description && (
-                          <div className="text-xs text-zinc-500">
+                          <div className="text-xs text-muted-foreground">
                             {item.description}
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-zinc-700">
+                      <td className="px-4 py-3 text-foreground">
                         {item.unit === "custom"
                           ? item.customUnit
                           : UNIT_LABELS[item.unit] || item.unit}
                       </td>
-                      <td className="px-4 py-3 text-zinc-700">
+                      <td className="px-4 py-3 text-primary">
                         {formatRupees(item.defaultRate)}
                       </td>
-                      <td className="px-4 py-3 text-zinc-700">
+                      <td className="px-4 py-3 text-foreground">
                         {item.gstPercent}%
                       </td>
                       <td className="px-4 py-3">
@@ -343,7 +343,7 @@ export default function CatalogPageClient() {
                             Active
                           </span>
                         ) : (
-                          <span className="inline-flex items-center rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-800">
+                          <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
                             Inactive
                           </span>
                         )}
@@ -360,7 +360,7 @@ export default function CatalogPageClient() {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleEdit(item)}
-                            className="text-zinc-400 hover:text-zinc-600"
+                            className="text-muted-foreground hover:text-foreground"
                             title="Edit"
                           >
                             <Pencil className="h-4 w-4" />
@@ -368,7 +368,7 @@ export default function CatalogPageClient() {
                           {item.isActive && (
                             <button
                               onClick={() => handleDeactivate(item)}
-                              className="text-zinc-400 hover:text-red-600"
+                              className="text-muted-foreground hover:text-red-600"
                               title="Deactivate"
                             >
                               <Trash2 className="h-4 w-4" />

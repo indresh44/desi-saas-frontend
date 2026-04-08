@@ -19,7 +19,7 @@ export function ChatMessageList() {
   return (
     <div className="flex-1 overflow-y-auto px-4 py-4">
       {isFetchingHistory && (
-        <div className="flex items-center justify-center py-8 text-sm text-zinc-400">
+        <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           Loading conversation...
         </div>
@@ -27,11 +27,11 @@ export function ChatMessageList() {
 
       {!isFetchingHistory && messages.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100">
-            <Sparkles className="h-5 w-5 text-zinc-400" />
+          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-secondary">
+            <Sparkles className="h-5 w-5 text-primary" />
           </div>
-          <p className="text-sm font-medium text-zinc-700">How can I help you?</p>
-          <p className="mt-1 text-xs text-zinc-400">
+          <p className="text-sm font-medium text-foreground">How can I help you?</p>
+          <p className="mt-1 text-xs text-muted-foreground">
             Ask me anything about your leads, customers, or invoices.
           </p>
         </div>
@@ -50,10 +50,10 @@ export function ChatMessageList() {
 
       {isLoading && (
         <div className="mt-3 flex items-start gap-2">
-          <div className="flex items-center gap-1 rounded-2xl rounded-tl-sm bg-zinc-100 px-4 py-3">
-            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.3s]" />
-            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.15s]" />
-            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-400" />
+          <div className="flex items-center gap-1 rounded-2xl rounded-tl-sm bg-secondary px-4 py-3">
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary/40 [animation-delay:-0.3s]" />
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary/40 [animation-delay:-0.15s]" />
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary/40" />
           </div>
         </div>
       )}

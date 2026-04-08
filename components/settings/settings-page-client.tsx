@@ -354,9 +354,9 @@ export default function SettingsPageClient() {
   if (isLoading) {
     return (
       <section className="space-y-4">
-        <div className="h-8 w-56 animate-pulse rounded bg-zinc-200" />
-        <div className="h-36 animate-pulse rounded-xl bg-zinc-200" />
-        <div className="h-40 animate-pulse rounded-xl bg-zinc-200" />
+        <div className="h-8 w-56 animate-pulse rounded bg-muted" />
+        <div className="h-36 animate-pulse rounded-xl bg-muted" />
+        <div className="h-40 animate-pulse rounded-xl bg-muted" />
       </section>
     );
   }
@@ -374,8 +374,8 @@ export default function SettingsPageClient() {
   return (
     <section className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">Settings</h1>
-        <p className="text-sm text-zinc-500">Manage your business profile and invoice preferences.</p>
+        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+        <p className="text-sm text-muted-foreground">Manage your business profile and invoice preferences.</p>
       </div>
 
       {successMessage ? (
@@ -384,17 +384,17 @@ export default function SettingsPageClient() {
         </div>
       ) : null}
 
-      <div className="rounded-xl border border-zinc-200 bg-white p-4 md:p-5">
+      <div className="rounded-xl border bg-card p-4 md:p-5">
         <div className="mb-4 flex items-center justify-between gap-2">
-          <h2 className="text-base font-semibold text-zinc-900">Business Profile</h2>
+          <h2 className="text-base font-semibold">Business Profile</h2>
         </div>
 
-        <div className="mb-5 flex flex-wrap items-start gap-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-          <div className="h-16 w-16 overflow-hidden rounded-lg border border-zinc-200 bg-white">
+        <div className="mb-5 flex flex-wrap items-start gap-4 rounded-lg border bg-muted p-3">
+          <div className="h-16 w-16 overflow-hidden rounded-lg border bg-card">
             {settings.logoUrl ? (
               <Image src={settings.logoUrl} alt="Business logo" width={64} height={64} className="h-16 w-16 object-cover" />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-xs font-medium text-zinc-500">
+              <div className="flex h-full w-full items-center justify-center text-xs font-medium text-muted-foreground">
                 No logo
               </div>
             )}
@@ -420,7 +420,7 @@ export default function SettingsPageClient() {
               className="hidden"
               onChange={(event) => void handleLogoSelected(event)}
             />
-            <p className="text-xs text-zinc-500">JPG/PNG up to 2MB.</p>
+            <p className="text-xs text-muted-foreground">JPG/PNG up to 2MB.</p>
           </div>
         </div>
 
@@ -523,8 +523,8 @@ export default function SettingsPageClient() {
           />
         </div>
 
-        <div className="mt-5 rounded-lg border border-zinc-200 p-3">
-          <h3 className="mb-3 text-sm font-semibold text-zinc-800">GST Details</h3>
+        <div className="mt-5 rounded-lg border p-3">
+          <h3 className="mb-3 text-sm font-semibold text-primary">GST Details</h3>
           <div className="grid gap-3 md:grid-cols-2">
             <Field
               label="GSTIN"
@@ -539,9 +539,9 @@ export default function SettingsPageClient() {
             />
 
             <div>
-              <label className="text-sm font-medium text-zinc-700">GST Mode</label>
+              <label className="text-sm font-medium text-foreground">GST Mode</label>
               <div className="mt-2 flex gap-4">
-                <label className="flex items-center gap-2 text-sm text-zinc-700">
+                <label className="flex items-center gap-2 text-sm text-foreground">
                   <input
                     type="radio"
                     name="gstMode"
@@ -551,7 +551,7 @@ export default function SettingsPageClient() {
                   />
                   Exclusive
                 </label>
-                <label className="flex items-center gap-2 text-sm text-zinc-700">
+                <label className="flex items-center gap-2 text-sm text-foreground">
                   <input
                     type="radio"
                     name="gstMode"
@@ -562,7 +562,7 @@ export default function SettingsPageClient() {
                   Inclusive
                 </label>
               </div>
-              <p className="mt-2 text-xs text-zinc-500">
+              <p className="mt-2 text-xs text-muted-foreground">
                 Exclusive: GST is added on top of item rates. Inclusive: item rates already include GST.
               </p>
             </div>
@@ -580,9 +580,9 @@ export default function SettingsPageClient() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-zinc-200 bg-white p-4 md:p-5">
+      <div className="rounded-xl border bg-card p-4 md:p-5">
         <div className="mb-4">
-          <h2 className="text-base font-semibold text-zinc-900">Invoice Settings</h2>
+          <h2 className="text-base font-semibold">Invoice Settings</h2>
         </div>
 
         <div className="grid gap-3 md:grid-cols-2">
@@ -599,9 +599,9 @@ export default function SettingsPageClient() {
             }
           />
 
-          <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700">
-            <p className="text-xs uppercase tracking-wide text-zinc-500">Next invoice</p>
-            <p className="mt-1 font-medium text-zinc-900">{nextInvoicePreview}</p>
+          <div className="rounded-lg border bg-muted px-3 py-2 text-sm text-foreground">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Next invoice</p>
+            <p className="mt-1 font-medium text-primary">{nextInvoicePreview}</p>
           </div>
 
           <Field
@@ -620,8 +620,8 @@ export default function SettingsPageClient() {
           />
         </div>
 
-        <div className="mt-5 rounded-lg border border-zinc-200 p-3">
-          <h3 className="mb-3 text-sm font-semibold text-zinc-800">Bank / Payment Details</h3>
+        <div className="mt-5 rounded-lg border p-3">
+          <h3 className="mb-3 text-sm font-semibold text-primary">Bank / Payment Details</h3>
           <div className="grid gap-3 md:grid-cols-2">
             <Field
               label="Bank Name"
@@ -673,8 +673,8 @@ export default function SettingsPageClient() {
           </div>
         </div>
 
-        <div className="mt-5 rounded-lg border border-zinc-200 p-3">
-          <h3 className="mb-3 text-sm font-semibold text-zinc-800">Default Invoice Text</h3>
+        <div className="mt-5 rounded-lg border p-3">
+          <h3 className="mb-3 text-sm font-semibold text-primary">Default Invoice Text</h3>
           <div className="grid gap-3 md:grid-cols-1">
             <Field
               label="Notes"
@@ -719,7 +719,7 @@ export default function SettingsPageClient() {
 }
 
 const inputClassName =
-  "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-0 transition focus:border-zinc-500 disabled:cursor-not-allowed disabled:bg-zinc-100";
+  "mt-1 w-full rounded-lg border bg-card px-3 py-2 text-sm text-foreground outline-none ring-0 transition focus:border-primary disabled:cursor-not-allowed disabled:bg-muted";
 
 type FieldProps = {
   label: string;
@@ -730,7 +730,7 @@ type FieldProps = {
 
 function Field({ label, input, error, required = false }: FieldProps) {
   return (
-    <label className="block text-sm text-zinc-700">
+    <label className="block text-sm text-foreground">
       <span className="font-medium">
         {label}
         {required ? <span className="ml-1 text-red-600">*</span> : null}

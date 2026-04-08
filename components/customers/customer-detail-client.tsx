@@ -56,7 +56,7 @@ function normalizePhone(phone: string): string {
 function getMeetingStatusClass(status: Meeting["status"]): string {
   if (status === "scheduled") return "bg-blue-50 text-blue-700";
   if (status === "completed") return "bg-green-50 text-green-700";
-  if (status === "cancelled") return "bg-zinc-100 text-zinc-500";
+  if (status === "cancelled") return "bg-muted text-muted-foreground";
   return "bg-red-50 text-red-600";
 }
 
@@ -216,7 +216,7 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -240,7 +240,7 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
 
   return (
     <section className="space-y-6">
-      <Link href="/customers" className="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-800">
+      <Link href="/customers" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" />
         Customers
       </Link>
@@ -251,11 +251,11 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
         </div>
       ) : null}
 
-      <header className="space-y-4 rounded-xl border border-zinc-200 bg-white p-4">
+      <header className="space-y-4 rounded-xl border bg-card p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-zinc-900">{summary.customer.name}</h1>
-            <p className="text-sm text-zinc-500">{summary.customer.phone}{summary.customer.email ? `  |  ${summary.customer.email}` : ""}</p>
+            <h1 className="text-2xl font-semibold text-primary">{summary.customer.name}</h1>
+            <p className="text-sm text-muted-foreground">{summary.customer.phone}{summary.customer.email ? `  |  ${summary.customer.email}` : ""}</p>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -282,10 +282,10 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
           <button
             type="button"
             onClick={() => switchTab("overview")}
-            className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-3 text-left"
+            className="rounded-lg border bg-muted px-3 py-3 text-left"
           >
-            <p className="text-lg font-semibold text-zinc-900">{formatRupees(summary.lifetimeValue)}</p>
-            <p className="text-xs text-zinc-600">Lifetime Revenue</p>
+            <p className="text-lg font-semibold text-primary">{formatRupees(summary.lifetimeValue)}</p>
+            <p className="text-xs text-muted-foreground">Lifetime Revenue</p>
           </button>
 
           <button
@@ -294,33 +294,33 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
               setInvoiceStatusPreset("partial");
               switchTab("invoices");
             }}
-            className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-3 text-left"
+            className="rounded-lg border bg-muted px-3 py-3 text-left"
           >
-            <p className="text-lg font-semibold text-zinc-900">{formatRupees(summary.totalOutstanding)}</p>
-            <p className="text-xs text-zinc-600">Outstanding</p>
+            <p className="text-lg font-semibold text-primary">{formatRupees(summary.totalOutstanding)}</p>
+            <p className="text-xs text-muted-foreground">Outstanding</p>
           </button>
 
           <button
             type="button"
             onClick={() => switchTab("leads")}
-            className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-3 text-left"
+            className="rounded-lg border bg-muted px-3 py-3 text-left"
           >
-            <p className="text-lg font-semibold text-zinc-900">{summary.activeLeads} active</p>
-            <p className="text-xs text-zinc-600">Leads ({summary.totalLeads} total)</p>
+            <p className="text-lg font-semibold text-primary">{summary.activeLeads} active</p>
+            <p className="text-xs text-muted-foreground">Leads ({summary.totalLeads} total)</p>
           </button>
 
           <button
             type="button"
             onClick={() => switchTab("meetings")}
-            className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-3 text-left"
+            className="rounded-lg border bg-muted px-3 py-3 text-left"
           >
-            <p className="text-lg font-semibold text-zinc-900">{summary.upcomingMeetings} upcoming</p>
-            <p className="text-xs text-zinc-600">Meetings</p>
+            <p className="text-lg font-semibold text-primary">{summary.upcomingMeetings} upcoming</p>
+            <p className="text-xs text-muted-foreground">Meetings</p>
           </button>
         </div>
       </header>
 
-      <nav className="flex flex-wrap gap-2 rounded-xl border border-zinc-200 bg-white p-2">
+      <nav className="flex flex-wrap gap-2 rounded-xl border bg-card p-2">
         {TABS.map((tab) => (
           <button
             key={tab.key}
@@ -328,8 +328,8 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
             onClick={() => switchTab(tab.key)}
             className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
               activeTab === tab.key
-                ? "bg-zinc-900 text-white"
-                : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-accent hover:text-foreground"
             }`}
           >
             {tab.label}
@@ -339,36 +339,36 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
 
       {activeTab === "overview" ? (
         <div className="grid gap-4 lg:grid-cols-2">
-          <section className="rounded-xl border border-zinc-200 bg-white p-4">
+          <section className="rounded-xl border bg-card p-4">
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-zinc-900">Recent Activity</h3>
+              <h3 className="text-sm font-semibold text-foreground">Recent Activity</h3>
             </div>
             {summary.recentActivities.length ? (
               <div className="space-y-2">
                 {summary.recentActivities.map((activity, index) => (
-                  <div key={`${activity.date}-${index}`} className="rounded-lg border border-zinc-100 bg-zinc-50 p-2">
-                    <p className="text-xs text-zinc-500">{formatDateTime(activity.date)}</p>
-                    <p className="text-sm text-zinc-800">{activity.description}</p>
-                    {activity.leadTitle ? <p className="text-xs text-zinc-500">{activity.leadTitle}</p> : null}
+                  <div key={`${activity.date}-${index}`} className="rounded-lg border border-border bg-muted p-2">
+                    <p className="text-xs text-muted-foreground">{formatDateTime(activity.date)}</p>
+                    <p className="text-sm text-foreground">{activity.description}</p>
+                    {activity.leadTitle ? <p className="text-xs text-muted-foreground">{activity.leadTitle}</p> : null}
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-zinc-500">No recent activity yet.</p>
+              <p className="text-sm text-muted-foreground">No recent activity yet.</p>
             )}
           </section>
 
-          <section className="rounded-xl border border-zinc-200 bg-white p-4">
+          <section className="rounded-xl border bg-card p-4">
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-zinc-900">Active Leads</h3>
+              <h3 className="text-sm font-semibold text-foreground">Active Leads</h3>
               <button type="button" className="text-xs text-primary hover:underline" onClick={() => switchTab("leads")}>View All</button>
             </div>
             {activeLeads.length ? (
               <div className="space-y-2">
                 {activeLeads.slice(0, 4).map((lead) => (
-                  <Link key={lead.id} href={`/leads/${lead.id}`} className="block rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2 hover:bg-zinc-100">
-                    <p className="text-sm font-medium text-zinc-900">{lead.title}</p>
-                    <div className="mt-1 flex items-center justify-between text-xs text-zinc-500">
+                  <Link key={lead.id} href={`/leads/${lead.id}`} className="block rounded-lg border border-border bg-muted px-3 py-2 hover:bg-accent">
+                    <p className="text-sm font-medium text-primary">{lead.title}</p>
+                    <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
                       <span>{lead.stageName ?? "Unknown stage"}</span>
                       <span>{lead.estimatedValue ? formatRupees(Number(lead.estimatedValue)) : "-"}</span>
                     </div>
@@ -376,13 +376,13 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-zinc-500">No active leads.</p>
+              <p className="text-sm text-muted-foreground">No active leads.</p>
             )}
           </section>
 
-          <section className="rounded-xl border border-zinc-200 bg-white p-4">
+          <section className="rounded-xl border bg-card p-4">
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-zinc-900">Pending Invoices</h3>
+              <h3 className="text-sm font-semibold text-foreground">Pending Invoices</h3>
               <button
                 type="button"
                 className="text-xs text-primary hover:underline"
@@ -404,11 +404,11 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
                   const href = `https://wa.me/91${normalizePhone(phone)}?text=${reminderText}`;
 
                   return (
-                    <div key={invoice.id} className="rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2">
+                    <div key={invoice.id} className="rounded-lg border border-border bg-muted px-3 py-2">
                       <div className="flex items-center justify-between gap-2">
                         <div>
-                          <p className="text-sm font-medium text-zinc-900">{invoice.invoiceNumber}</p>
-                          <p className="text-xs text-zinc-500">{formatRupees(Number(invoice.totalAmount))}</p>
+                          <p className="text-sm font-medium text-primary">{invoice.invoiceNumber}</p>
+                          <p className="text-xs text-muted-foreground">{formatRupees(Number(invoice.totalAmount))}</p>
                         </div>
                         <span className={`rounded-full px-2 py-1 text-xs font-medium capitalize ${invoice.status === "approved" ? "bg-teal-100 text-teal-700" : "bg-amber-100 text-amber-700"}`}>
                           {invoice.status}
@@ -424,45 +424,45 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
                 })}
               </div>
             ) : (
-              <p className="text-sm text-zinc-500">No pending invoices.</p>
+              <p className="text-sm text-muted-foreground">No pending invoices.</p>
             )}
           </section>
 
-          <section className="rounded-xl border border-zinc-200 bg-white p-4">
+          <section className="rounded-xl border bg-card p-4">
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-zinc-900">Upcoming Meetings</h3>
+              <h3 className="text-sm font-semibold text-foreground">Upcoming Meetings</h3>
               <button type="button" className="text-xs text-primary hover:underline" onClick={() => switchTab("meetings")}>View All</button>
             </div>
             {upcomingMeetings.length ? (
               <div className="space-y-2">
                 {upcomingMeetings.slice(0, 3).map((meeting) => (
-                  <div key={meeting.id} className="rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2">
-                    <p className="text-sm font-medium text-zinc-900">{meeting.title}</p>
-                    <p className="text-xs text-zinc-500">{formatDateTime(meeting.scheduledAt)}  |  {meeting.durationMinutes} min</p>
+                  <div key={meeting.id} className="rounded-lg border border-border bg-muted px-3 py-2">
+                    <p className="text-sm font-medium text-primary">{meeting.title}</p>
+                    <p className="text-xs text-muted-foreground">{formatDateTime(meeting.scheduledAt)}  |  {meeting.durationMinutes} min</p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-zinc-500">No upcoming meetings.</p>
+              <p className="text-sm text-muted-foreground">No upcoming meetings.</p>
             )}
           </section>
         </div>
       ) : null}
 
       {activeTab === "leads" ? (
-        <section className="space-y-3 rounded-xl border border-zinc-200 bg-white p-4">
+        <section className="space-y-3 rounded-xl border bg-card p-4">
           {leads.length ? (
             <div className="grid gap-3 md:grid-cols-2">
               {leads.map((lead) => (
-                <Link key={lead.id} href={`/leads/${lead.id}`} className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 hover:bg-zinc-100">
-                  <p className="text-sm font-semibold text-zinc-900">{lead.title}</p>
-                  <p className="mt-1 text-xs text-zinc-600">Stage: {lead.stageName ?? "Unknown"}</p>
-                  <p className="text-xs text-zinc-600">Value: {lead.estimatedValue ? formatRupees(Number(lead.estimatedValue)) : "-"}</p>
+                <Link key={lead.id} href={`/leads/${lead.id}`} className="rounded-lg border bg-muted p-3 hover:bg-accent">
+                  <p className="text-sm font-semibold text-primary">{lead.title}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Stage: {lead.stageName ?? "Unknown"}</p>
+                  <p className="text-xs text-muted-foreground">Value: {lead.estimatedValue ? formatRupees(Number(lead.estimatedValue)) : "-"}</p>
                 </Link>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-zinc-500">No leads found for this customer.</p>
+            <p className="text-sm text-muted-foreground">No leads found for this customer.</p>
           )}
         </section>
       ) : null}
@@ -478,26 +478,26 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
       ) : null}
 
       {activeTab === "meetings" ? (
-        <section className="space-y-3 rounded-xl border border-zinc-200 bg-white p-4">
+        <section className="space-y-3 rounded-xl border bg-card p-4">
           {meetings.length ? (
             <div className="space-y-2">
               {meetings
                 .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
                 .map((meeting) => (
-                  <div key={meeting.id} className="rounded-lg border border-zinc-200 px-3 py-2">
+                  <div key={meeting.id} className="rounded-lg border px-3 py-2">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-semibold text-zinc-900">{meeting.title}</p>
+                      <p className="text-sm font-semibold text-primary">{meeting.title}</p>
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getMeetingStatusClass(meeting.status)}`}>
                         {meeting.status}
                       </span>
-                      <span className="text-xs text-zinc-500">{formatDateTime(meeting.scheduledAt)}</span>
+                      <span className="text-xs text-muted-foreground">{formatDateTime(meeting.scheduledAt)}</span>
                     </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-zinc-600">
+                    <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                       <span>{meeting.durationMinutes} min</span>
                       {meeting.notes ? <span>{meeting.notes}</span> : null}
                     </div>
                     {meeting.status === "scheduled" ? (
-                      <div className="mt-2 flex items-center gap-3 border-t border-zinc-100 pt-2">
+                      <div className="mt-2 flex items-center gap-3 border-t border-border pt-2">
                         <button
                           type="button"
                           className="text-xs text-green-600 hover:underline"
@@ -507,7 +507,7 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
                         </button>
                         <button
                           type="button"
-                          className="text-xs text-zinc-500 hover:underline"
+                          className="text-xs text-muted-foreground hover:underline"
                           onClick={() => void updateMeetingStatus(meeting.id, "cancelled")}
                         >
                           Cancel
@@ -518,7 +518,7 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
                 ))}
             </div>
           ) : (
-            <p className="text-sm text-zinc-500">No meetings found for this customer.</p>
+            <p className="text-sm text-muted-foreground">No meetings found for this customer.</p>
           )}
         </section>
       ) : null}
@@ -527,20 +527,20 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
         <>
           <button
             type="button"
-            className="fixed inset-0 z-40 bg-zinc-900/40"
+            className="fixed inset-0 z-40 bg-foreground/40"
             onClick={isSavingCustomer ? undefined : () => setIsEditOpen(false)}
             aria-label="Close edit dialog"
           />
 
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="w-full max-w-lg rounded-xl border border-zinc-200 bg-white p-4 shadow-xl">
-              <h3 className="text-base font-semibold text-zinc-900">Edit Customer</h3>
+            <div className="w-full max-w-lg rounded-xl border bg-card p-4 shadow-xl">
+              <h3 className="text-base font-semibold text-foreground">Edit Customer</h3>
               <div className="mt-3 grid gap-3">
                 <input
                   type="text"
                   value={editName}
                   onChange={(event) => setEditName(event.target.value)}
-                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
                   placeholder="Name"
                   disabled={isSavingCustomer}
                 />
@@ -548,7 +548,7 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
                   type="text"
                   value={editPhone}
                   onChange={(event) => setEditPhone(event.target.value)}
-                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
                   placeholder="Phone"
                   disabled={isSavingCustomer}
                 />
@@ -556,14 +556,14 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
                   type="email"
                   value={editEmail}
                   onChange={(event) => setEditEmail(event.target.value)}
-                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
                   placeholder="Email"
                   disabled={isSavingCustomer}
                 />
                 <textarea
                   value={editNotes}
                   onChange={(event) => setEditNotes(event.target.value)}
-                  className="min-h-24 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  className="min-h-24 w-full rounded-lg border px-3 py-2 text-sm"
                   placeholder="Notes"
                   disabled={isSavingCustomer}
                 />

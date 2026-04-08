@@ -22,12 +22,12 @@ export default function InvoiceListPageClient() {
   return (
     <section className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">{title}</h1>
-        <p className="text-sm text-zinc-500">Manage all invoices and payments.</p>
+        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+        <p className="text-sm text-muted-foreground">Manage all invoices and payments.</p>
       </div>
 
       {customerId ? (
-        <div className="flex items-center gap-3 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-600">
+        <div className="flex items-center gap-3 rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground">
           <span>Showing invoices for {customerName}</span>
           <button
             type="button"

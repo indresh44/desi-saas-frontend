@@ -214,7 +214,7 @@ export function ChatInput() {
   }, [mentions, text]);
 
   return (
-    <div className="border-t bg-white px-3 py-3">
+    <div className="border-t border-border bg-card px-3 py-3">
       <div className="flex items-end gap-2">
         <div className="relative flex-1">
           {showMentionDropdown ? (
@@ -231,7 +231,7 @@ export function ChatInput() {
 
           {mentions.length > 0 ? (
             <div
-              className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-words rounded-xl border border-transparent bg-zinc-50 px-3.5 py-2.5 text-sm leading-normal text-zinc-900"
+              className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-words rounded-xl border border-transparent bg-muted px-3.5 py-2.5 text-sm leading-normal text-foreground"
               dangerouslySetInnerHTML={{ __html: `${highlightedHtml}<br />` }}
               aria-hidden="true"
             />
@@ -245,8 +245,8 @@ export function ChatInput() {
             placeholder="Ask anything... Type @ to mention"
             disabled={isLoading}
             rows={1}
-            className={`max-h-[120px] min-h-[40px] w-full resize-none rounded-xl border border-zinc-200 px-3.5 py-2.5 text-sm leading-normal placeholder:text-zinc-400 focus:border-zinc-300 focus:outline-none disabled:opacity-50 ${
-              mentions.length > 0 ? "bg-transparent" : "bg-zinc-50 focus:bg-white"
+            className={`max-h-[120px] min-h-[40px] w-full resize-none rounded-xl border border-border px-3.5 py-2.5 text-sm leading-normal placeholder:text-muted-foreground/60 focus:border-ring focus:outline-none disabled:opacity-50 ${
+              mentions.length > 0 ? "bg-transparent" : "bg-muted focus:bg-background"
             }`}
             style={mentions.length > 0 ? { color: "transparent", caretColor: "#18181b" } : undefined}
           />
@@ -255,14 +255,14 @@ export function ChatInput() {
           type="button"
           onClick={() => void handleSend()}
           disabled={!text.trim() || isLoading}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-900 text-white transition-colors hover:bg-zinc-800 disabled:opacity-30 disabled:hover:bg-zinc-900"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-30 disabled:hover:bg-primary"
           aria-label="Send message"
         >
           <SendHorizontal className="h-4 w-4" />
         </button>
       </div>
-      <p className="mt-1 px-1 text-[10px] text-zinc-400">
-        Type <kbd className="rounded border border-zinc-200 bg-zinc-50 px-1 font-mono">@</kbd> to mention customers, items, or invoices
+      <p className="mt-1 px-1 text-[10px] text-muted-foreground">
+        Type <kbd className="rounded border border-border bg-muted px-1 font-mono">@</kbd> to mention customers, items, or invoices
       </p>
     </div>
   );

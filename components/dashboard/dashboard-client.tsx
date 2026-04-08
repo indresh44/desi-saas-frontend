@@ -68,7 +68,7 @@ function getStageBadgeClass(stageId: string) {
   }
 
   if (normalized.includes("cold") || normalized.includes("lost")) {
-    return "bg-zinc-100 text-zinc-700 border-zinc-200";
+    return "bg-muted text-foreground border";
   }
 
   return "bg-sky-50 text-sky-700 border-sky-200";
@@ -248,20 +248,20 @@ export default function DashboardClient() {
 
         {isNewUser ? (
           <div className="flex min-h-[calc(100vh-14rem)] items-center justify-center">
-            <div className="mx-auto flex max-w-xl flex-col items-center rounded-3xl border border-zinc-200 bg-white px-6 py-10 text-center shadow-sm">
+            <div className="mx-auto flex max-w-xl flex-col items-center rounded-3xl border bg-card px-6 py-10 text-center shadow-sm">
               <div className="flex h-20 w-20 items-center justify-center rounded-full bg-sky-50 text-sky-600">
                 <Rocket className="h-10 w-10" />
               </div>
-              <h1 className="mt-6 text-3xl font-semibold tracking-tight text-zinc-900">
+              <h1 className="mt-6 text-3xl font-semibold tracking-tight text-foreground">
                 Welcome to SellNSettle! 🎉
               </h1>
-              <p className="mt-3 max-w-md text-sm leading-6 text-zinc-600">
+              <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
                 Track your enquiries, send quotes, and collect payments - all in one place.
               </p>
               <button
                 type="button"
                 onClick={() => setIsCreateOpen(true)}
-                className="mt-8 inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-zinc-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-zinc-800"
+                className="mt-8 inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
               >
                 <Plus className="h-4 w-4" />
                 Add Your First Enquiry
@@ -271,10 +271,10 @@ export default function DashboardClient() {
         ) : (
           <>
             <div className="space-y-1">
-              <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+              <h1 className="text-2xl font-semibold tracking-tight ">
                 Dashboard
               </h1>
-              <p className="text-sm text-zinc-600">
+              <p className="text-sm text-muted-foreground">
                 Quick snapshot of what needs attention today.
               </p>
             </div>
@@ -304,21 +304,21 @@ export default function DashboardClient() {
             ) : null}
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="rounded-2xl border border-zinc-200 bg-white p-5">
-                <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              <div className="rounded-2xl border bg-card p-5">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Follow-ups Today
                 </p>
-                <p className="mt-3 text-3xl font-semibold text-zinc-900">
+                <p className="mt-3 text-3xl font-semibold text-primary">
                   {isLoading ? "..." : pendingFollowUps.length}
                 </p>
-                <p className="mt-2 text-xs text-zinc-500">Don&apos;t miss these</p>
+                <p className="mt-2 text-xs text-muted-foreground">Don&apos;t miss these</p>
               </div>
 
-              <div className="rounded-2xl border border-zinc-200 bg-white p-5">
-                <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              <div className="rounded-2xl border bg-card p-5">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Collections This Month
                 </p>
-                <p className="mt-3 text-3xl font-semibold text-zinc-900">
+                <p className="mt-3 text-3xl font-semibold text-primary">
                   {isLoading || !paymentSummary
                     ? "..."
                     : formatRupees(paymentSummary.collections_this_month)}
@@ -328,20 +328,20 @@ export default function DashboardClient() {
                     {monthComparison.isUp ? "↑" : "↓"} {monthComparison.value.toFixed(0)}% vs last month
                   </p>
                 ) : (
-                  <p className="mt-2 text-xs text-zinc-500">Current month total</p>
+                  <p className="mt-2 text-xs text-muted-foreground">Current month total</p>
                 )}
               </div>
 
-              <div className="rounded-2xl border border-zinc-200 bg-white p-5">
-                <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              <div className="rounded-2xl border bg-card p-5">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Total Outstanding
                 </p>
-                <p className="mt-3 text-3xl font-semibold text-zinc-900">
+                <p className="mt-3 text-3xl font-semibold text-primary">
                   {isLoading || !paymentSummary
                     ? "..."
                     : formatRupees(paymentSummary.total_outstanding)}
                 </p>
-                <p className="mt-2 text-xs text-zinc-500">
+                <p className="mt-2 text-xs text-muted-foreground">
                   {isLoading || !paymentSummary
                     ? "..."
                     : `${paymentSummary.outstanding_invoice_count} invoices pending`}
@@ -350,19 +350,19 @@ export default function DashboardClient() {
             </div>
 
             <section className="space-y-4">
-              <h2 className="text-lg font-semibold text-zinc-900">Overdue Payments</h2>
+              <h2 className="text-lg font-semibold text-foreground">Overdue Payments</h2>
 
               {isLoading ? (
-                <div className="rounded-xl border border-zinc-200 bg-white p-4">
-                  <div className="h-12 animate-pulse rounded-md bg-zinc-100" />
+                <div className="rounded-xl border bg-card p-4">
+                  <div className="h-12 animate-pulse rounded-md bg-muted" />
                 </div>
               ) : overdueInvoices.length === 0 ? (
-                <div className="rounded-xl border border-zinc-200 bg-white px-4 py-6 text-sm text-zinc-600">
+                <div className="rounded-xl border bg-card px-4 py-6 text-sm text-muted-foreground">
                   No overdue payments. All clear! ✅
                 </div>
               ) : (
-                <div className="rounded-xl border border-zinc-200 bg-white">
-                  <ul className="divide-y divide-zinc-100">
+                <div className="rounded-xl border bg-card">
+                  <ul className="divide-y divide-border">
                     {overdueInvoices.map((invoice) => {
                       const firstName = (invoice.customer_name || "Customer").trim().split(/\s+/)[0] || "Customer";
                       const digits = (invoice.customer_phone || "").replace(/\D/g, "");
@@ -378,15 +378,15 @@ export default function DashboardClient() {
                         <li key={invoice.invoice_id} className="px-4 py-3">
                           <div className="flex flex-wrap items-start justify-between gap-3">
                             <div>
-                              <p className="text-sm font-semibold text-zinc-900">
+                              <p className="text-sm font-semibold text-foreground">
                                 {invoice.customer_name || "Unknown Customer"}
                               </p>
-                              <p className="text-xs text-zinc-600">{invoice.invoice_number}</p>
+                              <p className="text-xs text-muted-foreground">{invoice.invoice_number}</p>
                             </div>
 
                             <div className="text-right">
                               <p className="text-sm font-semibold text-rose-600">{formatRupees(invoice.balance_due)}</p>
-                              <p className="text-xs text-zinc-500">{invoice.days_overdue} days overdue</p>
+                              <p className="text-xs text-muted-foreground">{invoice.days_overdue} days overdue</p>
                             </div>
                           </div>
 
@@ -394,7 +394,7 @@ export default function DashboardClient() {
                             {invoice.lead_id ? (
                               <Link
                                 href={`/leads/${invoice.lead_id}`}
-                                className="inline-flex items-center rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-50"
+                                className="inline-flex items-center rounded-lg border border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-accent"
                               >
                                 View Invoice
                               </Link>
@@ -407,7 +407,7 @@ export default function DashboardClient() {
                               className={`inline-flex items-center rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
                                 normalized
                                   ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                                  : "cursor-not-allowed border-zinc-200 bg-zinc-100 text-zinc-500"
+                                  : "cursor-not-allowed border bg-muted text-muted-foreground"
                               }`}
                               aria-disabled={!normalized}
                               onClick={(event) => {
@@ -423,8 +423,8 @@ export default function DashboardClient() {
                               href={invoice.customer_phone ? `tel:${invoice.customer_phone}` : "#"}
                               className={`inline-flex items-center rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
                                 invoice.customer_phone
-                                  ? "border-zinc-300 text-zinc-700 hover:bg-zinc-50"
-                                  : "cursor-not-allowed border-zinc-200 bg-zinc-100 text-zinc-500"
+                                  ? "border text-foreground hover:bg-accent"
+                                  : "cursor-not-allowed border bg-muted text-muted-foreground"
                               }`}
                               aria-disabled={!invoice.customer_phone}
                               onClick={(event) => {
@@ -445,15 +445,15 @@ export default function DashboardClient() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-lg font-semibold text-zinc-900">Today&apos;s Follow-ups</h2>
+              <h2 className="text-lg font-semibold text-foreground">Today&apos;s Follow-ups</h2>
 
               {isLoading ? (
                 <div className="grid gap-3 md:grid-cols-2">
-                  <div className="h-32 animate-pulse rounded-xl border border-zinc-200 bg-zinc-50" />
-                  <div className="h-32 animate-pulse rounded-xl border border-zinc-200 bg-zinc-50" />
+                  <div className="h-32 animate-pulse rounded-xl border border bg-muted" />
+                  <div className="h-32 animate-pulse rounded-xl border border bg-muted" />
                 </div>
               ) : pendingFollowUps.length === 0 ? (
-                <div className="rounded-xl border border-zinc-200 bg-white px-4 py-8 text-center text-sm text-zinc-600">
+                <div className="rounded-xl border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
                   No follow-ups today. Enjoy your day! ☀️
                 </div>
               ) : (
@@ -461,26 +461,26 @@ export default function DashboardClient() {
                   {pendingFollowUps.map((followUp) => (
                     <article
                       key={followUp.id}
-                      className="rounded-xl border border-zinc-200 bg-white p-4"
+                      className="rounded-xl border bg-card p-4"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <h3 className="truncate text-sm font-semibold text-zinc-900">
+                          <h3 className="truncate text-sm font-semibold text-foreground">
                             {followUp.leadTitle || "Lead"}
                           </h3>
                           {followUp.customerName ? (
-                            <p className="mt-1 text-xs text-zinc-600">
+                            <p className="mt-1 text-xs text-muted-foreground">
                               {followUp.customerName}
                             </p>
                           ) : null}
                         </div>
-                        <p className="text-xs font-medium text-zinc-500">
+                        <p className="text-xs font-medium text-muted-foreground">
                           {formatTime(followUp.scheduledAt)}
                         </p>
                       </div>
 
                       {followUp.note ? (
-                        <p className="mt-3 line-clamp-2 text-sm text-zinc-700">
+                        <p className="mt-3 line-clamp-2 text-sm text-foreground">
                           {followUp.note}
                         </p>
                       ) : null}
@@ -489,7 +489,7 @@ export default function DashboardClient() {
                         type="button"
                         onClick={() => handleMarkDone(followUp.id)}
                         disabled={markingId === followUp.id}
-                        className="mt-4 inline-flex min-h-[44px] items-center rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="mt-4 inline-flex min-h-[44px] items-center rounded-lg border border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {markingId === followUp.id ? "Updating..." : "✓ Done"}
                       </button>
@@ -501,39 +501,39 @@ export default function DashboardClient() {
 
             <section className="space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-zinc-900">Recent Leads</h2>
+                <h2 className="text-lg font-semibold text-foreground">Recent Leads</h2>
                 <Link
                   href="/leads"
-                  className="text-sm font-medium text-zinc-700 transition hover:text-zinc-900"
+                  className="text-sm font-medium text-foreground transition hover:text-foreground"
                 >
                   View All →
                 </Link>
               </div>
 
-              <div className="rounded-xl border border-zinc-200 bg-white">
+              <div className="rounded-xl border bg-card">
                 {isLoading ? (
                   <div className="space-y-2 p-4">
-                    <div className="h-12 animate-pulse rounded-md bg-zinc-100" />
-                    <div className="h-12 animate-pulse rounded-md bg-zinc-100" />
-                    <div className="h-12 animate-pulse rounded-md bg-zinc-100" />
+                    <div className="h-12 animate-pulse rounded-md bg-muted" />
+                    <div className="h-12 animate-pulse rounded-md bg-muted" />
+                    <div className="h-12 animate-pulse rounded-md bg-muted" />
                   </div>
                 ) : recentLeads.length === 0 ? (
-                  <div className="px-4 py-8 text-center text-sm text-zinc-600">
+                  <div className="px-4 py-8 text-center text-sm text-muted-foreground">
                     No leads yet. Start by adding one.
                   </div>
                 ) : (
-                  <ul className="divide-y divide-zinc-100">
+                  <ul className="divide-y divide-border">
                     {recentLeads.map((lead) => (
                       <li key={lead.id} className="px-4 py-3">
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                          <p className="min-w-0 flex-1 truncate text-sm font-medium text-zinc-900">
+                          <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                             {lead.title}
                           </p>
-                          <p className="max-w-[45%] truncate text-xs text-zinc-600">
+                          <p className="max-w-[45%] truncate text-xs text-muted-foreground">
                             {lead.customerName ?? "Unknown Customer"}
                           </p>
                         </div>
-                        <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-zinc-600">
+                        <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                           <span
                             className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${getStageBadgeClass(
                               lead.stageName ?? lead.stageId

@@ -64,7 +64,7 @@ const DATE_OPTIONS: { value: DatePreset; label: string }[] = [
 ];
 
 const inputClassName =
-  "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:text-zinc-400";
+  "w-full rounded-lg border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground";
 
 function formatRupees(value: number): string {
   return new Intl.NumberFormat("en-IN", {
@@ -92,7 +92,7 @@ function statusClassName(status: InvoiceStatus): string {
   if (status === "approved") return "bg-teal-100 text-teal-700";
   if (status === "sent") return "bg-blue-100 text-blue-700";
   if (status === "partial") return "bg-amber-100 text-amber-700";
-  return "bg-zinc-100 text-zinc-600";
+  return "bg-muted text-muted-foreground";
 }
 
 function paymentMethodLabel(value: PaymentMethod): string {
@@ -259,7 +259,7 @@ function InlinePaymentForm({ invoice, remainingBalance, onSuccess }: InlinePayme
   };
 
   return (
-    <div className="space-y-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+    <div className="space-y-3 rounded-xl border bg-muted p-3">
       <div className="grid gap-2 md:grid-cols-[1.1fr_1fr_1fr_1fr_auto_auto]">
         <input
           type="number"
@@ -347,13 +347,13 @@ function InlinePaymentForm({ invoice, remainingBalance, onSuccess }: InlinePayme
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-600">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
         <span>Balance: {formatRupees(Math.max(remainingBalance, 0))}</span>
         {selectedFile ? (
-          <span className="inline-flex items-center gap-2 rounded bg-white px-2 py-1 text-zinc-700">
+          <span className="inline-flex items-center gap-2 rounded bg-card px-2 py-1 text-foreground">
             {previewUrl ? <img src={previewUrl} alt="Receipt" className="h-6 w-6 rounded object-cover" /> : <FileText className="h-3.5 w-3.5" />}
             {selectedFile.name}
-            <button type="button" onClick={resetFile} className="text-zinc-500 hover:text-red-600">
+            <button type="button" onClick={resetFile} className="text-muted-foreground hover:text-red-600">
               Remove
             </button>
           </span>
@@ -597,13 +597,13 @@ export function InvoiceListView({
   return (
     <section className="space-y-4">
       {showSummaryBar ? (
-        <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm font-medium text-zinc-800">
+        <div className="rounded-xl border bg-card px-4 py-3 text-sm font-medium text-foreground">
           {formatRupees(summaryOutstanding)} outstanding across {summaryCount} invoice{summaryCount === 1 ? "" : "s"}
         </div>
       ) : null}
 
       {showFilters ? (
-        <div className="space-y-3 rounded-xl border border-zinc-200 bg-white p-4">
+        <div className="space-y-3 rounded-xl border bg-card p-4">
           <div className="flex flex-wrap gap-2">
             {STATUS_OPTIONS.map((option) => (
               <button
@@ -612,8 +612,8 @@ export function InvoiceListView({
                 onClick={() => setStatusFilter(option.value)}
                 className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
                   statusFilter === option.value
-                    ? "border-zinc-900 bg-zinc-900 text-white"
-                    : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400 hover:text-zinc-900"
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
                 }`}
               >
                 {option.label}
@@ -623,7 +623,7 @@ export function InvoiceListView({
 
           <div className="grid gap-3 md:grid-cols-[1fr_1fr]">
             <div className="space-y-2">
-              <label className="text-xs font-medium uppercase tracking-wide text-zinc-500">Date Range</label>
+              <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Date Range</label>
               <select
                 value={datePreset}
                 onChange={(event) => setDatePreset(event.target.value as DatePreset)}
@@ -655,7 +655,7 @@ export function InvoiceListView({
 
             {!customerId ? (
               <div className="space-y-2">
-                <label className="text-xs font-medium uppercase tracking-wide text-zinc-500">Customer</label>
+                <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Customer</label>
                 <div className="relative">
                   <input
                     type="text"
@@ -679,7 +679,7 @@ export function InvoiceListView({
                     disabled={isCustomersLoading}
                   />
                   {isCustomerDropdownOpen ? (
-                    <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-zinc-200 bg-white shadow-md">
+                    <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border bg-card shadow-md">
                       <button
                         type="button"
                         onMouseDown={() => {
@@ -687,7 +687,7 @@ export function InvoiceListView({
                           setCustomerSearch("");
                           setIsCustomerDropdownOpen(false);
                         }}
-                        className="block w-full border-b border-zinc-100 px-3 py-2 text-left text-sm text-zinc-600 hover:bg-zinc-50"
+                        className="block w-full border-b border-border px-3 py-2 text-left text-sm text-muted-foreground hover:bg-accent"
                       >
                         All customers
                       </button>
@@ -700,14 +700,14 @@ export function InvoiceListView({
                             setCustomerSearch("");
                             setIsCustomerDropdownOpen(false);
                           }}
-                          className="block w-full px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50"
+                          className="block w-full px-3 py-2 text-left text-sm text-foreground hover:bg-accent"
                         >
-                          <div className="font-medium text-zinc-900">{customer.name}</div>
-                          <div className="text-xs text-zinc-500">{customer.phone}</div>
+                          <div className="font-medium text-primary">{customer.name}</div>
+                          <div className="text-xs text-muted-foreground">{customer.phone}</div>
                         </button>
                       ))}
                       {!filteredCustomers.length ? (
-                        <div className="px-3 py-2 text-sm text-zinc-500">No matching customers.</div>
+                        <div className="px-3 py-2 text-sm text-muted-foreground">No matching customers.</div>
                       ) : null}
                     </div>
                   ) : null}
@@ -725,13 +725,13 @@ export function InvoiceListView({
       ) : null}
 
       {isLoading ? (
-        <div className="space-y-2 rounded-xl border border-zinc-200 bg-white p-4">
-          <div className="h-12 animate-pulse rounded bg-zinc-100" />
-          <div className="h-12 animate-pulse rounded bg-zinc-100" />
-          <div className="h-12 animate-pulse rounded bg-zinc-100" />
+        <div className="space-y-2 rounded-xl border bg-card p-4">
+          <div className="h-12 animate-pulse rounded bg-muted" />
+          <div className="h-12 animate-pulse rounded bg-muted" />
+          <div className="h-12 animate-pulse rounded bg-muted" />
         </div>
       ) : !invoices.length ? (
-        <div className="rounded-xl border border-dashed border-zinc-200 bg-white px-6 py-10 text-center text-sm text-zinc-500">
+        <div className="rounded-xl border border-dashed bg-card px-6 py-10 text-center text-sm text-muted-foreground">
           No invoices found for the selected filters.
         </div>
       ) : (
@@ -755,7 +755,7 @@ export function InvoiceListView({
               : null;
 
             return (
-              <article key={invoice.id} className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+              <article key={invoice.id} className="overflow-hidden rounded-xl border bg-card">
                 <div
                   role="button"
                   tabIndex={0}
@@ -768,21 +768,21 @@ export function InvoiceListView({
                   }}
                   className="flex flex-wrap items-center gap-3 px-4 py-3"
                 >
-                  <span className="text-zinc-500">
+                  <span className="text-muted-foreground">
                     {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                   </span>
 
-                  <div className="min-w-36 font-semibold text-zinc-900">{invoice.invoiceNumber}</div>
+                  <div className="min-w-36 font-semibold text-primary">{invoice.invoiceNumber}</div>
 
                   {showCustomerColumn ? (
-                    <div className="min-w-40 text-sm text-zinc-700">{invoice.customerName ?? "-"}</div>
+                    <div className="min-w-40 text-sm text-foreground">{invoice.customerName ?? "-"}</div>
                   ) : null}
 
-                  <div className="text-sm text-zinc-600">{formatDate(invoice.issuedDate)}</div>
+                  <div className="text-sm text-muted-foreground">{formatDate(invoice.issuedDate)}</div>
 
-                  <div className="text-sm font-medium text-zinc-900">{formatRupees(Number(invoice.totalAmount))}</div>
+                  <div className="text-sm font-medium text-primary">{formatRupees(Number(invoice.totalAmount))}</div>
 
-                  <div className="text-sm text-zinc-600">{formatRupees(amountPaid)} paid</div>
+                  <div className="text-sm text-muted-foreground">{formatRupees(amountPaid)} paid</div>
 
                   <span className={`rounded-full px-2 py-1 text-xs font-medium capitalize ${statusClassName(invoice.status)}`}>
                     {invoice.status}
@@ -822,18 +822,18 @@ export function InvoiceListView({
                 </div>
 
                 {isExpanded ? (
-                  <div className="border-t border-zinc-200 px-4 py-4">
+                  <div className="border-t px-4 py-4">
                     {isExpandedLoading ? (
-                      <div className="flex items-center gap-2 text-sm text-zinc-600">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Loader2 className="h-4 w-4 animate-spin" />
                         Loading invoice details...
                       </div>
                     ) : (
                       <div className="space-y-4">
                         <section className="overflow-x-auto">
-                          <table className="min-w-full text-left text-sm text-zinc-700">
+                          <table className="min-w-full text-left text-sm text-foreground">
                             <thead>
-                              <tr className="border-b border-zinc-200 text-xs uppercase tracking-[0.12em] text-zinc-500">
+                              <tr className="border-b text-xs uppercase tracking-[0.12em] text-muted-foreground">
                                 <th className="py-2 pr-3">#</th>
                                 <th className="py-2 pr-3">Item</th>
                                 <th className="py-2 pr-3">Unit</th>
@@ -845,45 +845,45 @@ export function InvoiceListView({
                             </thead>
                             <tbody>
                               {lineItems.map((item, index) => (
-                                <tr key={item.id} className="border-b border-zinc-100 last:border-b-0">
+                                <tr key={item.id} className="border-b border-border last:border-b-0">
                                   <td className="py-2 pr-3">{index + 1}</td>
-                                  <td className="py-2 pr-3 font-medium text-zinc-900">{item.name || item.description}</td>
+                                  <td className="py-2 pr-3 font-medium text-primary">{item.name || item.description}</td>
                                   <td className="py-2 pr-3">{item.unit}</td>
                                   <td className="py-2 pr-3">{item.quantity}</td>
                                   <td className="py-2 pr-3">{formatRupees(Number(item.unitPrice))}</td>
                                   <td className="py-2 pr-3">{item.gstPercent}%</td>
-                                  <td className="py-2 text-right font-medium text-zinc-900">{formatRupees(Number(item.amount))}</td>
+                                  <td className="py-2 text-right font-medium text-primary">{formatRupees(Number(item.amount))}</td>
                                 </tr>
                               ))}
                             </tbody>
                             <tfoot>
                               <tr>
-                                <td colSpan={6} className="pt-3 text-right text-sm font-medium text-zinc-600">Subtotal</td>
-                                <td className="pt-3 text-right text-sm font-semibold text-zinc-800">{formatRupees(Number(invoice.subtotal ?? 0))}</td>
+                                <td colSpan={6} className="pt-3 text-right text-sm font-medium text-muted-foreground">Subtotal</td>
+                                <td className="pt-3 text-right text-sm font-semibold text-foreground">{formatRupees(Number(invoice.subtotal ?? 0))}</td>
                               </tr>
                               <tr>
-                                <td colSpan={6} className="pt-1 text-right text-sm font-medium text-zinc-600">Tax</td>
-                                <td className="pt-1 text-right text-sm font-semibold text-zinc-800">{formatRupees(Number(invoice.taxTotal ?? 0))}</td>
+                                <td colSpan={6} className="pt-1 text-right text-sm font-medium text-muted-foreground">Tax</td>
+                                <td className="pt-1 text-right text-sm font-semibold text-foreground">{formatRupees(Number(invoice.taxTotal ?? 0))}</td>
                               </tr>
                               <tr>
-                                <td colSpan={6} className="pt-1 text-right text-sm font-medium text-zinc-600">Total</td>
-                                <td className="pt-1 text-right text-base font-semibold text-zinc-900">{formatRupees(Number(invoice.totalAmount))}</td>
+                                <td colSpan={6} className="pt-1 text-right text-sm font-medium text-muted-foreground">Total</td>
+                                <td className="pt-1 text-right text-base font-semibold text-primary">{formatRupees(Number(invoice.totalAmount))}</td>
                               </tr>
                             </tfoot>
                           </table>
                         </section>
 
                         {payments.length ? (
-                          <section className="space-y-2 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
-                            <h4 className="text-sm font-semibold text-zinc-900">Payments</h4>
+                          <section className="space-y-2 rounded-xl border bg-muted p-3">
+                            <h4 className="text-sm font-semibold text-primary">Payments</h4>
                             <div className="space-y-2">
                               {payments.map((payment) => (
-                                <div key={payment.id} className="rounded-lg border border-zinc-200 bg-white p-2">
+                                <div key={payment.id} className="rounded-lg border bg-card p-2">
                                   <div className="flex flex-wrap items-center gap-3 text-sm">
-                                    <span className="font-semibold text-zinc-900">{formatRupees(Number(payment.amount))}</span>
-                                    <span className="text-zinc-600">{paymentMethodLabel(payment.paymentMethod)}</span>
-                                    <span className="text-zinc-600">{formatDate(payment.paymentDate)}</span>
-                                    {payment.reference ? <span className="text-zinc-500">Ref: {payment.reference}</span> : null}
+                                    <span className="font-semibold text-primary">{formatRupees(Number(payment.amount))}</span>
+                                    <span className="text-muted-foreground">{paymentMethodLabel(payment.paymentMethod)}</span>
+                                    <span className="text-muted-foreground">{formatDate(payment.paymentDate)}</span>
+                                    {payment.reference ? <span className="text-muted-foreground">Ref: {payment.reference}</span> : null}
                                   </div>
                                   <div className="mt-2">
                                     <PaymentAttachmentPreview paymentId={payment.id} />
@@ -899,7 +899,7 @@ export function InvoiceListView({
                             {showPaymentFormByInvoice[invoice.id] ? (
                               <>
                                 <div className="flex items-center justify-between">
-                                  <span className="text-sm font-medium text-zinc-700">Record Payment</span>
+                                  <span className="text-sm font-medium text-foreground">Record Payment</span>
                                   <Button
                                     type="button"
                                     size="sm"

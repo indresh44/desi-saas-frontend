@@ -49,16 +49,16 @@ function LeadCard({
   const callHref = lead.customerPhone ? `tel:${lead.customerPhone}` : null;
 
   return (
-    <div className="flex flex-col rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+    <div className="flex flex-col rounded-xl border bg-card p-4 shadow-lg transition-shadow hover:shadow-xl">
       {/* Top row: title + stage badge */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate text-base font-semibold leading-snug text-zinc-900">{lead.title}</p>
-          <p className="mt-1 truncate text-xs text-zinc-500">{customerName}</p>
+          <p className="truncate text-base font-semibold leading-snug text-primary">{lead.title}</p>
+          <p className="mt-1 truncate text-xs text-primary">{customerName}</p>
         </div>
         {stageName ? (
           <span
-            className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium text-zinc-800"
+            className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium text-foreground"
             style={{ backgroundColor: stageColor }}
           >
             {stageName}
@@ -68,8 +68,8 @@ function LeadCard({
 
       {/* Second row: source label + estimated value */}
       <div className="mt-1.5 flex items-center justify-between gap-2">
-        <p className="truncate text-sm text-zinc-500">{lead.source || "—"}</p>
-        <p className="shrink-0 text-sm font-medium text-zinc-800">
+        <p className="truncate text-sm text-muted-foreground">{lead.source || "—"}</p>
+        <p className="shrink-0 text-sm font-medium text-foreground">
           {lead.estimatedValue ? formatRupees(lead.estimatedValue) : "—"}
         </p>
       </div>
@@ -78,17 +78,17 @@ function LeadCard({
       {(lead.source || serviceDate || addedDate) ? (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {lead.source ? (
-            <span className="rounded-md bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">
+            <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
               {lead.source}
             </span>
           ) : null}
           {serviceDate ? (
-            <span className="rounded-md bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">
+            <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
               Service: {serviceDate}
             </span>
           ) : null}
           {addedDate ? (
-            <span className="rounded-md bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">
+            <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
               Added {addedDate}
             </span>
           ) : null}
@@ -96,7 +96,7 @@ function LeadCard({
       ) : null}
 
       {/* Actions row */}
-      <div className="mt-auto flex items-center gap-2 border-t border-zinc-100 pt-3 mt-3">
+      <div className="mt-auto flex items-center gap-2 border-t border-border pt-3 mt-3">
         {callHref ? (
           <a href={callHref}>
             <Button type="button" variant="outline" size="sm" className="gap-1.5">
@@ -142,23 +142,23 @@ function LeadCard({
 
 function SkeletonCard() {
   return (
-    <div className="animate-pulse rounded-xl border border-zinc-200 bg-white p-4">
+    <div className="animate-pulse rounded-xl border bg-card p-4">
       <div className="flex items-start justify-between gap-2">
-        <div className="h-4 w-40 rounded bg-zinc-200" />
-        <div className="h-5 w-20 rounded-full bg-zinc-200" />
+        <div className="h-4 w-40 rounded bg-muted" />
+        <div className="h-5 w-20 rounded-full bg-muted" />
       </div>
       <div className="mt-2 flex items-center justify-between gap-2">
-        <div className="h-3 w-24 rounded bg-zinc-100" />
-        <div className="h-3 w-16 rounded bg-zinc-100" />
+        <div className="h-3 w-24 rounded bg-muted" />
+        <div className="h-3 w-16 rounded bg-muted" />
       </div>
       <div className="mt-2 flex gap-1.5">
-        <div className="h-5 w-16 rounded-md bg-zinc-100" />
-        <div className="h-5 w-20 rounded-md bg-zinc-100" />
+        <div className="h-5 w-16 rounded-md bg-muted" />
+        <div className="h-5 w-20 rounded-md bg-muted" />
       </div>
-      <div className="mt-3 flex gap-2 border-t border-zinc-100 pt-3">
-        <div className="h-7 w-14 rounded-md bg-zinc-100" />
-        <div className="h-7 w-24 rounded-md bg-zinc-100" />
-        <div className="ml-auto h-7 w-24 rounded-md bg-zinc-100" />
+      <div className="mt-3 flex gap-2 border-t border-border pt-3">
+        <div className="h-7 w-14 rounded-md bg-muted" />
+        <div className="h-7 w-24 rounded-md bg-muted" />
+        <div className="ml-auto h-7 w-24 rounded-md bg-muted" />
       </div>
     </div>
   );
@@ -359,10 +359,10 @@ export function LeadsPageClient() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+          <h1 className="text-2xl font-semibold tracking-tight">
             {customerIdFilter ? `${customerNameForFilter}'s Leads` : "Leads"}
           </h1>
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-muted-foreground">
             {customerIdFilter
               ? `Showing ${leads.length} lead${leads.length !== 1 ? "s" : ""} for this customer`
               : "View and manage all your leads."}
@@ -382,7 +382,7 @@ export function LeadsPageClient() {
       ) : null}
 
       {customerIdFilter ? (
-        <div className="mb-2 flex items-center gap-2 rounded-md bg-zinc-100/70 px-3 py-2 text-sm text-zinc-600">
+        <div className="mb-2 flex items-center gap-2 rounded-md bg-muted/70 px-3 py-2 text-sm text-muted-foreground">
           <span>
             Showing leads for <strong>{customerNameForFilter}</strong>
           </span>
@@ -400,17 +400,17 @@ export function LeadsPageClient() {
       {!isLoading && !errorMessage ? (
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <div className="relative w-full sm:min-w-48 sm:flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/60" />
             <input
               type="text"
               placeholder="Search by title or source..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border border-zinc-200 bg-white py-2 pl-9 pr-3 text-sm text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/20"
+              className="w-full rounded-lg border border bg-card py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
           <div className="relative w-full sm:min-w-56 sm:flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/60" />
             <input
               type="text"
               placeholder="Filter by customer..."
@@ -418,13 +418,13 @@ export function LeadsPageClient() {
               onChange={(event) => handleCustomerSearchChange(event.target.value)}
               onFocus={handleCustomerFocus}
               onBlur={handleCustomerBlur}
-              className="w-full rounded-lg border border-zinc-200 bg-white py-2 pl-9 pr-3 text-sm text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/20"
+              className="w-full rounded-lg border border bg-card py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
 
             {showCustomerDropdown ? (
-              <div className="absolute z-30 mt-1 w-full rounded-lg border border-zinc-200 bg-white p-1 shadow-lg">
+              <div className="absolute z-30 mt-1 w-full rounded-lg border border bg-card p-1 shadow-lg">
                 {isCustomerSearchLoading ? (
-                  <div className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-500">
+                  <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Searching customers...
                   </div>
@@ -440,21 +440,21 @@ export function LeadsPageClient() {
                       <button
                         key={customer.id}
                         type="button"
-                        className="w-full rounded-md px-3 py-2 text-left hover:bg-zinc-100"
+                        className="w-full rounded-md px-3 py-2 text-left hover:bg-muted"
                         onMouseDown={(event) => {
                           event.preventDefault();
                           handleCustomerSelect(customer);
                         }}
                       >
-                        <p className="text-sm font-medium text-zinc-900">{customer.name}</p>
-                        <p className="text-xs text-zinc-500">{customer.phone}</p>
+                        <p className="text-sm font-medium text-foreground">{customer.name}</p>
+                        <p className="text-xs text-muted-foreground">{customer.phone}</p>
                       </button>
                     ))}
                   </div>
                 ) : null}
 
                 {!isCustomerSearchLoading && !customerSearchError && customerResults.length === 0 ? (
-                  <div className="px-3 py-2 text-sm text-zinc-500">No customers found.</div>
+                  <div className="px-3 py-2 text-sm text-muted-foreground">No customers found.</div>
                 ) : null}
               </div>
             ) : null}
@@ -463,7 +463,7 @@ export function LeadsPageClient() {
             value={stageFilter}
             onChange={(e) => setStageFilter(e.target.value)}
             disabled={isLoadingStages}
-            className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 sm:w-auto"
+            className="w-full rounded-lg border border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 sm:w-auto"
           >
             <option value="all">All Stages</option>
             {stageOptions.map((stage) => (
@@ -483,8 +483,8 @@ export function LeadsPageClient() {
           <SkeletonCard />
         </div>
       ) : filteredLeads.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 py-16 text-center">
-          <p className="text-sm text-zinc-500">
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border bg-muted py-16 text-center">
+          <p className="text-sm text-muted-foreground">
             {leads.length === 0
               ? "No leads yet. Create your first lead →"
               : "No leads match your search."}

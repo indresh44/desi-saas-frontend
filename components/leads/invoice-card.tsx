@@ -55,7 +55,7 @@ function getInvoiceStatusClass(status: Invoice["status"]): string {
   if (status === "approved") return "bg-teal-100 text-teal-700";
   if (status === "sent") return "bg-blue-100 text-blue-700";
   if (status === "partial") return "bg-amber-100 text-amber-700";
-  return "bg-zinc-100 text-zinc-600";
+  return "bg-muted text-muted-foreground";
 }
 
 function getPaymentMethodLabel(method: PaymentMethod): string {
@@ -173,7 +173,7 @@ export function InvoiceCard({
   const remainingClass =
     invoice.status === "partial"
       ? "text-amber-600"
-      : "text-zinc-500";
+      : "text-muted-foreground";
   const canEditInvoice = invoice.status === "draft" && !!onEdit;
 
   const handleStatusChange = async (targetStatus: "sent" | "approved") => {
@@ -253,11 +253,11 @@ export function InvoiceCard({
 
   return (
     <>
-      <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <div className="space-y-4 rounded-2xl border bg-card p-4 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-base font-semibold text-zinc-900">
+              <h3 className="text-base font-semibold text-primary">
                 {invoice.invoiceNumber}
               </h3>
               <span
@@ -266,20 +266,20 @@ export function InvoiceCard({
                 {invoice.status}
               </span>
             </div>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-muted-foreground">
               Due {formatDate(invoice.dueDate)}
             </p>
           </div>
 
           <div className="text-right">
-            <p className="text-xs uppercase tracking-[0.14em] text-zinc-400">
+            <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
               Total Amount
             </p>
-            <p className="text-lg font-semibold text-zinc-900">
+            <p className="text-lg font-semibold text-primary">
               {formatRupees(totalAmount)}
             </p>
-            <p className="mt-1 text-xs text-zinc-500">
-              Status: <span className="font-medium capitalize text-zinc-700">{invoice.status}</span>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Status: <span className="font-medium capitalize text-foreground">{invoice.status}</span>
               {canEditInvoice ? " • Editable" : " • Editable only in draft"}
             </p>
 
@@ -347,7 +347,7 @@ export function InvoiceCard({
                 </Button>
 
                 {!canEditInvoice ? (
-                  <div className="pointer-events-none absolute right-0 top-full z-20 mt-1 w-52 rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-left text-xs text-zinc-600 opacity-0 shadow transition-opacity group-hover:opacity-100">
+                  <div className="pointer-events-none absolute right-0 top-full z-20 mt-1 w-52 rounded-md border bg-card px-2 py-1.5 text-left text-xs text-muted-foreground opacity-0 shadow transition-opacity group-hover:opacity-100">
                     Editable only in draft mode.
                   </div>
                 ) : null}
@@ -362,16 +362,16 @@ export function InvoiceCard({
           </div>
         ) : null}
 
-        <div className="space-y-2 rounded-xl border border-zinc-100 bg-zinc-50 p-3">
+        <div className="space-y-2 rounded-xl border-border border bg-muted p-3">
           <div className="flex items-center justify-between gap-3 text-sm">
-            <span className="font-medium text-zinc-800">
+            <span className="font-medium text-foreground">
               {formatRupees(totalPaid)} paid of {formatRupees(totalAmount)}
             </span>
             <span className={`text-xs font-medium ${remainingClass}`}>
               {formatRupees(remainingAmount)} due
             </span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-zinc-200">
+          <div className="h-2 overflow-hidden rounded-full bg-border">
             <div
               className={`h-full rounded-full transition-[width] ${
                 invoice.status === "paid" ? "bg-green-500" : "bg-amber-500"
@@ -381,10 +381,10 @@ export function InvoiceCard({
           </div>
         </div>
 
-        <div className="rounded-xl border border-zinc-100 bg-zinc-50/70">
+        <div className="rounded-xl border-border border bg-muted/70">
           <button
             type="button"
-            className="flex w-full items-center justify-between px-3 py-2 text-sm font-medium text-zinc-800"
+            className="flex w-full items-center justify-between px-3 py-2 text-sm font-medium text-foreground"
             onClick={() => setShowItems((prev) => !prev)}
           >
             <span>{showItems ? "Hide items" : "Show items"}</span>
@@ -392,12 +392,12 @@ export function InvoiceCard({
           </button>
 
           {showItems ? (
-            <div className="border-t border-zinc-200 px-3 py-3">
+            <div className="border-t border-border px-3 py-3">
               {invoice.items && invoice.items.length > 0 ? (
                 <div className="overflow-x-auto">
-                  <table className="min-w-full text-left text-sm text-zinc-700">
+                  <table className="min-w-full text-left text-sm text-foreground">
                     <thead>
-                      <tr className="border-b border-zinc-200 text-xs uppercase tracking-[0.12em] text-zinc-500">
+                      <tr className="border-b text-xs uppercase tracking-[0.12em] text-muted-foreground">
                         <th className="py-2 pr-3 font-medium">Name</th>
                         <th className="py-2 pr-3 font-medium">Description</th>
                         <th className="py-2 pr-3 font-medium">Qty</th>
@@ -408,20 +408,20 @@ export function InvoiceCard({
                     </thead>
                     <tbody>
                       {invoice.items.map((item) => (
-                        <tr key={item.id} className="border-b border-zinc-100 last:border-b-0">
-                          <td className="py-2 pr-3 font-medium text-zinc-900">{item.name}</td>
+                        <tr key={item.id} className="border-b border-border last:border-b-0">
+                          <td className="py-2 pr-3 font-medium text-primary">{item.name}</td>
                           <td className="py-2 pr-3">{item.description}</td>
                           <td className="py-2 pr-3">{toSafeNumber(item.quantity)}</td>
                           <td className="py-2 pr-3">{formatRupees(item.unitPrice)}</td>
                           <td className="py-2 pr-3">{toSafeNumber(item.gstPercent)}%</td>
-                          <td className="py-2 text-right font-medium text-zinc-900">
+                          <td className="py-2 text-right font-medium text-primary">
                             {formatRupees(item.amount)}
                           </td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot>
-                      <tr className="text-sm text-zinc-600">
+                      <tr className="text-sm text-muted-foreground">
                         <td colSpan={4} className="pt-3 pr-3 text-right font-medium">
                           Subtotal
                         </td>
@@ -429,7 +429,7 @@ export function InvoiceCard({
                           {formatRupees(subtotal)}
                         </td>
                       </tr>
-                      <tr className="text-sm text-zinc-600">
+                      <tr className="text-sm text-muted-foreground">
                         <td colSpan={4} className="pt-1 pr-3 text-right font-medium">
                           GST
                         </td>
@@ -441,15 +441,15 @@ export function InvoiceCard({
                   </table>
                 </div>
               ) : (
-                <p className="text-sm text-zinc-500">No line items on this invoice.</p>
+                <p className="text-sm text-muted-foreground">No line items on this invoice.</p>
               )}
             </div>
           ) : null}
         </div>
 
-        <div className="space-y-3 rounded-xl border border-zinc-100 bg-white">
+        <div className="space-y-3 rounded-xl border-border border bg-card">
           <div className="flex items-center justify-between gap-3">
-            <h4 className="text-sm font-semibold text-zinc-900">Payments</h4>
+            <h4 className="text-sm font-semibold text-primary">Payments</h4>
             {invoice.status !== "paid" ? (
               <Button
                 type="button"
@@ -464,7 +464,7 @@ export function InvoiceCard({
           </div>
 
           {isLoadingPayments ? (
-            <div className="flex items-center gap-2 rounded-xl border border-zinc-100 bg-zinc-50 px-3 py-4 text-sm text-zinc-500">
+            <div className="flex items-center gap-2 rounded-xl border-border border bg-muted px-3 py-4 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
               Loading payments...
             </div>
@@ -473,7 +473,7 @@ export function InvoiceCard({
               {paymentsError}
             </div>
           ) : payments.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-3 py-4 text-sm text-zinc-500">
+            <div className="rounded-xl border border-dashed border bg-muted px-3 py-4 text-sm text-muted-foreground">
               No payments recorded yet.
             </div>
           ) : (
@@ -481,12 +481,12 @@ export function InvoiceCard({
               {payments.map((payment) => (
                 <div
                   key={payment.id}
-                  className="rounded-xl border border-zinc-100 bg-zinc-50 px-3 py-3"
+                  className="rounded-xl border-border border bg-muted px-3 py-3"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="min-w-0 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-medium text-zinc-900">
+                        <span className="text-sm font-medium text-foreground">
                           {formatDate(payment.paymentDate)}
                         </span>
                         <span
@@ -496,7 +496,7 @@ export function InvoiceCard({
                         </span>
                       </div>
                       {payment.reference ? (
-                        <p className="text-xs text-zinc-500">{payment.reference}</p>
+                        <p className="text-xs text-muted-foreground">{payment.reference}</p>
                       ) : null}
                     </div>
 

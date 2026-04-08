@@ -77,7 +77,7 @@ function getPriorityLabel(priority: number): string {
 function getPriorityClass(priority: number): string {
   if (priority === 1) return "bg-red-100 text-red-700";
   if (priority === 2) return "bg-amber-100 text-amber-700";
-  return "bg-zinc-100 text-zinc-500";
+  return "bg-muted text-muted-foreground";
 }
 
 const ACTIVITY_OPTIONS: { value: ActivityType; label: string }[] = [
@@ -92,7 +92,7 @@ function ActivityIcon({ type }: { type: ActivityType }) {
   if (type === "call") return <Phone className={`${cls} text-blue-500`} />;
   if (type === "whatsapp") return <MessageCircle className={`${cls} text-green-500`} />;
   if (type === "meeting") return <Users className={`${cls} text-purple-500`} />;
-  return <FileText className={`${cls} text-zinc-400`} />;
+  return <FileText className={`${cls} text-muted-foreground`} />;
 }
 
 function extractErrorMessage(err: unknown, fallback: string): string {
@@ -108,7 +108,7 @@ function extractErrorMessage(err: unknown, fallback: string): string {
 }
 
 const inputCls =
-  "w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-900/20";
+  "w-full rounded-lg border px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20";
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
@@ -350,7 +350,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -379,19 +379,19 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
         <div className="space-y-3">
           <Link
             href="/leads"
-            className="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-800"
+            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
             Leads
           </Link>
 
           <div className="flex flex-wrap items-start gap-3">
-            <h1 className="flex-1 text-2xl font-bold leading-tight text-zinc-900">
+            <h1 className="flex-1 text-2xl font-bold leading-tight text-primary">
               {lead.title}
             </h1>
             {(lead.stageName || lead.stageId) ? (
               <span
-                className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold text-zinc-800"
+                className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold text-foreground"
                 style={{
                   backgroundColor:
                     lead.stageColor ?? stageMap[lead.stageId]?.color ?? "#e4e4e7",
@@ -408,7 +408,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
                 setSelectedStageId(nextStageId);
                 void handleStageChange(nextStageId);
               }}
-              className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-xs font-medium text-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 sm:w-44"
+              className="w-full rounded-lg border px-3 py-2 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 sm:w-44"
               disabled={isLoadingStages || isMovingStage || stageOptions.length === 0}
             >
               <option value="">
@@ -436,17 +436,17 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
 
           <div className="flex flex-wrap items-center gap-2 text-sm">
             {lead.estimatedValue ? (
-              <span className="font-semibold text-zinc-800">
+              <span className="font-semibold text-foreground">
                 {formatRupees(lead.estimatedValue)}
               </span>
             ) : null}
             {lead.source ? (
-              <span className="rounded-md bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">
+              <span className="rounded-md bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
                 {lead.source}
               </span>
             ) : null}
             {lead.serviceDate ? (
-              <span className="text-xs text-zinc-500">
+              <span className="text-xs text-muted-foreground">
                 Service: {formatDate(lead.serviceDate)}
               </span>
             ) : null}
@@ -463,7 +463,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
         {/* Activity Log */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold text-zinc-900">Activity</h2>
+            <h2 className="text-base font-semibold text-primary">Activity</h2>
             <Button
               type="button"
               size="sm"
@@ -476,7 +476,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
           </div>
 
           {showActivityForm ? (
-            <div className="space-y-2 rounded-xl border border-zinc-200 bg-white p-3">
+            <div className="space-y-2 rounded-xl border bg-card p-3">
               {activityError ? (
                 <p className="text-xs text-red-600">{activityError}</p>
               ) : null}
@@ -524,22 +524,22 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
           ) : null}
 
           {activities.length === 0 ? (
-            <p className="text-sm text-zinc-400">No activity yet.</p>
+            <p className="text-sm text-muted-foreground">No activity yet.</p>
           ) : (
             <div className="space-y-2">
               {activities.map((a) => (
                 <div
                   key={a.id}
-                  className="flex items-start gap-3 rounded-xl border border-zinc-100 bg-white px-3 py-2.5"
+                  className="flex items-start gap-3 rounded-xl border border-border bg-card px-3 py-2.5"
                 >
-                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-50">
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted">
                     <ActivityIcon type={a.type} />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm leading-snug text-zinc-800">
+                    <p className="text-sm leading-snug text-foreground">
                       {a.description}
                     </p>
-                    <p className="mt-0.5 text-xs text-zinc-400">
+                    <p className="mt-0.5 text-xs text-muted-foreground">
                       {timeAgo(a.createdAt)}
                     </p>
                   </div>
@@ -552,7 +552,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
         {/* Invoices */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold text-zinc-900">Invoices</h2>
+            <h2 className="text-base font-semibold text-primary">Invoices</h2>
             <Button
               type="button"
               size="sm"
@@ -565,7 +565,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
           </div>
 
           {invoices.length === 0 ? (
-            <p className="text-sm text-zinc-400">No invoices yet.</p>
+            <p className="text-sm text-muted-foreground">No invoices yet.</p>
           ) : (
             <div className="space-y-2">
               {invoices.map((inv) => (
@@ -592,12 +592,12 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
       {/* ══ RIGHT SIDEBAR ═════════════════════════════════════════════════════ */}
       <div className="space-y-4 lg:sticky lg:top-6 lg:self-start">
         {/* Customer card */}
-        <div className="space-y-3 rounded-xl border border-zinc-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-zinc-900">Customer</h2>
-          <p className="text-sm font-medium text-zinc-900">
+        <div className="space-y-3 rounded-xl border bg-card p-4">
+          <h2 className="text-sm font-semibold text-primary">Customer</h2>
+          <p className="text-sm font-medium text-foreground">
             {lead.customerName ?? "Unknown Customer"}
           </p>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-muted-foreground">
             {lead.customerPhone ?? "Phone not available"}
           </p>
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -640,9 +640,9 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
         </div>
 
         {/* Follow-ups */}
-        <section className="space-y-3 rounded-xl border border-zinc-200 bg-white p-4">
+        <section className="space-y-3 rounded-xl border bg-card p-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-zinc-900">Follow-ups</h2>
+            <h2 className="text-sm font-semibold text-primary">Follow-ups</h2>
             <Button
               type="button"
               size="sm"
@@ -654,7 +654,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
           </div>
 
           {showFollowUpForm ? (
-            <div className="space-y-2 rounded-lg border border-zinc-100 bg-zinc-50 p-2.5">
+            <div className="space-y-2 rounded-lg border border-border bg-muted p-2.5">
               {followUpError ? (
                 <p className="text-xs text-red-600">{followUpError}</p>
               ) : null}
@@ -696,7 +696,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
           ) : null}
 
           {followUps.length === 0 ? (
-            <p className="text-xs text-zinc-400">No follow-ups scheduled.</p>
+            <p className="text-xs text-muted-foreground">No follow-ups scheduled.</p>
           ) : (
             <div className="space-y-2">
               {followUps.map((fu) => {
@@ -706,8 +706,8 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
                     key={fu.id}
                     className={`rounded-lg border p-2.5 ${
                       isDone
-                        ? "border-zinc-100 bg-zinc-50 opacity-60"
-                        : "border-zinc-200 bg-white"
+                        ? "border-border bg-muted opacity-60"
+                        : "border bg-card"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -715,14 +715,14 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
                         <p
                           className={`text-xs font-medium ${
                             isDone
-                              ? "text-zinc-400 line-through"
-                              : "text-zinc-800"
+                              ? "text-muted-foreground line-through"
+                              : "text-foreground"
                           }`}
                         >
                           {formatDate(fu.scheduledAt)}
                         </p>
                         {fu.note ? (
-                          <p className="mt-0.5 truncate text-xs text-zinc-500">
+                          <p className="mt-0.5 truncate text-xs text-muted-foreground">
                             {fu.note}
                           </p>
                         ) : null}

@@ -107,7 +107,7 @@ export function ActionCard({ action, messageId }: ActionCardProps) {
           type="button"
           onClick={() => void handleConfirm()}
           disabled={isConfirming}
-          className="flex items-center gap-1.5 rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
         >
           {isConfirming ? (
             <Loader2 className="h-3 w-3 animate-spin" />

@@ -10,7 +10,7 @@ export function ChatToggleButton() {
     <button
       type="button"
       onClick={toggleChat}
-      className="fixed right-5 bottom-5 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900 text-white shadow-lg transition-all hover:scale-105 hover:bg-zinc-800 active:scale-95 md:right-6 md:bottom-6 md:h-14 md:w-14"
+      className="fixed right-5 bottom-5 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-all hover:scale-105 hover:bg-primary/90 active:scale-95 md:right-6 md:bottom-6 md:h-14 md:w-14"
       aria-label={isOpen ? "Close chat" : "Open chat assistant"}
     >
       {isOpen ? (
