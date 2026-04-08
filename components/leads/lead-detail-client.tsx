@@ -282,9 +282,10 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
     setFollowUpSubmitting(true);
     setFollowUpError(null);
     try {
+      const scheduledAt = new Date(followUpDate + "T09:00:00").toISOString();
       const input = followUpNote.trim()
-        ? { lead_id: leadId, scheduled_at: followUpDate, note: followUpNote.trim() }
-        : { lead_id: leadId, scheduled_at: followUpDate };
+        ? { lead_id: leadId, scheduled_at: scheduledAt, note: followUpNote.trim() }
+        : { lead_id: leadId, scheduled_at: scheduledAt };
       await createFollowUp(input);
       setFollowUpDate("");
       setFollowUpNote("");
@@ -658,7 +659,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
                 <p className="text-xs text-red-600">{followUpError}</p>
               ) : null}
               <input
-                type="datetime-local"
+                type="date"
                 className={inputCls}
                 value={followUpDate}
                 onChange={(e) => setFollowUpDate(e.target.value)}
