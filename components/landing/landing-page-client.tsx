@@ -251,60 +251,54 @@ const DEMO_TABS: { key: string; label: string; messages: DemoMsg[] }[] = [
 
 function DemoChat({ messages }: { messages: DemoMsg[] }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       {messages.map((m, i) => {
         if (m.from === "user") return (
           <div key={i} style={{ display: "flex", justifyContent: "flex-end" }}>
             <div style={{
-              background: C.gray, border: `3px solid ${C.navy}`,
-              padding: "12px 18px", borderRadius: "20px 20px 4px 20px",
-              fontWeight: 700, fontSize: 14, fontStyle: "italic", maxWidth: "82%",
-            }}>&ldquo;{m.text}&rdquo;</div>
+              background: C.navy, color: "#fff",
+              padding: "8px 12px", borderRadius: "14px 14px 4px 14px",
+              fontWeight: 500, fontSize: 11, lineHeight: 1.45, maxWidth: "88%",
+              border: `2px solid ${C.navy}`,
+            }}>{m.text}</div>
           </div>
         );
         if (m.from === "ai") return (
-          <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: "50%",
-              background: C.coral, border: `3px solid ${C.navy}`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              flexShrink: 0, boxShadow: shadow(3, 3, C.navy),
-            }}><Icon name="smart_toy" style={{ color: "#fff", fontSize: 20 }} /></div>
-            <p style={{ fontSize: 17, fontWeight: 900, fontFamily: FH, paddingTop: 6 }}>{m.text}</p>
+          <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>
+            <p style={{ fontSize: 11, fontWeight: 800, fontFamily: FH, lineHeight: 1.4 }}>{m.text}</p>
           </div>
         );
         if (m.from === "card" && m.card) {
           const card = m.card;
-
           return (
-          <div key={i} className="demo-card-ml">
+          <div key={i}>
             <div style={{
-              background: "#fff", border: `3px solid ${C.navy}`,
-              padding: "clamp(16px, 2.5vw, 28px)", borderRadius: 20,
-              boxShadow: shadow(5, 5, C.gold),
+              background: "#fff", border: `2.5px solid ${C.navy}`,
+              padding: "8px 10px", borderRadius: 12,
+              boxShadow: shadow(3, 3, C.gold),
             }}>
               <div style={{
                 display: "flex", justifyContent: "space-between", alignItems: "center",
-                marginBottom: 16, borderBottom: `2px solid ${C.navy}`, paddingBottom: 10,
+                marginBottom: 6, borderBottom: `1.5px solid ${C.navy}`, paddingBottom: 6,
               }}>
-                <span style={{ fontSize: 20, fontWeight: 900, fontStyle: "italic", fontFamily: FH, letterSpacing: -1 }}>{card.label}</span>
-                <span style={{ fontSize: 11, fontWeight: 900, background: C.navy, color: "#fff", padding: "4px 10px" }}>{card.id}</span>
+                <span style={{ fontSize: 8, fontWeight: 900, fontFamily: FH, letterSpacing: 1, color: C.coral }}>{card.label}</span>
+                <span style={{ fontSize: 7, fontWeight: 900, background: C.navy, color: "#fff", padding: "2px 6px" }}>{card.id}</span>
               </div>
               {card.lines.map((line, j) => (
                 <div key={j} style={{
                   display: "flex", justifyContent: "space-between",
-                  padding: "10px 0",
-                  borderBottom: j < card.lines.length - 1 ? `1px dashed ${C.navy}44` : `2px dashed ${C.navy}`,
+                  padding: "4px 0", fontSize: 9,
+                  borderBottom: j < card.lines.length - 1 ? `1px dashed ${C.navy}44` : `1.5px dashed ${C.navy}`,
                 }}>
-                  <span style={{ fontWeight: 700, fontSize: 15 }}>{line.item} {line.qty && <span style={{ color: `${C.navy}88` }}>{line.qty}</span>}</span>
+                  <span style={{ fontWeight: 700 }}>{line.item} {line.qty && <span style={{ color: `${C.navy}88` }}>{line.qty}</span>}</span>
                   <span style={{ fontWeight: 900, fontFamily: FH }}>{line.amt}</span>
                 </div>
               ))}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 14 }}>
-                <span style={{ fontWeight: 900, fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: `${C.navy}88` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 6 }}>
+                <span style={{ fontWeight: 900, fontSize: 7, textTransform: "uppercase", letterSpacing: 1, color: `${C.navy}88` }}>
                   {card.due ? `Due: ${card.due}` : "Total"}
                 </span>
-                <span style={{ fontWeight: 900, fontSize: "clamp(22px, 3.5vw, 36px)", color: C.coral, fontFamily: FH }}>{card.total}</span>
+                <span style={{ fontWeight: 900, fontSize: 14, color: C.coral, fontFamily: FH }}>{card.total}</span>
               </div>
             </div>
           </div>
@@ -312,26 +306,25 @@ function DemoChat({ messages }: { messages: DemoMsg[] }) {
         }
         if (m.from === "card" && m.list) {
           const list = m.list;
-
           return (
-          <div key={i} className="demo-card-ml">
+          <div key={i}>
             <div style={{
-              background: "#fff", border: `3px solid ${C.navy}`,
-              borderRadius: 20, boxShadow: shadow(5, 5, C.teal), overflow: "hidden",
+              background: "#fff", border: `2.5px solid ${C.navy}`,
+              borderRadius: 12, boxShadow: shadow(3, 3, C.teal), overflow: "hidden",
             }}>
               {list.map((item, j) => (
                 <div key={j} style={{
-                  display: "flex", alignItems: "center", gap: 12, padding: "12px 18px",
-                  borderBottom: j < list.length - 1 ? `2px solid ${C.gray}` : "none",
+                  display: "flex", alignItems: "center", gap: 8, padding: "6px 10px",
+                  borderBottom: j < list.length - 1 ? `1.5px solid ${C.gray}` : "none",
                 }}>
                   <div style={{
-                    width: 14, height: 14, borderRadius: "50%",
-                    background: item.dot, border: `2px solid ${C.navy}`,
-                    boxShadow: `0 0 8px ${item.dot}44`, flexShrink: 0,
+                    width: 10, height: 10, borderRadius: "50%",
+                    background: item.dot, border: `1.5px solid ${C.navy}`,
+                    boxShadow: `0 0 6px ${item.dot}44`, flexShrink: 0,
                   }} />
                   <div>
-                    <p style={{ fontWeight: 900, fontSize: 15, fontFamily: FH }}>{item.name}</p>
-                    <p style={{ fontSize: 13, color: `${C.navy}88`, fontWeight: 600 }}>{item.note}</p>
+                    <p style={{ fontWeight: 900, fontSize: 10, fontFamily: FH }}>{item.name}</p>
+                    <p style={{ fontSize: 8, color: `${C.navy}88`, fontWeight: 600 }}>{item.note}</p>
                   </div>
                 </div>
               ))}
@@ -340,15 +333,15 @@ function DemoChat({ messages }: { messages: DemoMsg[] }) {
           );
         }
         if (m.from === "chips") return (
-          <div key={i} className="demo-card-ml" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <div key={i} style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
             {m.chips!.map((c, j) => (
               <button key={j} style={{
                 background: j === 0 ? C.teal : "#fff",
                 color: j === 0 ? "#fff" : C.navy,
-                padding: "10px 18px", borderRadius: 100,
-                fontWeight: 900, border: `3px solid ${C.navy}`,
-                boxShadow: j === 0 ? shadow(3, 3, C.navy) : "none",
-                fontSize: 13, cursor: "pointer", fontFamily: FH,
+                padding: "4px 10px", borderRadius: 100,
+                fontWeight: 900, border: `2px solid ${C.navy}`,
+                boxShadow: j === 0 ? shadow(2, 2, C.navy) : "none",
+                fontSize: 9, cursor: "pointer", fontFamily: FH,
               }}>{c}</button>
             ))}
           </div>
@@ -364,7 +357,7 @@ function DemoSection() {
   const active = DEMO_TABS.find((t) => t.key === activeTab)!;
 
   return (
-    <div className="flex flex-col lg:flex-row" style={{ maxWidth: 1000, margin: "0 auto", alignItems: "flex-start", gap: 40 }}>
+    <div className="flex flex-col lg:flex-row" style={{ maxWidth: 1000, margin: "0 auto", alignItems: "center", gap: 40 }}>
       <div className="w-full lg:w-1/3">
         <h2 style={{ fontFamily: FH, fontSize: 40, fontWeight: 900, color: C.navy, marginBottom: 32, lineHeight: 1 }}>
           See It <br /><span style={{ color: C.coral, fontStyle: "italic", fontSize: 30 }}>IN ACTION</span>
@@ -383,20 +376,38 @@ function DemoSection() {
           ))}
         </div>
       </div>
-      <div className="w-full lg:w-2/3" style={{ position: "relative" }}>
-        <div aria-hidden="true" style={{
-          position: "absolute", inset: -40,
-          background: `${C.coral}15`,
+      <div className="w-full lg:w-2/3" style={{ position: "relative", display: "flex", justifyContent: "center" }}>
+        <div aria-hidden="true" className="hidden lg:block" style={{
+          position: "absolute", top: -60, right: -20, width: 280, height: 280,
+          background: `${C.gold}33`,
           borderRadius: "40% 60% 70% 30% / 40% 50% 60% 50%",
-          zIndex: 0, transform: "rotate(12deg)",
+          zIndex: 0, animation: "blobPulse 4s ease infinite",
         }} />
-        <div style={{
-          position: "relative", zIndex: 1,
-          background: "#fff", border: `4px solid ${C.navy}`,
-          padding: "clamp(30px, 3vw, 36px)", borderRadius: 32,
-          boxShadow: shadow(10, 10, C.teal), minHeight: 360,
+        <div className="demo-phone" style={{
+          position: "relative", zIndex: 1, width: "100%", maxWidth: 280, minHeight: 460,
+          background: C.navy, borderRadius: 36, padding: 7,
+          boxShadow: shadow(10, 10, C.teal), border: `3px solid ${C.navy}`,
+          transform: "rotate(2deg)",
         }}>
-          <DemoChat messages={active.messages} />
+          <div style={{ width: "100%", height: "100%", background: "#fff", borderRadius: 30, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+            <div style={{
+              padding: "20px 14px 10px", borderBottom: `3px solid ${C.navy}`,
+              display: "flex", alignItems: "center", gap: 8, background: C.gray,
+            }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: "50%", background: C.coral,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                border: `2px solid ${C.navy}`, boxShadow: shadow(2, 2, C.navy),
+              }}><Icon name="smart_toy" style={{ color: "#fff", fontSize: 16 }} /></div>
+              <div>
+                <p style={{ fontWeight: 900, fontSize: 12, color: C.navy, fontFamily: FH }}>AI Assistant</p>
+                <p style={{ fontSize: 7, color: C.teal, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase" }}>Active Now</p>
+              </div>
+            </div>
+            <div style={{ flex: 1, padding: "12px 12px" }}>
+              <DemoChat messages={active.messages} />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -424,6 +435,8 @@ export default function LandingPageClient() {
         }
         .demo-card-ml { margin-left: 16px; }
         @media (min-width: 768px) { .demo-card-ml { margin-left: 48px; } }
+        .demo-phone { transform: rotate(2deg) scale(1); }
+        @media (max-width: 767px) { .demo-phone { transform: rotate(-2deg) scale(0.9) !important; max-width: 240px !important; } }
         @media (max-width: 767px) {
           .pain-card { margin-top: 0 !important; transform: none !important; }
           .persona-stagger { margin-top: 0 !important; }
