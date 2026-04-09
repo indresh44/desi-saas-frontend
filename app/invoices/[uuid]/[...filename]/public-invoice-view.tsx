@@ -95,6 +95,8 @@ export function PublicInvoiceView({
   const pdfUrl = `${API_BASE}/api/public/invoices/${uuid}/pdf`;
   const docLabel = getDocLabel(meta.status);
 
+  console.log("pdfUrl:", pdfUrl);
+
   const handleDownload = () => {
     const a = document.createElement("a");
     a.href = pdfUrl;
