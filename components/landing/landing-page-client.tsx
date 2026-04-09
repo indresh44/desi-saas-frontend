@@ -354,7 +354,19 @@ function DemoChat({ messages }: { messages: DemoMsg[] }) {
 
 function DemoSection() {
   const [activeTab, setActiveTab] = useState("invoice");
+  const [paused, setPaused] = useState(false);
   const active = DEMO_TABS.find((t) => t.key === activeTab)!;
+
+  useEffect(() => {
+    if (paused) return;
+    const timer = setInterval(() => {
+      setActiveTab((prev) => {
+        const idx = DEMO_TABS.findIndex((t) => t.key === prev);
+        return DEMO_TABS[(idx + 1) % DEMO_TABS.length].key;
+      });
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [paused]);
 
   return (
     <div className="flex flex-col lg:flex-row" style={{ maxWidth: 1000, margin: "0 auto", alignItems: "center", gap: 40 }}>
@@ -364,7 +376,7 @@ function DemoSection() {
         </h2>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {DEMO_TABS.map((tab) => (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
+            <button key={tab.key} onClick={() => { setActiveTab(tab.key); setPaused(true); }} style={{
               width: "100%", textAlign: "left", padding: "14px 18px",
               border: `3px solid ${C.navy}`,
               background: activeTab === tab.key ? C.gold : "#fff",
