@@ -6,6 +6,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { useAuth } from "@/lib/auth/auth-context";
 
 const PUBLIC_ROUTES = ["/", "/login", "/register", "/blog"];
+const FULL_SCREEN_ROUTES = ["/onboarding"];
 
 // Public invoice view: /invoices/{uuid}/filename.pdf
 const INVOICE_VIEW_PATTERN = /^\/invoices\/[0-9a-f-]{36}\/.+/;
@@ -41,6 +42,11 @@ export function LayoutContent({ children }: { children: ReactNode }) {
 
   // Other public routes (login, register)
   if (isPublicRoute(pathname) && pathname !== "/") {
+    return <>{children}</>;
+  }
+
+  // Full-screen routes: authenticated but no AppShell (e.g., onboarding)
+  if (isAuthenticated && FULL_SCREEN_ROUTES.some((r) => pathname.startsWith(r))) {
     return <>{children}</>;
   }
 

@@ -11,6 +11,11 @@ const registerSchema = z
   .object({
     name: z.string().min(2, "Name must be at least 2 characters"),
     email: z.string().min(1, "Email is required").email("Invalid email"),
+    phone: z
+      .string()
+      .min(1, "Phone number is required")
+      .regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number"),
+    isWhatsapp: z.boolean().default(true),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters")
@@ -35,10 +40,17 @@ export default function RegisterPageClient() {
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
+    defaultValues: {
+      isWhatsapp: true,
+    },
   });
+
+  const isWhatsapp = watch("isWhatsapp");
 
   const onSubmit = async (values: RegisterForm) => {
     setIsSubmitting(true);
@@ -51,6 +63,9 @@ export default function RegisterPageClient() {
         password: values.password,
         business_name: values.businessName,
         city: values.city,
+        phone: values.phone,
+        country_code: "+91",
+        is_whatsapp: values.isWhatsapp,
       });
     } catch (submitError) {
       if (
@@ -100,6 +115,33 @@ export default function RegisterPageClient() {
                 autoComplete="email"
               />
               {errors.email ? <p className="mt-1 text-xs text-red-500">{errors.email.message}</p> : null}
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Phone number</label>
+              <div className="mt-1 flex">
+                <span className="inline-flex items-center rounded-l-md border border-r-0 border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-500">
+                  +91
+                </span>
+                <input
+                  type="tel"
+                  {...register("phone")}
+                  className="w-full rounded-r-md border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-900/20"
+                  placeholder="9876543210"
+                  autoComplete="tel-national"
+                  maxLength={10}
+                />
+              </div>
+              {errors.phone ? <p className="mt-1 text-xs text-red-500">{errors.phone.message}</p> : null}
+              <label className="mt-2 flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isWhatsapp}
+                  onChange={(e) => setValue("isWhatsapp", e.target.checked)}
+                  className="h-3.5 w-3.5 rounded border-zinc-300 text-primary focus:ring-primary"
+                />
+                <span className="text-xs text-zinc-500">This number is on WhatsApp</span>
+              </label>
             </div>
 
             <div>

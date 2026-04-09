@@ -44,7 +44,7 @@ interface AuthContextValue {
   logout: () => Promise<void>;
 }
 
-const PUBLIC_ROUTES = ["/", "/login", "/register", "/blog"];
+const PUBLIC_ROUTES = ["/", "/login", "/register", "/blog", "/onboarding"];
 const AUTH_ONLY_ROUTES = ["/login", "/register"];
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -89,6 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const authBusiness: AuthBusiness = {
       id: response.business.id,
       name: response.business.name,
+      onboarding_status: response.business.onboarding_status,
     };
 
     setUser(authUser);
@@ -152,13 +153,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user && isAuthOnlyRoute(pathname)) {
       router.replace("/");
     }
+
+    // Redirect to onboarding if not completed (unless already on /onboarding)
+    if (
+      user &&
+      business &&
+      business.onboarding_status &&
+      business.onboarding_status !== "completed" &&
+      !pathname.startsWith("/onboarding")
+    ) {
+      router.replace("/onboarding");
+    }
   }, [isLoading, pathname, router, user]);
 
   const login = useCallback(
     async (input: LoginInput) => {
       const response = await loginUser(input);
       handleAuthResponse(response);
-      router.replace("/");
+      const onboardingStatus = response.business.onboarding_status;
+      if (onboardingStatus && onboardingStatus !== "completed") {
+        router.replace("/onboarding");
+      } else {
+        router.replace("/");
+      }
     },
     [handleAuthResponse, router]
   );
@@ -167,7 +184,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (input: RegisterInput) => {
       const response = await registerUser(input);
       handleAuthResponse(response);
-      router.replace("/");
+      const onboardingStatus = response.business.onboarding_status;
+      if (onboardingStatus && onboardingStatus !== "completed") {
+        router.replace("/onboarding");
+      } else {
+        router.replace("/");
+      }
     },
     [handleAuthResponse, router]
   );

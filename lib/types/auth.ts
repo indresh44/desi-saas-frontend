@@ -10,6 +10,7 @@ export interface AuthUser {
 export interface AuthBusiness {
   id: string;
   name: string;
+  onboarding_status?: string;
 }
 
 export interface AuthResponse {
@@ -27,6 +28,7 @@ export interface AuthResponse {
   business: {
     id: string;
     name: string;
+    onboarding_status?: string;
   };
 }
 
@@ -42,6 +44,9 @@ export interface RegisterInput {
   name: string;
   business_name: string;
   city: string;
+  phone?: string;
+  country_code?: string;
+  is_whatsapp?: boolean;
 }
 
 export interface LoginInput {

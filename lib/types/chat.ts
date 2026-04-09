@@ -1,6 +1,6 @@
 export interface ChatThread {
   thread_id: number;
-  context_type: "dashboard" | "customer" | "lead" | "global";
+  context_type: "dashboard" | "customer" | "lead" | "global" | "onboarding";
   context_id: string | null;
 }
 
@@ -28,7 +28,7 @@ export interface ChatMessage {
 
 export interface ChatMessageRequest {
   message: string;
-  context_type: "dashboard" | "customer" | "lead" | "global";
+  context_type: "dashboard" | "customer" | "lead" | "global" | "onboarding";
   context_id?: string | null;
   thread_id?: number | null;
 }
@@ -78,13 +78,13 @@ export interface ChatHistoryMessage {
 }
 
 export interface ChatThreadRequest {
-  context_type: "dashboard" | "customer" | "lead" | "global";
+  context_type: "dashboard" | "customer" | "lead" | "global" | "onboarding";
   context_id?: string | null;
 }
 
 export interface ChatThreadResponse {
   thread_id: number;
-  context_type: "dashboard" | "customer" | "lead" | "global";
+  context_type: "dashboard" | "customer" | "lead" | "global" | "onboarding";
   context_id: string | null;
   is_new?: boolean;
 }

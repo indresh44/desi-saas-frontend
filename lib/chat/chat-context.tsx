@@ -5,7 +5,7 @@ import { confirmChatAction, fetchChatHistory, getOrCreateThread, sendChatMessage
 import { ChatAction, ChatHistoryMessage, ChatMessage, ChatMessageResponse } from "@/lib/types/chat";
 
 interface PageContext {
-  type: "dashboard" | "customer" | "lead" | "global";
+  type: "dashboard" | "customer" | "lead" | "global" | "onboarding";
   id?: string | null;
 }
 
