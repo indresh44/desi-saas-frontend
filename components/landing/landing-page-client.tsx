@@ -256,21 +256,21 @@ function DemoChat({ messages }: { messages: DemoMsg[] }) {
         if (m.from === "user") return (
           <div key={i} style={{ display: "flex", justifyContent: "flex-end" }}>
             <div style={{
-              background: C.gray, border: `4px solid ${C.navy}`,
-              padding: "14px 24px", borderRadius: "24px 24px 4px 24px",
-              fontWeight: 700, fontSize: 16, fontStyle: "italic", maxWidth: "78%",
+              background: C.gray, border: `3px solid ${C.navy}`,
+              padding: "12px 18px", borderRadius: "20px 20px 4px 20px",
+              fontWeight: 700, fontSize: 14, fontStyle: "italic", maxWidth: "82%",
             }}>&ldquo;{m.text}&rdquo;</div>
           </div>
         );
         if (m.from === "ai") return (
-          <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+          <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
             <div style={{
-              width: 48, height: 48, borderRadius: "50%",
-              background: C.coral, border: `4px solid ${C.navy}`,
+              width: 40, height: 40, borderRadius: "50%",
+              background: C.coral, border: `3px solid ${C.navy}`,
               display: "flex", alignItems: "center", justifyContent: "center",
-              flexShrink: 0, boxShadow: shadow(4, 4, C.navy),
-            }}><Icon name="smart_toy" style={{ color: "#fff", fontSize: 24 }} /></div>
-            <p style={{ fontSize: 20, fontWeight: 900, fontFamily: FH, paddingTop: 8 }}>{m.text}</p>
+              flexShrink: 0, boxShadow: shadow(3, 3, C.navy),
+            }}><Icon name="smart_toy" style={{ color: "#fff", fontSize: 20 }} /></div>
+            <p style={{ fontSize: 17, fontWeight: 900, fontFamily: FH, paddingTop: 6 }}>{m.text}</p>
           </div>
         );
         if (m.from === "card" && m.card) {
@@ -287,7 +287,7 @@ function DemoChat({ messages }: { messages: DemoMsg[] }) {
                 display: "flex", justifyContent: "space-between", alignItems: "center",
                 marginBottom: 16, borderBottom: `2px solid ${C.navy}`, paddingBottom: 10,
               }}>
-                <span style={{ fontSize: 24, fontWeight: 900, fontStyle: "italic", fontFamily: FH, letterSpacing: -1 }}>{card.label}</span>
+                <span style={{ fontSize: 20, fontWeight: 900, fontStyle: "italic", fontFamily: FH, letterSpacing: -1 }}>{card.label}</span>
                 <span style={{ fontSize: 11, fontWeight: 900, background: C.navy, color: "#fff", padding: "4px 10px" }}>{card.id}</span>
               </div>
               {card.lines.map((line, j) => (
@@ -304,7 +304,7 @@ function DemoChat({ messages }: { messages: DemoMsg[] }) {
                 <span style={{ fontWeight: 900, fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: `${C.navy}88` }}>
                   {card.due ? `Due: ${card.due}` : "Total"}
                 </span>
-                <span style={{ fontWeight: 900, fontSize: "clamp(28px, 4vw, 44px)", color: C.coral, fontFamily: FH }}>{card.total}</span>
+                <span style={{ fontWeight: 900, fontSize: "clamp(22px, 3.5vw, 36px)", color: C.coral, fontFamily: FH }}>{card.total}</span>
               </div>
             </div>
           </div>
@@ -321,7 +321,7 @@ function DemoChat({ messages }: { messages: DemoMsg[] }) {
             }}>
               {list.map((item, j) => (
                 <div key={j} style={{
-                  display: "flex", alignItems: "center", gap: 16, padding: "16px 24px",
+                  display: "flex", alignItems: "center", gap: 12, padding: "12px 18px",
                   borderBottom: j < list.length - 1 ? `2px solid ${C.gray}` : "none",
                 }}>
                   <div style={{
@@ -330,7 +330,7 @@ function DemoChat({ messages }: { messages: DemoMsg[] }) {
                     boxShadow: `0 0 8px ${item.dot}44`, flexShrink: 0,
                   }} />
                   <div>
-                    <p style={{ fontWeight: 900, fontSize: 17, fontFamily: FH }}>{item.name}</p>
+                    <p style={{ fontWeight: 900, fontSize: 15, fontFamily: FH }}>{item.name}</p>
                     <p style={{ fontSize: 13, color: `${C.navy}88`, fontWeight: 600 }}>{item.note}</p>
                   </div>
                 </div>
@@ -345,10 +345,10 @@ function DemoChat({ messages }: { messages: DemoMsg[] }) {
               <button key={j} style={{
                 background: j === 0 ? C.teal : "#fff",
                 color: j === 0 ? "#fff" : C.navy,
-                padding: "12px 22px", borderRadius: 100,
-                fontWeight: 900, border: `4px solid ${C.navy}`,
-                boxShadow: j === 0 ? shadow(4, 4, C.navy) : "none",
-                fontSize: 14, cursor: "pointer", fontFamily: FH,
+                padding: "10px 18px", borderRadius: 100,
+                fontWeight: 900, border: `3px solid ${C.navy}`,
+                boxShadow: j === 0 ? shadow(3, 3, C.navy) : "none",
+                fontSize: 13, cursor: "pointer", fontFamily: FH,
               }}>{c}</button>
             ))}
           </div>
@@ -425,11 +425,15 @@ export default function LandingPageClient() {
         .demo-card-ml { margin-left: 16px; }
         @media (min-width: 768px) { .demo-card-ml { margin-left: 48px; } }
         @media (max-width: 767px) {
-          .pain-card { margin-top: 0 !important; }
+          .pain-card { margin-top: 0 !important; transform: none !important; }
           .persona-stagger { margin-top: 0 !important; }
-          section[aria-label] { padding-left: 16px !important; padding-right: 16px !important; }
+          .persona-stagger [role="img"] { height: 160px !important; font-size: 48px !important; }
+          section[aria-label] { padding-left: 20px !important; padding-right: 20px !important; }
           nav { padding: 10px 16px !important; }
           .hero-phone { transform: rotate(-2deg) scale(0.85) !important; max-width: 200px !important; }
+          .skew-section { transform: none !important; }
+          .skew-section > div:first-child { transform: none !important; }
+          .demo-card-ml { margin-left: 12px !important; }
         }
       `}</style>
 
@@ -442,28 +446,28 @@ export default function LandingPageClient() {
         boxShadow: shadow(5, 5, C.coral), padding: "12px 24px",
         display: "flex", justifyContent: "space-between", alignItems: "center",
       }}>
-        <div style={{ fontSize: 22, fontWeight: 900, color:'#E8862E', display: "flex", alignItems: "center", gap: 8, fontFamily: FH }}>
+        <Link href="/" style={{ fontSize: 18, fontWeight: 900, color:'#E8862E', display: "flex", alignItems: "center", gap: 6, fontFamily: FH, textDecoration: "none", flexShrink: 0 }}>
           <Image
             src={sellNSettleIcon}
             alt="SellNSettle"
-            width={30}
-            height={30}
+            width={26}
+            height={26}
             style={{ flexShrink: 0 }}
           />
           SellNSettle
-        </div>
+        </Link>
         <div className="hidden md:flex" style={{ gap: 28, alignItems: "center" }}>
           {["Features", "Comparison", "Pricing"].map((l) => (
             <a key={l} href={`#${l.toLowerCase()}`} style={{ color: C.navy, fontWeight: 700, textDecoration: "none", fontSize: 14 }}>{l}</a>
           ))}
           <Link href="/blog" style={{ color: C.navy, fontWeight: 700, textDecoration: "none", fontSize: 14 }}>Blog</Link>
         </div>
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <Link href="/login" style={{ fontWeight: 700, color: C.navy, fontSize: 14, textDecoration: "none" }}>Login</Link>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <Link href="/login" style={{ fontWeight: 700, color: C.navy, fontSize: 13, textDecoration: "none" }}>Login</Link>
           <Link href="/register" style={{
-            background: C.gold, color: C.navy, padding: "9px 20px", borderRadius: 100,
-            fontWeight: 900, fontSize: 14, border: `2px solid ${C.navy}`,
-            boxShadow: shadow(4, 4, C.navy), fontFamily: FH, textDecoration: "none",
+            background: C.gold, color: C.navy, padding: "8px 16px", borderRadius: 100,
+            fontWeight: 900, fontSize: 13, border: `2px solid ${C.navy}`,
+            boxShadow: shadow(3, 3, C.navy), fontFamily: FH, textDecoration: "none", whiteSpace: "nowrap",
           }}>Start Free</Link>
         </div>
       </nav>
@@ -540,7 +544,7 @@ export default function LandingPageClient() {
         </section>
 
         {/* ═══ PAIN — with skew (#2) ═══ */}
-        <section aria-label="Common problems" style={{ padding: "72px 24px", background: C.gray, transform: "skewY(-2deg)" }}>
+        <section aria-label="Common problems" className="skew-section" style={{ padding: "72px 24px", background: C.gray, transform: "skewY(-2deg)" }}>
           <div style={{ transform: "skewY(2deg)", maxWidth: 1000, margin: "0 auto", padding: "24px 0" }}>
             <div style={{ marginBottom: 48 }}>
               <h2 style={{ fontFamily: FH, fontSize: "clamp(32px, 5vw, 64px)", fontWeight: 900, color: C.navy, letterSpacing: -2, marginBottom: 16, lineHeight: 1 }}>
@@ -630,7 +634,7 @@ export default function LandingPageClient() {
         </section>
 
         {/* ═══ COMPARISON — no Vyapar name (#4), with skew ═══ */}
-        <section id="comparison" aria-label="Comparison" style={{ padding: "72px 24px", background: C.navy, color: "#fff", transform: "skewY(2deg)" }}>
+        <section id="comparison" aria-label="Comparison" className="skew-section" style={{ padding: "72px 24px", background: C.navy, color: "#fff", transform: "skewY(2deg)" }}>
           <div style={{ transform: "skewY(-2deg)", maxWidth: 960, margin: "0 auto", padding: "24px 0" }}>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
               <h2 style={{ fontFamily: FH, fontSize: "clamp(28px, 5vw, 56px)", fontWeight: 900, letterSpacing: -2, marginBottom: 12 }}>
