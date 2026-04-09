@@ -251,7 +251,7 @@ const DEMO_TABS: { key: string; label: string; messages: DemoMsg[] }[] = [
 
 function DemoChat({ messages }: { messages: DemoMsg[] }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       {messages.map((m, i) => {
         if (m.from === "user") return (
           <div key={i} style={{ display: "flex", justifyContent: "flex-end" }}>
@@ -277,11 +277,11 @@ function DemoChat({ messages }: { messages: DemoMsg[] }) {
           const card = m.card;
 
           return (
-          <div key={i} style={{ marginLeft: 64 }}>
+          <div key={i} className="demo-card-ml">
             <div style={{
-              background: "#fff", border: `4px solid ${C.navy}`,
-              padding: "clamp(20px, 3vw, 32px)", borderRadius: 24,
-              boxShadow: shadow(8, 8, C.gold),
+              background: "#fff", border: `3px solid ${C.navy}`,
+              padding: "clamp(16px, 2.5vw, 28px)", borderRadius: 20,
+              boxShadow: shadow(5, 5, C.gold),
             }}>
               <div style={{
                 display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -314,10 +314,10 @@ function DemoChat({ messages }: { messages: DemoMsg[] }) {
           const list = m.list;
 
           return (
-          <div key={i} style={{ marginLeft: 64 }}>
+          <div key={i} className="demo-card-ml">
             <div style={{
-              background: "#fff", border: `4px solid ${C.navy}`,
-              borderRadius: 24, boxShadow: shadow(8, 8, C.teal), overflow: "hidden",
+              background: "#fff", border: `3px solid ${C.navy}`,
+              borderRadius: 20, boxShadow: shadow(5, 5, C.teal), overflow: "hidden",
             }}>
               {list.map((item, j) => (
                 <div key={j} style={{
@@ -340,7 +340,7 @@ function DemoChat({ messages }: { messages: DemoMsg[] }) {
           );
         }
         if (m.from === "chips") return (
-          <div key={i} style={{ display: "flex", gap: 10, flexWrap: "wrap", marginLeft: 64 }}>
+          <div key={i} className="demo-card-ml" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             {m.chips!.map((c, j) => (
               <button key={j} style={{
                 background: j === 0 ? C.teal : "#fff",
@@ -364,19 +364,19 @@ function DemoSection() {
   const active = DEMO_TABS.find((t) => t.key === activeTab)!;
 
   return (
-    <div className="flex flex-col lg:flex-row" style={{ maxWidth: 1200, margin: "0 auto", alignItems: "flex-start", gap: 56 }}>
+    <div className="flex flex-col lg:flex-row" style={{ maxWidth: 1000, margin: "0 auto", alignItems: "flex-start", gap: 40 }}>
       <div className="w-full lg:w-1/3">
-        <h2 style={{ fontFamily: FH, fontSize: 48, fontWeight: 900, color: C.navy, marginBottom: 40, lineHeight: 1 }}>
-          See It <br /><span style={{ color: C.coral, fontStyle: "italic", fontSize: 38 }}>IN ACTION</span>
+        <h2 style={{ fontFamily: FH, fontSize: 40, fontWeight: 900, color: C.navy, marginBottom: 32, lineHeight: 1 }}>
+          See It <br /><span style={{ color: C.coral, fontStyle: "italic", fontSize: 30 }}>IN ACTION</span>
         </h2>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {DEMO_TABS.map((tab) => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
-              width: "100%", textAlign: "left", padding: "18px 20px",
-              border: `4px solid ${C.navy}`,
+              width: "100%", textAlign: "left", padding: "14px 18px",
+              border: `3px solid ${C.navy}`,
               background: activeTab === tab.key ? C.gold : "#fff",
-              fontWeight: 900, fontSize: 18, fontFamily: FH, cursor: "pointer",
-              boxShadow: activeTab === tab.key ? shadow(6, 6, C.navy) : "none",
+              fontWeight: 900, fontSize: 16, fontFamily: FH, cursor: "pointer",
+              boxShadow: activeTab === tab.key ? shadow(4, 4, C.navy) : "none",
               transition: "all 0.2s ease",
               transform: activeTab === tab.key ? "translate(-2px, -2px)" : "none",
             }}>{tab.label}</button>
@@ -392,9 +392,9 @@ function DemoSection() {
         }} />
         <div style={{
           position: "relative", zIndex: 1,
-          background: "#fff", border: `8px solid ${C.navy}`,
-          padding: "clamp(24px, 4vw, 48px)", borderRadius: 40,
-          boxShadow: shadow(20, 20, C.teal), minHeight: 400,
+          background: "#fff", border: `4px solid ${C.navy}`,
+          padding: "clamp(30px, 3vw, 36px)", borderRadius: 32,
+          boxShadow: shadow(10, 10, C.teal), minHeight: 360,
         }}>
           <DemoChat messages={active.messages} />
         </div>
@@ -416,6 +416,21 @@ export default function LandingPageClient() {
         @keyframes popIn { from{opacity:0;transform:translateY(8px) scale(.96)} to{opacity:1;transform:translateY(0) scale(1)} }
         @keyframes dotPulse { 0%,80%,100%{transform:scale(.6);opacity:.3}40%{transform:scale(1);opacity:1} }
         @keyframes blobPulse { 0%,100%{transform:scale(1);opacity:.2}50%{transform:scale(1.05);opacity:.3} }
+        .persona-stagger:nth-child(2) { margin-top: 0; }
+        .persona-stagger:nth-child(3) { margin-top: 0; }
+        @media (min-width: 768px) {
+          .persona-stagger:nth-child(2) { margin-top: 36px; }
+          .persona-stagger:nth-child(3) { margin-top: 72px; }
+        }
+        .demo-card-ml { margin-left: 16px; }
+        @media (min-width: 768px) { .demo-card-ml { margin-left: 48px; } }
+        @media (max-width: 767px) {
+          .pain-card { margin-top: 0 !important; }
+          .persona-stagger { margin-top: 0 !important; }
+          section[aria-label] { padding-left: 16px !important; padding-right: 16px !important; }
+          nav { padding: 10px 16px !important; }
+          .hero-phone { transform: rotate(-2deg) scale(0.85) !important; max-width: 200px !important; }
+        }
       `}</style>
 
       {/* ═══ NAV ═══ */}
@@ -423,8 +438,8 @@ export default function LandingPageClient() {
         position: "fixed", top: 24, left: "50%", transform: "translateX(-50%)",
         width: "90%", maxWidth: 1100, zIndex: 50,
         background: "rgba(255,255,255,0.92)", backdropFilter: "blur(16px)",
-        border: `4px solid ${C.navy}`, borderRadius: 100,
-        boxShadow: shadow(8, 8, C.coral), padding: "14px 28px",
+        border: `3px solid ${C.navy}`, borderRadius: 100,
+        boxShadow: shadow(5, 5, C.coral), padding: "12px 24px",
         display: "flex", justifyContent: "space-between", alignItems: "center",
       }}>
         <div style={{ fontSize: 22, fontWeight: 900, color:'#E8862E', display: "flex", alignItems: "center", gap: 8, fontFamily: FH }}>
@@ -456,51 +471,51 @@ export default function LandingPageClient() {
       <main style={{ paddingTop: 140 }}>
 
         {/* ═══ HERO ═══ */}
-        <section style={{ padding: "0 32px 100px", position: "relative" }} aria-label="Hero">
-          <div className="flex flex-col lg:flex-row" style={{ maxWidth: 1200, margin: "0 auto", gap: 48, alignItems: "center" }}>
+        <section style={{ padding: "0 24px 72px", position: "relative" }} aria-label="Hero">
+          <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16" style={{ maxWidth: 1000, margin: "0 auto" }}>
             <div className="w-full lg:w-3/5" style={{ zIndex: 20 }}>
               {/* CHANGED #7: no "first" claim */}
               <div style={{
-                display: "inline-block", padding: "8px 16px", marginBottom: 24,
-                fontSize: 11, fontWeight: 900, letterSpacing: 3, textTransform: "uppercase",
+                display: "inline-block", padding: "6px 14px", marginBottom: 20,
+                fontSize: 10, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase",
                 color: "#fff", background: C.teal,
                 border: `2px solid ${C.navy}`, boxShadow: shadow(4, 4, C.navy), fontFamily: FH,
               }}>🤖 AI-Powered Business Diary for Bharat</div>
 
               <h1 style={{
-                fontFamily: FH, fontSize: "clamp(48px, 8vw, 110px)",
-                fontWeight: 900, letterSpacing: -3, lineHeight: 0.92, marginBottom: 32, color: C.navy,
+                fontFamily: FH, fontSize: "clamp(32px, 5.5vw, 72px)",
+                fontWeight: 900, letterSpacing: -2, lineHeight: 0.95, marginBottom: 24, color: C.navy,
               }}>
                 Apni business diary, <span style={{ color: C.coral }}>ab AI</span>{" "}
                 <span style={{ color: C.gold, fontStyle: "italic" }}>ke saath</span>
               </h1>
 
-              <p style={{ fontSize: 20, color: `${C.navy}cc`, marginBottom: 36, maxWidth: 480, lineHeight: 1.6, fontWeight: 600 }}>
+              <p style={{ fontSize: 15, color: `${C.navy}cc`, marginBottom: 24, maxWidth: 440, lineHeight: 1.6, fontWeight: 500 }}>
                 Track enquiries, send invoices, collect payments — just by chatting. In{" "}
                 <span style={{ textDecoration: "underline", textDecorationColor: C.teal, textDecorationThickness: 4, textUnderlineOffset: 4 }}>Hindi, English, ya Hinglish.</span>
               </p>
 
               <Link href="/register" style={{
-                background: C.coral, color: "#fff", padding: "20px 40px", borderRadius: 16,
-                fontWeight: 900, fontSize: 22, border: `4px solid ${C.navy}`,
-                boxShadow: shadow(10, 10, C.navy), fontFamily: FH,
+                background: C.coral, color: "#fff", padding: "14px 28px", borderRadius: 12,
+                fontWeight: 900, fontSize: 16, border: `3px solid ${C.navy}`,
+                boxShadow: shadow(6, 6, C.navy), fontFamily: FH,
                 display: "inline-block", textDecoration: "none",
               }}>Start free — no card needed</Link>
             </div>
 
             {/* Phone with animated chat */}
             <div className="w-full lg:w-2/5" style={{ position: "relative", zIndex: 10 }}>
-              <div aria-hidden="true" style={{
+              <div aria-hidden="true" className="hidden lg:block" style={{
                 position: "absolute", top: -60, right: -60, width: 280, height: 280,
                 background: `${C.gold}33`,
                 borderRadius: "40% 60% 70% 30% / 40% 50% 60% 50%",
                 zIndex: 0, animation: "blobPulse 4s ease infinite",
               }} />
-              <div className="mx-auto lg:-ml-10" style={{
-                position: "relative", zIndex: 1, width: "100%", maxWidth: 320,
-                aspectRatio: "9/19", background: C.navy, borderRadius: 44, padding: 8,
-                boxShadow: shadow(24, 24, C.teal), border: `4px solid ${C.navy}`,
-                transform: "rotate(-6deg) scale(1.1)",
+              <div className="hero-phone mx-auto lg:mx-0" style={{
+                position: "relative", zIndex: 1, width: "100%", maxWidth: 240,
+                aspectRatio: "9/19", background: C.navy, borderRadius: 36, padding: 7,
+                boxShadow: shadow(10, 10, C.teal), border: `3px solid ${C.navy}`,
+                transform: "rotate(-4deg) scale(1.05)",
               }}>
                 <div style={{ width: "100%", height: "100%", background: "#fff", borderRadius: 36, overflow: "hidden", display: "flex", flexDirection: "column" }}>
                   <div style={{
@@ -525,27 +540,27 @@ export default function LandingPageClient() {
         </section>
 
         {/* ═══ PAIN — with skew (#2) ═══ */}
-        <section aria-label="Common problems" style={{ padding: "100px 32px", background: C.gray, transform: "skewY(-2deg)" }}>
-          <div style={{ transform: "skewY(2deg)", maxWidth: 1200, margin: "0 auto", padding: "40px 0" }}>
-            <div style={{ marginBottom: 64 }}>
-              <h2 style={{ fontFamily: FH, fontSize: "clamp(40px, 7vw, 90px)", fontWeight: 900, color: C.navy, letterSpacing: -2, marginBottom: 16, lineHeight: 1 }}>
+        <section aria-label="Common problems" style={{ padding: "72px 24px", background: C.gray, transform: "skewY(-2deg)" }}>
+          <div style={{ transform: "skewY(2deg)", maxWidth: 1000, margin: "0 auto", padding: "24px 0" }}>
+            <div style={{ marginBottom: 48 }}>
+              <h2 style={{ fontFamily: FH, fontSize: "clamp(32px, 5vw, 64px)", fontWeight: 900, color: C.navy, letterSpacing: -2, marginBottom: 16, lineHeight: 1 }}>
                 Sound <span style={{ color: C.teal, fontStyle: "italic" }}>Familiar?</span>
               </h2>
-              <p style={{ fontSize: 20, color: `${C.navy}99`, fontWeight: 700, maxWidth: 520 }}>The daily chaos of manual management is holding your business back.</p>
+              <p style={{ fontSize: 18, color: `${C.navy}99`, fontWeight: 600, maxWidth: 520 }}>The daily chaos of manual management is holding your business back.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4" style={{ gap: 24 }}>
               {[
-                { icon: "menu_book", color: C.coral, sc: C.coral, title: "Notebook mein likha par dhundna mushkil...", desc: "Enquiry details scattered across 10 pages. Never there when you need them.", mt: 0 , rot: "1.25deg"},
-                { icon: "event_busy", color: C.teal, sc: C.teal, title: "Follow-up bhool gaye, lead chala gaya...", desc: "Missed a ₹2 lakh lead because you forgot to check your diary.", mt: 32 , rot: "1.25deg"},
-                { icon: "timer", color: C.gold, sc: C.gold, title: "Invoice banane mein itna time lagta hai...", desc: "Manually calculating totals and taxes when you could be working.", mt: 0 , rot: "1.25deg"},
-                { icon: "volunteer_activism", color: C.navy, sc: C.navy, title: "Payment yaad dilana awkward...", desc: "Asking for money feels difficult. Let our AI handle the reminders.", mt: 32 , rot: "1.25deg"},
+                { icon: "menu_book", color: C.coral, sc: C.coral, title: "Notebook mein likha par dhundna mushkil...", desc: "Enquiry details scattered across 10 pages. Never there when you need them.", mt: 0 , rot: "0.75deg"},
+                { icon: "event_busy", color: C.teal, sc: C.teal, title: "Follow-up bhool gaye, lead chala gaya...", desc: "Missed a ₹2 lakh lead because you forgot to check your diary.", mt: 32 , rot: "0.75deg"},
+                { icon: "timer", color: C.gold, sc: C.gold, title: "Invoice banane mein itna time lagta hai...", desc: "Manually calculating totals and taxes when you could be working.", mt: 0 , rot: "0.75deg"},
+                { icon: "volunteer_activism", color: C.navy, sc: C.navy, title: "Payment yaad dilana awkward...", desc: "Asking for money feels difficult. Let our AI handle the reminders.", mt: 32 , rot: "0.75deg"},
               ].map((p, i) => (
-                <div key={i} className="hover:-translate-y-2 transition-transform" style={{
-                  background: "#fff", padding: 36, border: `4px solid ${C.navy}`,
-                  boxShadow: shadow(8, 8, p.sc), marginTop: p.mt,
+                <div key={i} className="pain-card hover:-translate-y-2 transition-transform" style={{
+                  background: "#fff", padding: 28, border: `3px solid ${C.navy}`,
+                  boxShadow: shadow(5, 5, p.sc), marginTop: p.mt,
                   transform: `rotate(${p.rot})`,
                 }}>
-                  <Icon name={p.icon} style={{ color: p.color, fontSize: 52, marginBottom: 24, display: "block" }} />
+                  <Icon name={p.icon} style={{ color: p.color, fontSize: 40, marginBottom: 16, display: "block" }} />
                   <h3 style={{ fontWeight: 900, fontSize: 20, marginBottom: 12, lineHeight: 1.2, fontFamily: FH }}>{p.title}</h3>
                   <p style={{ color: `${C.navy}aa`, fontWeight: 500, fontSize: 14, lineHeight: 1.5 }}>{p.desc}</p>
                 </div>
@@ -555,15 +570,15 @@ export default function LandingPageClient() {
         </section>
 
         {/* ═══ DEMO — 3 functional tabs (#3) ═══ */}
-        <section aria-label="Product demo" style={{ padding: "100px 32px", overflow: "hidden" }}>
+        <section aria-label="Product demo" style={{ padding: "72px 24px", overflow: "hidden" }}>
           <DemoSection />
         </section>
 
         {/* ═══ FEATURES — collage ═══ */}
-        <section id="features" aria-label="Features" style={{ padding: "100px 32px", background: "#fff" }}>
-          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-            <div style={{ marginBottom: 64, position: "relative", display: "inline-block" }}>
-              <h2 style={{ fontFamily: FH, fontSize: "clamp(40px, 7vw, 90px)", fontWeight: 900, color: C.navy, letterSpacing: -2, lineHeight: 1 }}>
+        <section id="features" aria-label="Features" style={{ padding: "72px 24px", background: "#fff" }}>
+          <div style={{ maxWidth: 1000, margin: "0 auto",padding: "24px 0"  }}>
+            <div style={{ marginBottom: 48, position: "relative", display: "inline-block" }}>
+              <h2 style={{ fontFamily: FH, fontSize: "clamp(32px, 5vw, 64px)", fontWeight: 900, color: C.navy, letterSpacing: -2, lineHeight: 1 }}>
                 Sab kuch ek <br />
                 <span style={{ color: C.gold, fontStyle: "italic", textDecoration: "underline", textDecorationColor: C.coral, textDecorationThickness: 6, textUnderlineOffset: 6 }}>conversation</span> mein
               </h2>
@@ -574,36 +589,36 @@ export default function LandingPageClient() {
               }}>KYA MILEGA</div>
             </div>
             <div className="flex flex-col lg:grid" style={{ gridTemplateColumns: "repeat(12, 1fr)", gap: 20, alignItems: "start" }}>
-              <div className="lg:col-span-5" style={{ background: "#fff", border: `4px solid ${C.navy}`, padding: 36, boxShadow: shadow(10, 10, C.coral), transform: "rotate(-1deg)" }}>
+              <div className="lg:col-span-5" style={{ background: "#fff", border: `3px solid ${C.navy}`, padding: 28, boxShadow: shadow(6, 6, C.coral), transform: "rotate(-0.5deg)" }}>
                 <Icon name="chat_bubble" style={{ color: C.coral, fontSize: 48, marginBottom: 16, display: "block" }} />
                 <h3 style={{ fontWeight: 900, fontSize: 26, marginBottom: 10, fontFamily: FH }}>Bolo, ho jaayega</h3>
-                <p style={{ fontWeight: 600, fontSize: 16, lineHeight: 1.5 }}>&ldquo;Rajesh ka invoice banao&rdquo; — Hindi mein bolo, AI samjhega.</p>
+                <p style={{ fontWeight: 500, fontSize: 15, lineHeight: 1.5 }}>&ldquo;Rajesh ka invoice banao&rdquo; — Hindi mein bolo, AI samjhega.</p>
               </div>
-              <div className="lg:col-span-7" style={{ background: C.navy, color: "#fff", border: `4px solid ${C.navy}`, padding: 40, boxShadow: shadow(12, 12, C.teal), transform: "rotate(1.5deg) translateY(-16px)" }}>
+              <div className="lg:col-span-7" style={{ background: C.navy, color: "#fff", border: `3px solid ${C.navy}`, padding: 32, boxShadow: shadow(7, 7, C.teal), transform: "rotate(0.75deg) translateY(-8px)" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 20 }}>
                   <Icon name="assignment" style={{ color: C.teal, fontSize: 56 }} />
                   <div>
-                    <h3 style={{ fontWeight: 900, fontSize: 30, marginBottom: 10, fontFamily: FH }}>Pura business cycle</h3>
-                    <p style={{ fontSize: 17, fontWeight: 500, opacity: 0.8 }}>Enquiry → follow-up → quote → invoice → payment → reminder. <span style={{ color: C.gold, fontWeight: 900, fontStyle: "italic" }}>End to end.</span></p>
+                    <h3 style={{ fontWeight: 900, fontSize: 24, marginBottom: 10, fontFamily: FH }}>Pura business cycle</h3>
+                    <p style={{ fontSize: 15, fontWeight: 500, opacity: 0.8 }}>Enquiry → follow-up → quote → invoice → payment → reminder. <span style={{ color: C.gold, fontWeight: 900, fontStyle: "italic" }}>End to end.</span></p>
                   </div>
                 </div>
               </div>
-              <div className="lg:col-span-6" style={{ background: "#fff", border: `4px solid ${C.navy}`, padding: 36, boxShadow: shadow(10, 10, C.gold), transform: "rotate(-2deg)" }}>
+              <div className="lg:col-span-6" style={{ background: "#fff", border: `3px solid ${C.navy}`, padding: 28, boxShadow: shadow(6, 6, C.gold), transform: "rotate(-1deg)" }}>
                 <Icon name="smartphone" style={{ color: C.gold, fontSize: 48, marginBottom: 16, display: "block" }} />
                 <h3 style={{ fontWeight: 900, fontSize: 26, marginBottom: 10, fontFamily: FH }}>WhatsApp pe instant share</h3>
-                <p style={{ fontWeight: 600, fontSize: 15 }}>PDF invoice ek tap mein generate. Seedha WhatsApp pe bhej do — <span style={{ color: C.coral }}>professional lage.</span></p>
+                <p style={{ fontWeight: 500, fontSize: 14 }}>PDF invoice ek tap mein generate. Seedha WhatsApp pe bhej do — <span style={{ color: C.coral }}>professional lage.</span></p>
               </div>
-              <div className="lg:col-span-6" style={{ background: C.gray, border: `4px solid ${C.navy}`, padding: 28, boxShadow: shadow(10, 10, C.navy), transform: "rotate(1deg) translateX(8px)" }}>
+              <div className="lg:col-span-6" style={{ background: C.gray, border: `3px solid ${C.navy}`, padding: 24, boxShadow: shadow(6, 6, C.navy), transform: "rotate(0.5deg) translateX(4px)" }}>
                 <Icon name="notifications_active" style={{ color: C.navy, fontSize: 42, marginBottom: 16, display: "block" }} />
                 <h3 style={{ fontWeight: 900, fontSize: 22, marginBottom: 10, fontFamily: FH }}>Kabhi bhoologe nahi</h3>
                 <p style={{ fontWeight: 500, fontSize: 14 }}>AI follow-up yaad dilata hai. Overdue dikhaata hai. Payment pending toh alert.</p>
               </div>
-              <div className="lg:col-span-4" style={{ background: C.teal, color: "#fff", border: `4px solid ${C.navy}`, padding: 28, boxShadow: shadow(8, 8, C.coral), transform: "rotate(-1.5deg)" }}>
+              <div className="lg:col-span-4" style={{ background: C.teal, color: "#fff", border: `3px solid ${C.navy}`, padding: 24, boxShadow: shadow(5, 5, C.coral), transform: "rotate(-0.75deg)" }}>
                 <Icon name="alternate_email" style={{ color: "#fff", fontSize: 42, marginBottom: 10, display: "block" }} />
                 <h3 style={{ fontWeight: 900, fontSize: 20, marginBottom: 8, fontFamily: FH }}>@Mention se speed</h3>
                 <p style={{ fontWeight: 500, fontSize: 14 }}>@Rajesh @ModularKitchen type karo — AI turant samajh jayega.</p>
               </div>
-              <div className="lg:col-span-8" style={{ background: C.gold, border: `4px solid ${C.navy}`, padding: 36, display: "flex", alignItems: "center", gap: 28, boxShadow: shadow(10, 10, C.navy), transform: "rotate(0.5deg) translateY(-8px)" }}>
+              <div className="lg:col-span-8" style={{ background: C.gold, border: `3px solid ${C.navy}`, padding: 28, display: "flex", alignItems: "center", gap: 24, boxShadow: shadow(6, 6, C.navy), transform: "rotate(0.25deg) translateY(-4px)" }}>
                 <Icon name="bar_chart" style={{ color: C.navy, fontSize: 56, opacity: 0.3 }} />
                 <div>
                   <h3 style={{ fontWeight: 900, fontSize: 26, marginBottom: 8, fontFamily: FH }}>Ek line mein hisaab</h3>
@@ -615,16 +630,16 @@ export default function LandingPageClient() {
         </section>
 
         {/* ═══ COMPARISON — no Vyapar name (#4), with skew ═══ */}
-        <section id="comparison" aria-label="Comparison" style={{ padding: "100px 32px", background: C.navy, color: "#fff", transform: "skewY(2deg)" }}>
-          <div style={{ transform: "skewY(-2deg)", maxWidth: 960, margin: "0 auto", padding: "40px 0" }}>
-            <div style={{ textAlign: "center", marginBottom: 64 }}>
-              <h2 style={{ fontFamily: FH, fontSize: "clamp(36px, 6vw, 72px)", fontWeight: 900, letterSpacing: -2, marginBottom: 12 }}>
+        <section id="comparison" aria-label="Comparison" style={{ padding: "72px 24px", background: C.navy, color: "#fff", transform: "skewY(2deg)" }}>
+          <div style={{ transform: "skewY(-2deg)", maxWidth: 960, margin: "0 auto", padding: "24px 0" }}>
+            <div style={{ textAlign: "center", marginBottom: 48 }}>
+              <h2 style={{ fontFamily: FH, fontSize: "clamp(28px, 5vw, 56px)", fontWeight: 900, letterSpacing: -2, marginBottom: 12 }}>
                 Billing app se <span style={{ color: C.gold, fontStyle: "italic", textDecoration: "underline", textDecorationColor: C.coral }}>kaise alag?</span>
               </h2>
-              <p style={{ fontSize: 18, fontWeight: 700, opacity: 0.5 }}>SellNSettle isn&apos;t just for billing; it&apos;s for managing your whole day.</p>
+              <p style={{ fontSize: 16, fontWeight: 600, opacity: 0.5 }}>SellNSettle isn&apos;t just for billing; it&apos;s for managing your whole day.</p>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: 36 }}>
-              <div style={{ padding: 40, border: "4px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.03)", transform: "rotate(-1deg)" }}>
+            <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: 28 }}>
+              <div style={{ padding: 32, border: "3px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.03)", transform: "rotate(-0.5deg)" }}>
                 <h3 style={{ fontSize: 26, fontWeight: 900, marginBottom: 36, display: "flex", alignItems: "center", gap: 12, fontFamily: FH }}>
                   <Icon name="description" style={{ opacity: 0.4 }} /> Generic Billing Apps
                 </h3>
@@ -641,7 +656,7 @@ export default function LandingPageClient() {
                   </div>
                 ))}
               </div>
-              <div style={{ padding: 40, border: `4px solid ${C.gold}`, background: "#fff", color: C.navy, transform: "rotate(1deg)", boxShadow: shadow(15, 15, C.gold) }}>
+              <div style={{ padding: 32, border: `3px solid ${C.gold}`, background: "#fff", color: C.navy, transform: "rotate(0.5deg)", boxShadow: shadow(8, 8, C.gold) }}>
                 <h3 style={{ fontSize: 26, fontWeight: 900, marginBottom: 36, color: C.coral, display: "flex", alignItems: "center", gap: 12, fontFamily: FH }}>
                   <Icon name="stars" /> SellNSettle
                 </h3>
@@ -664,26 +679,26 @@ export default function LandingPageClient() {
         </section>
 
         {/* ═══ PERSONAS — with hover animation (#5) ═══ */}
-        <section aria-label="Target audience" style={{ padding: "100px 32px", background: "#fff" }}>
-          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-            <div style={{ marginBottom: 64 }}>
-              <h2 style={{ fontFamily: FH, fontSize: "clamp(40px, 7vw, 90px)", fontWeight: 900, color: C.navy, letterSpacing: -3, marginBottom: 8 }}>
+        <section aria-label="Target audience" style={{ padding: "72px 24px", background: "#fff" }}>
+          <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+            <div style={{ marginBottom: 48 }}>
+              <h2 style={{ fontFamily: FH, fontSize: "clamp(32px, 5vw, 64px)", fontWeight: 900, color: C.navy, letterSpacing: -3, marginBottom: 8 }}>
                 Yeh <span style={{ color: C.coral }}>Kiske</span> Liye Hai?
               </h2>
-              <p style={{ fontSize: 20, fontWeight: 900, color: `${C.navy}55` }}>Tailored for the modern Indian entrepreneur.</p>
+              <p style={{ fontSize: 18, fontWeight: 700, color: `${C.navy}55` }}>Tailored for the modern Indian entrepreneur.</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3" style={{ gap: 48 }}>
+            <div className="grid grid-cols-1 md:grid-cols-3" style={{ gap: 32 }}>
               {[
-                { emoji: "🏠", bg: "#fce4ec", title: "Interior Designers", desc: "Manage multiple site enquiries, send quotes on-site, track material orders.", sc: C.coral, rot: 1, mt: 0 },
-                { emoji: "📸", bg: "#e0f2f1", title: "Photographers", desc: "Track shoot dates, send booking confirmations, collect advances automatically.", sc: C.teal, rot: -1, mt: 36 },
-                { emoji: "🎯", bg: "#fff8e1", title: "Freelancers & Coaches", desc: "Record payments instantly, send professional invoices, automate follow-ups.", sc: C.gold, rot: 2, mt: 72 },
+                { emoji: "🏠", bg: "#fce4ec", title: "Interior Designers", desc: "Manage multiple site enquiries, send quotes on-site, track material orders.", sc: C.coral, rot: 0.5, mt: 0 },
+                { emoji: "📸", bg: "#e0f2f1", title: "Photographers", desc: "Track shoot dates, send booking confirmations, collect advances automatically.", sc: C.teal, rot: -0.5, mt: 36 },
+                { emoji: "🎯", bg: "#fff8e1", title: "Freelancers & Coaches", desc: "Record payments instantly, send professional invoices, automate follow-ups.", sc: C.gold, rot: 1, mt: 72 },
               ].map((p) => (
-                <div key={p.title} className="group" style={{ marginTop: p.mt }}>
+                <div key={p.title} className="group persona-stagger">
                   <div
                     className="transition-all duration-500 ease-out group-hover:!rotate-0 group-hover:scale-[1.03] group-hover:shadow-2xl"
                     style={{
-                      border: `8px solid ${C.navy}`,
-                      boxShadow: shadow(12, 12, p.sc),
+                      border: `4px solid ${C.navy}`,
+                      boxShadow: shadow(7, 7, p.sc),
                       transform: `rotate(${p.rot}deg)`,
                       overflow: "hidden", cursor: "default",
                     }}
@@ -696,9 +711,9 @@ export default function LandingPageClient() {
                       }}
                       role="img" aria-label={p.title}
                     >{p.emoji}</div>
-                    <div style={{ padding: "24px 28px", background: "#fff", borderTop: `8px solid ${C.navy}` }}>
+                    <div style={{ padding: "20px 24px", background: "#fff", borderTop: `4px solid ${C.navy}` }}>
                       <h3 style={{ fontSize: 24, fontWeight: 900, fontStyle: "italic", fontFamily: FH, marginBottom: 8 }}>{p.title}</h3>
-                      <p style={{ color: `${C.navy}aa`, fontWeight: 700, fontSize: 13, lineHeight: 1.4 }}>{p.desc}</p>
+                      <p style={{ color: `${C.navy}aa`, fontWeight: 600, fontSize: 13, lineHeight: 1.4 }}>{p.desc}</p>
                     </div>
                   </div>
                 </div>
@@ -708,30 +723,30 @@ export default function LandingPageClient() {
         </section>
 
         {/* ═══ HOW IT WORKS ═══ */}
-        <section aria-label="How it works" style={{ padding: "100px 32px", background: `${C.teal}18` }}>
-          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-            <div style={{ textAlign: "center", marginBottom: 64 }}>
-              <h2 style={{ fontFamily: FH, fontSize: 52, fontWeight: 900, fontStyle: "italic", color: C.navy, marginBottom: 8 }}>How It Works</h2>
-              <p style={{ fontSize: 20, fontWeight: 700, color: `${C.navy}99` }}>Three steps to a more organized business life.</p>
+        <section aria-label="How it works" style={{ padding: "72px 24px", background: `${C.teal}18` }}>
+          <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+            <div style={{ textAlign: "center", marginBottom: 48 }}>
+              <h2 style={{ fontFamily: FH, fontSize: 42, fontWeight: 900, fontStyle: "italic", color: C.navy, marginBottom: 8 }}>How It Works</h2>
+              <p style={{ fontSize: 18, fontWeight: 600, color: `${C.navy}99` }}>Three steps to a more organized business life.</p>
             </div>
-            <div className="flex flex-col lg:flex-row" style={{ gap: 32 }}>
+            <div className="flex flex-col lg:flex-row" style={{ gap: 24 }}>
               {[
-                { n: "1", icon: "how_to_reg", title: "Sign up", desc: "Zero paperwork. Register with your phone number in 30 seconds.", color: C.coral, sc: C.navy, rot: "-1deg" },
-                { n: "2", icon: "add_comment", title: "Add enquiry", desc: "Just chat. \"Rajesh met me for kitchen work today.\" Done.", color: C.gold, sc: C.coral, rot: "1deg" },
-                { n: "3", icon: "send_to_mobile", title: "Send invoices", desc: "Ask AI to generate and send invoices directly to WhatsApp.", color: C.teal, sc: C.teal, rot: "-2deg" },
+                { n: "1", icon: "how_to_reg", title: "Sign up", desc: "Zero paperwork. Register with your phone number in 30 seconds.", color: C.coral, sc: C.navy, rot: "-0.5deg" },
+                { n: "2", icon: "add_comment", title: "Add enquiry", desc: "Just chat. \"Rajesh met me for kitchen work today.\" Done.", color: C.gold, sc: C.coral, rot: "0.5deg" },
+                { n: "3", icon: "send_to_mobile", title: "Send invoices", desc: "Ask AI to generate and send invoices directly to WhatsApp.", color: C.teal, sc: C.teal, rot: "-1deg" },
               ].map((s) => (
                 <div key={s.n} style={{
-                  flex: 1, background: "#fff", border: `4px solid ${C.navy}`,
-                  padding: 40, boxShadow: shadow(12, 12, s.sc), transform: `rotate(${s.rot})`,
+                  flex: 1, background: "#fff", border: `3px solid ${C.navy}`,
+                  padding: 32, boxShadow: shadow(7, 7, s.sc), transform: `rotate(${s.rot})`,
                 }}>
                   <div style={{
-                    width: 64, height: 64, borderRadius: "50%",
-                    background: s.color, color: "#fff", border: `4px solid ${C.navy}`,
+                    width: 52, height: 52, borderRadius: "50%",
+                    background: s.color, color: "#fff", border: `3px solid ${C.navy}`,
                     display: "flex", alignItems: "center", justifyContent: "center",
                     marginBottom: 24, boxShadow: shadow(4, 4, C.navy),
                   }}><Icon name={s.icon} style={{ fontSize: 30 }} /></div>
-                  <h3 style={{ fontSize: 30, fontWeight: 900, fontFamily: FH, marginBottom: 12 }}>{s.n}. {s.title}</h3>
-                  <p style={{ fontSize: 17, fontWeight: 700, color: `${C.navy}99`, lineHeight: 1.5 }}>{s.desc}</p>
+                  <h3 style={{ fontSize: 24, fontWeight: 900, fontFamily: FH, marginBottom: 10 }}>{s.n}. {s.title}</h3>
+                  <p style={{ fontSize: 15, fontWeight: 600, color: `${C.navy}99`, lineHeight: 1.5 }}>{s.desc}</p>
                 </div>
               ))}
             </div>
@@ -739,12 +754,12 @@ export default function LandingPageClient() {
         </section>
 
         {/* ═══ CTA — removed "Join 5000+" (#6) ═══ */}
-        <section aria-label="Call to action" style={{ padding: "120px 32px" }}>
-          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+        <section aria-label="Call to action" style={{ padding: "80px 24px" }}>
+          <div style={{ maxWidth: 1100, margin: "0 auto" }}>
             <div style={{
-              background: C.coral, border: `12px solid ${C.navy}`, borderRadius: 56,
-              padding: "clamp(48px, 8vw, 100px)", textAlign: "center",
-              position: "relative", overflow: "hidden", boxShadow: shadow(30, 30, C.gold),
+              background: C.coral, border: `6px solid ${C.navy}`, borderRadius: 40,
+              padding: "clamp(36px, 6vw, 72px)", textAlign: "center",
+              position: "relative", overflow: "hidden", boxShadow: shadow(14, 14, C.gold),
             }}>
               <div aria-hidden="true" style={{
                 position: "absolute", top: -80, left: -80, width: 300, height: 300,
@@ -753,7 +768,7 @@ export default function LandingPageClient() {
               }} />
               <div style={{ position: "relative", zIndex: 1 }}>
                 <h2 style={{
-                  fontFamily: FH, fontSize: "clamp(40px, 8vw, 100px)",
+                  fontFamily: FH, fontSize: "clamp(32px, 6vw, 72px)",
                   fontWeight: 900, color: "#fff", letterSpacing: -3, lineHeight: 0.95, marginBottom: 48,
                 }}>
                   Notebook <span style={{ color: C.navy }}>band</span> karo.<br />
@@ -761,15 +776,15 @@ export default function LandingPageClient() {
                 </h2>
                 <div className="flex flex-col sm:flex-row" style={{ justifyContent: "center", gap: 20 }}>
                   <Link href="/register" style={{
-                    background: C.gold, color: C.navy, padding: "22px 40px", borderRadius: 16,
-                    fontWeight: 900, fontSize: "clamp(18px, 3vw, 24px)",
-                    border: `4px solid ${C.navy}`, boxShadow: shadow(10, 10, C.navy),
+                    background: C.gold, color: C.navy, padding: "18px 32px", borderRadius: 14,
+                    fontWeight: 900, fontSize: "clamp(16px, 2.5vw, 20px)",
+                    border: `3px solid ${C.navy}`, boxShadow: shadow(6, 6, C.navy),
                     fontFamily: FH, textDecoration: "none", display: "inline-block",
                   }}>Start free — no card needed</Link>
                   <button style={{
-                    background: "#fff", color: C.navy, padding: "22px 40px", borderRadius: 16,
-                    fontWeight: 900, fontSize: "clamp(18px, 3vw, 24px)",
-                    border: `4px solid ${C.navy}`, boxShadow: shadow(10, 10, C.navy),
+                    background: "#fff", color: C.navy, padding: "18px 32px", borderRadius: 14,
+                    fontWeight: 900, fontSize: "clamp(16px, 2.5vw, 20px)",
+                    border: `3px solid ${C.navy}`, boxShadow: shadow(6, 6, C.navy),
                     fontFamily: FH, cursor: "pointer",
                   }}>Watch Video Demo</button>
                 </div>
@@ -780,10 +795,10 @@ export default function LandingPageClient() {
       </main>
 
       {/* ═══ FOOTER ═══ */}
-      <footer style={{ padding: "72px 32px", borderTop: `8px solid ${C.navy}`, background: C.gray }}>
-        <div className="grid grid-cols-1 md:grid-cols-12" style={{ maxWidth: 1200, margin: "0 auto", gap: 48 }}>
+      <footer style={{ padding: "56px 24px", borderTop: `4px solid ${C.navy}`, background: C.gray }}>
+        <div className="grid grid-cols-1 md:grid-cols-12" style={{ maxWidth: 1100, margin: "0 auto", gap: 36 }}>
           <div className="md:col-span-5">
-            <div style={{ fontSize: 32, fontWeight: 900, color: '#E8862E', marginBottom: 24, display: "flex", alignItems: "center", gap: 10, fontFamily: FH }}>
+            <div style={{ fontSize: 26, fontWeight: 900, color: '#E8862E', marginBottom: 20, display: "flex", alignItems: "center", gap: 10, fontFamily: FH }}>
               <Image
                 src={sellNSettleIcon}
                 alt="SellNSettle"
@@ -793,7 +808,7 @@ export default function LandingPageClient() {
               />
               SellNSettle
             </div>
-            <p style={{ fontSize: 17, color: `${C.navy}aa`, fontWeight: 700, maxWidth: 320, marginBottom: 28, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 15, color: `${C.navy}aa`, fontWeight: 600, maxWidth: 320, marginBottom: 28, lineHeight: 1.5 }}>
               Empowering India&apos;s small businesses with intelligent conversation-first technology.
             </p>
             <p style={{ fontSize: 11, color: `${C.navy}55`, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase" }}>© 2026 SellNSettle. Made in India with ❤️</p>
