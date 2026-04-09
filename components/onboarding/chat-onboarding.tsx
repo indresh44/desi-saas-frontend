@@ -15,6 +15,7 @@ import {
 import { ChatMarkdown } from "@/components/chat/chat-markdown";
 import { sendChatMessage, getOrCreateThread } from "@/lib/api/chat";
 import {
+  setLanguage as apiSetLanguage,
   setPersona as apiSetPersona,
   addCatalogItem as apiAddCatalogItem,
   completeOnboarding as apiCompleteOnboarding,
@@ -32,12 +33,19 @@ interface OnboardingMessage {
 }
 
 type OnboardingStep =
-  | "init"
-  | "greeting"      // AI greeted, show persona buttons
+  | "init"          // Creating thread + getting AI greeting
+  | "language"      // AI asked language, show language buttons
+  | "greeting"      // Language set, AI asked persona, show persona buttons
   | "selecting"     // User clicked persona, loading
   | "catalog"       // Persona set, show pipeline + catalog form
   | "submitting"    // Catalog submit in progress
   | "done";         // Complete, about to show animation
+
+const LANGUAGES = [
+  { id: "hinglish", label: "Hinglish", description: "Hindi + English mix", example: "Aapka kaam easy ho jayega!" },
+  { id: "english", label: "English", description: "Pure English", example: "Your work just got easier!" },
+  { id: "hindi", label: "Hindi", description: "शुद्ध हिंदी", example: "आपका काम आसान हो जाएगा!" },
+] as const;
 
 const PERSONAS = [
   { id: "interior_designer", label: "Interior Designer", icon: Home },
@@ -61,7 +69,7 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
   const [step, setStep] = useState<OnboardingStep>("init");
   const [showSetup, setShowSetup] = useState(false);
 
-  // Step-based UI state (not attached to messages)
+  // Step-based UI state
   const [pipelineStages, setPipelineStages] = useState<{ name: string; color: string }[]>([]);
   const [catalogName, setCatalogName] = useState("");
   const [catalogPrice, setCatalogPrice] = useState("");
@@ -73,7 +81,7 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading, step]);
 
-  // Single init — create thread + send greeting trigger
+  // Single init — create thread, send "hi", AI asks language
   useEffect(() => {
     if (initCalledRef.current) return;
     initCalledRef.current = true;
@@ -98,7 +106,7 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
           role: "assistant",
           content: response.reply,
         }]);
-        setStep("greeting");
+        setStep("language");
       } catch {
         setMessages([{
           id: "msg_error",
@@ -120,7 +128,38 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
     ]);
   };
 
-  // Handle persona selection (button click)
+  // Handle language selection
+  const handleLanguageSelect = useCallback(
+    async (languageId: string) => {
+      if (isLoading || !threadId) return;
+
+      const label = LANGUAGES.find((l) => l.id === languageId)?.label ?? languageId;
+      setIsLoading(true);
+      addMessage("user", label);
+
+      try {
+        // 1. Save language preference
+        await apiSetLanguage(languageId);
+
+        // 2. Tell AI — it will now respond in chosen language and ask persona
+        const response = await sendChatMessage({
+          message: `I chose ${label}`,
+          context_type: "onboarding",
+          thread_id: threadId,
+        });
+        addMessage("assistant", response.reply);
+        setStep("greeting");
+      } catch {
+        addMessage("assistant", "Something went wrong. Please try again.");
+        setStep("language");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [isLoading, threadId]
+  );
+
+  // Handle persona selection
   const handlePersonaSelect = useCallback(
     async (personaId: string) => {
       if (isLoading || !threadId) return;
@@ -128,15 +167,12 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
       const label = PERSONAS.find((p) => p.id === personaId)?.label ?? personaId;
       setStep("selecting");
       setIsLoading(true);
-
       addMessage("user", label);
 
       try {
-        // 1. Set persona via REST (creates pipeline)
         const personaResult = await apiSetPersona(personaId);
         setPipelineStages(personaResult.pipeline_stages);
 
-        // 2. Tell AI so it responds naturally
         const response = await sendChatMessage({
           message: `I selected: ${label}`,
           context_type: "onboarding",
@@ -144,11 +180,9 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
         });
         addMessage("assistant", response.reply);
 
-        // 3. Pre-fill catalog example
         const example = CATALOG_EXAMPLES[personaId] || CATALOG_EXAMPLES.other;
         setCatalogName(example.name);
         setCatalogPrice(example.price);
-
         setStep("catalog");
       } catch {
         addMessage("assistant", "Oops, something went wrong. Please try again.");
@@ -167,7 +201,6 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
 
     setStep("submitting");
     setIsLoading(true);
-
     addMessage("user", `${catalogName.trim()} — ₹${Number(catalogPrice).toLocaleString("en-IN")}`);
 
     try {
@@ -196,7 +229,6 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
 
     setStep("submitting");
     setIsLoading(true);
-
     addMessage("user", "Skip for now");
 
     try {
@@ -306,6 +338,34 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
 
           {/* ── Step-based interactive blocks ── */}
 
+          {/* Language buttons — shown when step is "language" */}
+          {step === "language" && !isLoading && (
+            <div className="flex justify-start">
+              <div className="flex flex-col gap-2 max-w-[85%] w-full">
+                {LANGUAGES.map(({ id, label, description, example }) => (
+                  <button
+                    key={id}
+                    onClick={() => void handleLanguageSelect(id)}
+                    className="w-full rounded-xl border-2 border-zinc-200 bg-white px-4 py-3 text-left transition-all hover:border-primary hover:bg-primary/5 hover:shadow-sm active:scale-[0.98]"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-sm font-semibold text-zinc-800">{label}</span>
+                        <span className="ml-2 text-xs text-zinc-400">{description}</span>
+                      </div>
+                      {id === "hinglish" && (
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                          Default
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-0.5 text-xs text-zinc-400 italic">&quot;{example}&quot;</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Persona buttons — shown when step is "greeting" */}
           {step === "greeting" && !isLoading && (
             <div className="flex justify-start">
@@ -324,7 +384,7 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
             </div>
           )}
 
-          {/* Pipeline preview — shown when step is "catalog" (after persona set) */}
+          {/* Pipeline preview — shown when step is "catalog" */}
           {step === "catalog" && pipelineStages.length > 0 && (
             <div className="flex justify-start">
               <div className="max-w-[90%] rounded-xl border border-zinc-200 bg-gradient-to-br from-white to-zinc-50 p-4 shadow-sm">

@@ -24,6 +24,18 @@ export interface PipelinePreviewResponse {
   stages: { name: string; color: string }[];
 }
 
+export interface SetLanguageResponse {
+  preferred_language: string;
+}
+
+export async function setLanguage(language: string): Promise<SetLanguageResponse> {
+  const result = await apiClient<SetLanguageResponse>("/api/v1/onboarding/language", {
+    method: "POST",
+    body: { language },
+  });
+  return result.data;
+}
+
 export async function checkAiHealth(): Promise<HealthCheckResponse> {
   const result = await apiClient<HealthCheckResponse>("/api/v1/onboarding/health");
   return result.data;

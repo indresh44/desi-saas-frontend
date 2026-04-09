@@ -64,6 +64,7 @@ type ProfileForm = {
   pinCode: string;
   gstNumber: string;
   gstMode: "inclusive" | "exclusive" | "";
+  preferredLanguage: "hinglish" | "english" | "hindi";
 };
 
 type InvoiceForm = {
@@ -88,6 +89,7 @@ function toProfileForm(settings: BusinessSettings): ProfileForm {
     pinCode: settings.pinCode ?? "",
     gstNumber: settings.gstNumber ?? "",
     gstMode: settings.gstMode === "inclusive" || settings.gstMode === "exclusive" ? settings.gstMode : "",
+    preferredLanguage: settings.preferredLanguage === "english" || settings.preferredLanguage === "hindi" ? settings.preferredLanguage : "hinglish",
   };
 }
 
@@ -203,6 +205,7 @@ export default function SettingsPageClient() {
       payload.gst_number = profileForm.gstNumber.trim().toUpperCase();
     }
     if (profileForm.gstMode !== (settings.gstMode ?? "")) payload.gst_mode = profileForm.gstMode || "exclusive";
+    if (profileForm.preferredLanguage !== (settings.preferredLanguage ?? "hinglish")) payload.preferred_language = profileForm.preferredLanguage;
 
     if (Object.keys(payload).length === 0) {
       setSuccessMessage("No profile changes to save.");
@@ -437,6 +440,21 @@ export default function SettingsPageClient() {
                 onChange={(event) => handleProfileChange("name", event.target.value)}
                 className={inputClassName}
               />
+            }
+          />
+
+          <Field
+            label="AI Language"
+            input={
+              <select
+                value={profileForm.preferredLanguage}
+                onChange={(event) => handleProfileChange("preferredLanguage", event.target.value as "hinglish" | "english" | "hindi")}
+                className={inputClassName}
+              >
+                <option value="hinglish">Hinglish (Hindi + English mix)</option>
+                <option value="english">English</option>
+                <option value="hindi">Hindi</option>
+              </select>
             }
           />
 

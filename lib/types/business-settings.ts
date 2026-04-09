@@ -20,6 +20,7 @@ export interface BusinessSettings {
   upiId: string | null;
   invoiceNotes: string | null;
   invoiceFooter: string | null;
+  preferredLanguage: string;
   createdAt: string;
 }
 
@@ -45,6 +46,7 @@ export interface BusinessSettingsApiResponse {
   upi_id: string | null;
   invoice_notes: string | null;
   invoice_footer: string | null;
+  preferred_language: string;
   created_at: string;
 }
 
@@ -67,6 +69,7 @@ export interface UpdateBusinessSettingsInput {
   upi_id?: string;
   invoice_notes?: string;
   invoice_footer?: string;
+  preferred_language?: string;
 }
 
 export function toBusinessSettings(raw: BusinessSettingsApiResponse): BusinessSettings {
@@ -92,6 +95,7 @@ export function toBusinessSettings(raw: BusinessSettingsApiResponse): BusinessSe
     upiId: raw.upi_id,
     invoiceNotes: raw.invoice_notes,
     invoiceFooter: raw.invoice_footer,
+    preferredLanguage: raw.preferred_language ?? "hinglish",
     createdAt: raw.created_at,
   };
 }
