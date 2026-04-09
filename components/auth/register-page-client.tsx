@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/lib/auth/auth-context";
+import sellNSettleIcon from "@/app/sellnsettle-icon.png";
 
 const registerSchema = z
   .object({
@@ -31,6 +33,9 @@ const registerSchema = z
   });
 
 type RegisterForm = z.infer<typeof registerSchema>;
+
+const inputClassName =
+  "mt-1 w-full rounded-md border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
 
 export default function RegisterPageClient() {
   const { register: authRegister } = useAuth();
@@ -84,123 +89,126 @@ export default function RegisterPageClient() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 py-12">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold">SellnSettle</h1>
-          <p className="mt-1 text-sm text-zinc-500">Create your account</p>
+          <h1 className="flex items-center justify-center gap-2 text-2xl font-black text-[#E8862E]">
+            <Image src={sellNSettleIcon} alt="SellNSettle" width={28} height={28} />
+            SellNSettle
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">Create your account</p>
         </div>
 
-        <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
+        <div className="rounded-lg border bg-card p-6 shadow-sm">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Your name</label>
+              <label className="text-sm font-medium text-primary">Your name</label>
               <input
                 type="text"
                 {...register("name")}
-                className="mt-1 w-full rounded-md border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-900/20"
+                className={inputClassName}
                 placeholder="Ramesh Tiwari"
                 autoComplete="name"
               />
-              {errors.name ? <p className="mt-1 text-xs text-red-500">{errors.name.message}</p> : null}
+              {errors.name ? <p className="mt-1 text-xs text-destructive">{errors.name.message}</p> : null}
             </div>
 
             <div>
-              <label className="text-sm font-medium">Email</label>
+              <label className="text-sm font-medium text-primary">Email</label>
               <input
                 type="email"
                 {...register("email")}
-                className="mt-1 w-full rounded-md border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-900/20"
+                className={inputClassName}
                 placeholder="you@example.com"
                 autoComplete="email"
               />
-              {errors.email ? <p className="mt-1 text-xs text-red-500">{errors.email.message}</p> : null}
+              {errors.email ? <p className="mt-1 text-xs text-destructive">{errors.email.message}</p> : null}
             </div>
 
             <div>
-              <label className="text-sm font-medium">Phone number</label>
+              <label className="text-sm font-medium text-primary">Phone number</label>
               <div className="mt-1 flex">
-                <span className="inline-flex items-center rounded-l-md border border-r-0 border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-500">
+                <span className="inline-flex items-center rounded-l-md border border-r-0 bg-muted px-3 text-sm text-muted-foreground">
                   +91
                 </span>
                 <input
                   type="tel"
                   {...register("phone")}
-                  className="w-full rounded-r-md border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-900/20"
+                  className="w-full rounded-r-md border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   placeholder="9876543210"
                   autoComplete="tel-national"
                   maxLength={10}
                 />
               </div>
-              {errors.phone ? <p className="mt-1 text-xs text-red-500">{errors.phone.message}</p> : null}
+              {errors.phone ? <p className="mt-1 text-xs text-destructive">{errors.phone.message}</p> : null}
               <label className="mt-2 flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={isWhatsapp}
                   onChange={(e) => setValue("isWhatsapp", e.target.checked)}
-                  className="h-3.5 w-3.5 rounded border-zinc-300 text-primary focus:ring-primary"
+                  className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary"
                 />
-                <span className="text-xs text-zinc-500">This number is on WhatsApp</span>
+                <span className="text-xs text-muted-foreground">This number is on WhatsApp</span>
               </label>
             </div>
 
             <div>
-              <label className="text-sm font-medium">Password</label>
+              <label className="text-sm font-medium text-primary">Password</label>
               <input
                 type="password"
                 {...register("password")}
-                className="mt-1 w-full rounded-md border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-900/20"
+                className={inputClassName}
                 placeholder="Min 8 characters, letter + number"
                 autoComplete="new-password"
               />
-              {errors.password ? <p className="mt-1 text-xs text-red-500">{errors.password.message}</p> : null}
+              {errors.password ? <p className="mt-1 text-xs text-destructive">{errors.password.message}</p> : null}
             </div>
 
             <div>
-              <label className="text-sm font-medium">Confirm password</label>
+              <label className="text-sm font-medium text-primary">Confirm password</label>
               <input
                 type="password"
                 {...register("confirmPassword")}
-                className="mt-1 w-full rounded-md border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-900/20"
+                className={inputClassName}
                 placeholder="Re-enter your password"
                 autoComplete="new-password"
               />
               {errors.confirmPassword ? (
-                <p className="mt-1 text-xs text-red-500">{errors.confirmPassword.message}</p>
+                <p className="mt-1 text-xs text-destructive">{errors.confirmPassword.message}</p>
               ) : null}
             </div>
 
             <div className="mt-4 border-t pt-4">
-              <p className="mb-3 text-xs text-zinc-500">Tell us about your business</p>
+              <p className="mb-3 text-xs text-muted-foreground">Tell us about your business</p>
             </div>
 
             <div>
-              <label className="text-sm font-medium">Business name</label>
+              <label className="text-sm font-medium text-primary">Business name</label>
               <input
                 type="text"
                 {...register("businessName")}
-                className="mt-1 w-full rounded-md border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-900/20"
+                className={inputClassName}
                 placeholder="Tiwari Interiors"
               />
               {errors.businessName ? (
-                <p className="mt-1 text-xs text-red-500">{errors.businessName.message}</p>
+                <p className="mt-1 text-xs text-destructive">{errors.businessName.message}</p>
               ) : null}
             </div>
 
             <div>
-              <label className="text-sm font-medium">City</label>
+              <label className="text-sm font-medium text-primary">City</label>
               <input
                 type="text"
                 {...register("city")}
-                className="mt-1 w-full rounded-md border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-900/20"
+                className={inputClassName}
                 placeholder="Bhopal"
               />
-              {errors.city ? <p className="mt-1 text-xs text-red-500">{errors.city.message}</p> : null}
+              {errors.city ? <p className="mt-1 text-xs text-destructive">{errors.city.message}</p> : null}
             </div>
 
             {error ? (
-              <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2">
-                <p className="text-sm text-red-600">{error}</p>
+              <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2">
+                <p className="text-sm text-destructive">{error}</p>
               </div>
             ) : null}
 
@@ -214,9 +222,9 @@ export default function RegisterPageClient() {
           </form>
         </div>
 
-        <p className="mt-6 text-center text-sm text-zinc-500">
+        <p className="mt-6 text-center text-sm text-muted-foreground">
           Already have an account?{" "}
-          <Link href="/login" className="font-medium text-primary hover:underline">
+          <Link href="/register" className="font-medium text-primary hover:underline">
             Sign in
           </Link>
         </p>
