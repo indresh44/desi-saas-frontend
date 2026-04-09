@@ -15,7 +15,7 @@ const registerSchema = z
       .string()
       .min(1, "Phone number is required")
       .regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number"),
-    isWhatsapp: z.boolean().default(true),
+    isWhatsapp: z.boolean(),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters")
