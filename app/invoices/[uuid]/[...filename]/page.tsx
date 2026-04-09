@@ -16,7 +16,7 @@ interface InvoiceMeta {
 async function fetchMeta(uuid: string): Promise<InvoiceMeta | null> {
   try {
     const res = await fetch(`${API_BASE}/api/public/invoices/${uuid}/meta`, {
-      next: { revalidate: 60 },
+      cache: "no-store",
     });
     if (!res.ok) return null;
     return res.json();

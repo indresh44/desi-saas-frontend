@@ -92,7 +92,7 @@ export function PublicInvoiceView({
     );
   }
 
-  const pdfUrl = `${API_BASE}/api/public/invoices/${uuid}/pdf`;
+  const pdfUrl = `${API_BASE}/api/public/invoices/${uuid}/pdf?t=${Date.now()}`;
   const docLabel = getDocLabel(meta.status);
 
   // console.log("pdfUrl:", pdfUrl);
