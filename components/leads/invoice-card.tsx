@@ -447,7 +447,7 @@ export function InvoiceCard({
           ) : null}
         </div>
 
-        <div className="space-y-3 rounded-xl border-border border bg-card">
+        <div className="space-y-3 rounded-xl border-border border bg-card p-3">
           <div className="flex items-center justify-between gap-3">
             <h4 className="text-sm font-semibold text-primary">Payments</h4>
             {invoice.status !== "paid" ? (

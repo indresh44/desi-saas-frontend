@@ -479,20 +479,22 @@ export default function DashboardClient() {
                         </p>
                       </div>
 
-                      {followUp.note ? (
-                        <p className="mt-3 line-clamp-2 text-sm text-foreground">
-                          {followUp.note}
-                        </p>
-                      ) : null}
+                      <div className="mt-3 flex items-end justify-between gap-3">
+                        {followUp.note ? (
+                          <p className="line-clamp-2 text-sm text-foreground">
+                            {followUp.note}
+                          </p>
+                        ) : <div />}
 
-                      <button
-                        type="button"
-                        onClick={() => handleMarkDone(followUp.id)}
-                        disabled={markingId === followUp.id}
-                        className="mt-4 inline-flex min-h-[44px] items-center rounded-lg border border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {markingId === followUp.id ? "Updating..." : "✓ Done"}
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMarkDone(followUp.id)}
+                          disabled={markingId === followUp.id}
+                          className="inline-flex shrink-0 min-h-[44px] items-center rounded-lg border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {markingId === followUp.id ? "Updating..." : "✓ Done"}
+                        </button>
+                      </div>
                     </article>
                   ))}
                 </div>
