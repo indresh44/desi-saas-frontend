@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { Download, FileText, Loader2, Maximize2 } from "lucide-react";
 
@@ -66,9 +66,24 @@ export function PublicInvoiceView({
   uuid: string;
   meta: InvoiceMeta | null;
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [pdfWidth, setPdfWidth] = useState(0);
   const [pdfLoading, setPdfLoading] = useState(true);
   const [pdfError, setPdfError] = useState(false);
   const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const update = () => {
+      const w = el.clientWidth;
+      if (w > 0) setPdfWidth(w);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   if (!meta) {
     return (
@@ -92,7 +107,9 @@ export function PublicInvoiceView({
     );
   }
 
-  const pdfUrl = `${API_BASE}/api/public/invoices/${uuid}/pdf?t=${Date.now()}`;
+  const [pdfUrl] = useState(
+    () => `${API_BASE}/api/public/invoices/${uuid}/pdf?t=${Date.now()}`,
+  );
   const docLabel = getDocLabel(meta.status);
 
   // console.log("pdfUrl:", pdfUrl);
@@ -186,19 +203,22 @@ export function PublicInvoiceView({
 
               {!pdfError && (
                 <div
-                  className={`flex justify-center overflow-hidden transition-all duration-300 ${
+                  ref={containerRef}
+                  className={`overflow-hidden transition-all duration-300 ${
                     expanded ? "max-h-[800px]" : "max-h-[400px]"
                   }`}
                 >
-                  <PdfPreviewPage
-                    file={pdfUrl}
-                    width={600}
-                    onLoadSuccess={() => setPdfLoading(false)}
-                    onLoadError={() => {
-                      setPdfLoading(false);
-                      setPdfError(true);
-                    }}
-                  />
+                  {pdfWidth > 0 && (
+                    <PdfPreviewPage
+                      file={pdfUrl}
+                      width={pdfWidth}
+                      onLoadSuccess={() => setPdfLoading(false)}
+                      onLoadError={() => {
+                        setPdfLoading(false);
+                        setPdfError(true);
+                      }}
+                    />
+                  )}
                 </div>
               )}
 
