@@ -46,10 +46,13 @@ interface AuthContextValue {
 
 const PUBLIC_ROUTES = ["/", "/login", "/register", "/blog", "/onboarding"];
 const AUTH_ONLY_ROUTES = ["/login", "/register"];
+const INVOICE_VIEW_PATTERN = /^\/invoices\/[0-9a-f-]{36}\/.+/;
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 function isPublicRoute(pathname: string): boolean {
+  if (INVOICE_VIEW_PATTERN.test(pathname)) return true;
+
   return PUBLIC_ROUTES.some((route) => {
     if (route === "/") {
       return pathname === "/";
