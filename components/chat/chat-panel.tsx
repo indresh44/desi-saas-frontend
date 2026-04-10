@@ -7,20 +7,7 @@ import { useChat } from "@/lib/chat/chat-context";
 import { X } from "lucide-react";
 
 export function ChatPanel() {
-  const { isOpen, closeChat, pageContext } = useChat();
-
-  function getPanelTitle(): string {
-    switch (pageContext.type) {
-      case "dashboard":
-        return "Dashboard Assistant";
-      case "lead":
-        return "Lead Assistant";
-      case "customer":
-        return "Customer Assistant";
-      default:
-        return "Assistant";
-    }
-  }
+  const { isOpen, closeChat } = useChat();
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && closeChat()}>
@@ -35,7 +22,7 @@ export function ChatPanel() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
               </span>
-              {getPanelTitle()}
+              Assistant
             </SheetTitle>
             <button
               onClick={closeChat}

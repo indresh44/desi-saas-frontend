@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Loader2, MessageCircle, Pencil, Phone } from "lucide-react";
 import { InvoiceListView } from "@/components/invoices/invoice-list-view";
 import { Button } from "@/components/ui/button";
-import { useChatPageContext } from "@/lib/chat/chat-context";
 import { fetchCustomerSummary, updateCustomer } from "@/lib/api/customers";
 import { fetchInvoices } from "@/lib/api/invoices";
 import { fetchLeads } from "@/lib/api/leads";
@@ -93,7 +92,6 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
   const [editEmail, setEditEmail] = useState("");
   const [editNotes, setEditNotes] = useState("");
 
-  useChatPageContext({ type: "customer", id: customerId });
 
   useEffect(() => {
     const tab = searchParams.get("tab");

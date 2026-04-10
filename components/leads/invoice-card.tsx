@@ -254,8 +254,8 @@ export function InvoiceCard({
   return (
     <>
       <div className="space-y-4 rounded-2xl border bg-card p-4 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="space-y-2">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-base font-semibold text-primary">
                 {invoice.invoiceNumber}
@@ -271,89 +271,90 @@ export function InvoiceCard({
             </p>
           </div>
 
-          <div className="text-right">
+          <div className="shrink-0 text-right">
             <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
               Total Amount
             </p>
             <p className="text-lg font-semibold text-primary">
               {formatRupees(totalAmount)}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Status: <span className="font-medium capitalize text-foreground">{invoice.status}</span>
-              {canEditInvoice ? " • Editable" : " • Editable only in draft"}
-            </p>
-
-            <div className="mt-2 flex items-center justify-end gap-2">
-              {invoice.status === "draft" || invoice.status === "sent" ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => void handleStatusChange("approved")}
-                  disabled={statusChanging !== null}
-                  title="Approve invoice"
-                  className="border-teal-200 text-teal-700 hover:bg-teal-50"
-                >
-                  {statusChanging === "approved" ? (
-                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <CheckCircle className="h-3.5 w-3.5" />
-                  )}
-                  Approve
-                </Button>
-              ) : null}
-
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => handleDownloadPdf()}
-                title="View PDF"
-              >
-                <Download className="h-3.5 w-3.5" />
-                PDF
-              </Button>
-
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => void handleSharePdf()}
-                disabled={shareLoading}
-                title="Share invoice"
-              >
-                {shareLoading ? (
-                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Share2 className="h-3.5 w-3.5" />
-                )}
-                Share
-              </Button>
-
-              {shareMessage ? (
-                <span className="self-center text-xs text-green-600">{shareMessage}</span>
-              ) : null}
-
-              <div className="group relative inline-flex">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={canEditInvoice && onEdit ? () => onEdit(invoice) : undefined}
-                  disabled={!canEditInvoice}
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                  Edit
-                </Button>
-
-                {!canEditInvoice ? (
-                  <div className="pointer-events-none absolute right-0 top-full z-20 mt-1 w-52 rounded-md border bg-card px-2 py-1.5 text-left text-xs text-muted-foreground opacity-0 shadow transition-opacity group-hover:opacity-100">
-                    Editable only in draft mode.
-                  </div>
-                ) : null}
-              </div>
-            </div>
           </div>
+        </div>
+
+        <p className="text-xs text-muted-foreground">
+          Status: <span className="font-medium capitalize text-foreground">{invoice.status}</span>
+          {canEditInvoice ? " • Editable" : " • Editable only in draft"}
+        </p>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {invoice.status === "draft" || invoice.status === "sent" ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => void handleStatusChange("approved")}
+              disabled={statusChanging !== null}
+              title="Approve invoice"
+              className="border-teal-200 text-teal-700 hover:bg-teal-50"
+            >
+              {statusChanging === "approved" ? (
+                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <CheckCircle className="h-3.5 w-3.5" />
+              )}
+              Approve
+            </Button>
+          ) : null}
+
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => handleDownloadPdf()}
+            title="View PDF"
+          >
+            <Download className="h-3.5 w-3.5" />
+            PDF
+          </Button>
+
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => void handleSharePdf()}
+            disabled={shareLoading}
+            title="Share invoice"
+          >
+            {shareLoading ? (
+              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Share2 className="h-3.5 w-3.5" />
+            )}
+            Share
+          </Button>
+
+          <div className="group relative inline-flex">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={canEditInvoice && onEdit ? () => onEdit(invoice) : undefined}
+              disabled={!canEditInvoice}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Edit
+            </Button>
+
+            {!canEditInvoice ? (
+              <div className="pointer-events-none absolute right-0 top-full z-20 mt-1 w-52 rounded-md border bg-card px-2 py-1.5 text-left text-xs text-muted-foreground opacity-0 shadow transition-opacity group-hover:opacity-100">
+                Editable only in draft mode.
+              </div>
+            ) : null}
+          </div>
+
+          {shareMessage ? (
+            <span className="text-xs text-green-600">{shareMessage}</span>
+          ) : null}
         </div>
 
         {pdfError ? (

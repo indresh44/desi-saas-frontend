@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Rocket } from "lucide-react";
 import { CreateLeadDialog } from "@/components/leads/create-lead-dialog";
-import { useChatPageContext } from "@/lib/chat/chat-context";
 import { fetchDashboardPaymentSummary } from "@/lib/api/dashboard";
 import { fetchBusinessSettings } from "@/lib/api/business-settings";
 import { fetchTodaysFollowUps, markFollowUpDone } from "@/lib/api/followups";
@@ -97,7 +96,6 @@ export default function DashboardClient() {
   const [error, setError] = useState<string | null>(null);
   const [markingId, setMarkingId] = useState<string | null>(null);
 
-  useChatPageContext({ type: "dashboard" });
 
   const loadDashboard = useCallback(async () => {
     setIsLoading(true);

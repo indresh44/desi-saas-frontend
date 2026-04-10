@@ -17,7 +17,7 @@ export function AppShell({ children }: AppShellProps) {
   return (
     <ChatProvider>
       <div className="min-h-screen bg-shell-bg text-foreground">
-        <div className="mx-auto flex min-h-screen w-full max-w-[1600px]">
+        <div className="flex min-h-screen w-full">
           <AppSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
           <div className="flex min-h-screen min-w-0 flex-1 flex-col">

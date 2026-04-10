@@ -1,21 +1,14 @@
 "use client";
 
-import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createContext, ReactNode, useCallback, useContext, useRef, useState } from "react";
 import { confirmChatAction, fetchChatHistory, getOrCreateThread, sendChatMessage } from "@/lib/api/chat";
 import { ChatAction, ChatHistoryMessage, ChatMessage, ChatMessageResponse } from "@/lib/types/chat";
-
-interface PageContext {
-  type: "dashboard" | "customer" | "lead" | "global" | "onboarding";
-  id?: string | null;
-}
 
 interface ChatContextValue {
   isOpen: boolean;
   openChat: () => void;
   closeChat: () => void;
   toggleChat: () => void;
-  pageContext: PageContext;
-  setChatPageContext: (ctx: PageContext) => void;
   messages: ChatMessage[];
   isLoading: boolean;
   isFetchingHistory: boolean;
@@ -28,41 +21,34 @@ const ChatContext = createContext<ChatContextValue | null>(null);
 
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [pageContext, setPageContext] = useState<PageContext>({ type: "global" });
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingHistory, setIsFetchingHistory] = useState(false);
 
-  const threadCache = useRef<Map<string, number>>(new Map());
-  const historyLoaded = useRef<Set<number>>(new Set());
+  const cachedThreadId = useRef<number | null>(null);
+  const historyLoaded = useRef<boolean>(false);
   const currentThreadId = useRef<number | null>(null);
-
-  function contextKey(ctx: PageContext): string {
-    return ctx.id ? `${ctx.type}:${ctx.id}` : ctx.type;
-  }
 
   function generateMessageId(): string {
     return `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   }
 
-  const ensureThread = useCallback(async (ctx: PageContext): Promise<number> => {
-    const key = contextKey(ctx);
-    const cached = threadCache.current.get(key);
-    if (cached) {
-      return cached;
+  const ensureThread = useCallback(async (): Promise<number> => {
+    if (cachedThreadId.current) {
+      return cachedThreadId.current;
     }
 
     const response = await getOrCreateThread({
-      context_type: ctx.type,
-      context_id: ctx.id ?? null,
+      context_type: "global",
+      context_id: null,
     });
 
-    threadCache.current.set(key, response.thread_id);
+    cachedThreadId.current = response.thread_id;
     return response.thread_id;
   }, []);
 
   async function loadHistoryIfNeeded(threadId: number): Promise<void> {
-    if (historyLoaded.current.has(threadId)) {
+    if (historyLoaded.current) {
       return;
     }
 
@@ -83,7 +69,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       );
 
       setMessages(historicMessages);
-      historyLoaded.current.add(threadId);
+      historyLoaded.current = true;
     } catch (error) {
       console.error("Failed to load chat history:", error);
     } finally {
@@ -95,7 +81,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setIsOpen(true);
 
     try {
-      const threadId = await ensureThread(pageContext);
+      const threadId = await ensureThread();
       currentThreadId.current = threadId;
       await loadHistoryIfNeeded(threadId);
     } catch (error) {
@@ -108,7 +94,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             : undefined,
       });
     }
-  }, [ensureThread, pageContext]);
+  }, [ensureThread]);
 
   const closeChat = useCallback(() => setIsOpen(false), []);
 
@@ -120,34 +106,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
     void openChat();
   }, [closeChat, isOpen, openChat]);
-
-  const setChatPageContext = useCallback(
-    async (ctx: PageContext) => {
-      setPageContext(ctx);
-
-      if (!isOpen) {
-        return;
-      }
-
-      try {
-        const threadId = await ensureThread(ctx);
-        currentThreadId.current = threadId;
-        setMessages([]);
-        historyLoaded.current.delete(threadId);
-        await loadHistoryIfNeeded(threadId);
-      } catch (error) {
-        console.error("Failed to switch chat context:", {
-          error,
-          message: error instanceof Error ? error.message : undefined,
-          status:
-            typeof error === "object" && error !== null && "status" in error
-              ? (error as { status?: number }).status
-              : undefined,
-        });
-      }
-    },
-    [ensureThread, isOpen]
-  );
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -167,17 +125,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
 
       try {
-        const threadId = currentThreadId.current ?? (await ensureThread(pageContext));
+        const threadId = currentThreadId.current ?? (await ensureThread());
         currentThreadId.current = threadId;
 
         const response: ChatMessageResponse = await sendChatMessage({
           message: trimmed,
-          context_type: pageContext.type,
-          context_id: pageContext.id ?? null,
+          context_type: "global",
+          context_id: null,
           thread_id: threadId,
         });
 
-        threadCache.current.set(contextKey(pageContext), response.thread_id);
+        cachedThreadId.current = response.thread_id;
         currentThreadId.current = response.thread_id;
 
         const assistantMessage: ChatMessage = {
@@ -212,7 +170,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     },
-    [ensureThread, isLoading, pageContext]
+    [ensureThread, isLoading]
   );
 
   const confirmAction = useCallback(
@@ -297,8 +255,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         openChat,
         closeChat,
         toggleChat,
-        pageContext,
-        setChatPageContext,
         messages,
         isLoading,
         isFetchingHistory,
@@ -319,13 +275,4 @@ export function useChat() {
   }
 
   return ctx;
-}
-
-export function useChatPageContext(context: PageContext) {
-  const { setChatPageContext } = useChat();
-  const { id, type } = context;
-
-  useEffect(() => {
-    void setChatPageContext({ type, id });
-  }, [id, setChatPageContext, type]);
 }

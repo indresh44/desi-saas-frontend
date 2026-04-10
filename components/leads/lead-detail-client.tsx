@@ -19,7 +19,6 @@ import { CreateInvoiceModal } from "@/components/leads/create-invoice-modal";
 import { InvoiceCard } from "@/components/leads/invoice-card";
 import { LeadNotes } from "@/components/leads/lead-notes";
 import { useLookupMaps } from "@/hooks/use-lookup-maps";
-import { useChatPageContext } from "@/lib/chat/chat-context";
 import { fetchLeads, moveLeadStage, updateLeadNotes } from "@/lib/api/leads";
 import { createActivity, fetchLeadActivities } from "@/lib/api/activities";
 import {
@@ -122,7 +121,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
   const [loadError, setLoadError] = useState<string | null>(null);
 
   // Drawer / modal
-  const [isChatOpen, setIsChatOpen] = useState(false);
+  // const [isChatOpen, setIsChatOpen] = useState(false);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
 
@@ -144,7 +143,6 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
   const [stageMoveError, setStageMoveError] = useState<string | null>(null);
   const [stageMoveSuccess, setStageMoveSuccess] = useState<string | null>(null);
 
-  useChatPageContext({ type: "lead", id: leadId });
 
   const stageOptions = useMemo(
     () =>
@@ -600,19 +598,24 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
           <p className="text-xs text-muted-foreground">
             {lead.customerPhone ?? "Phone not available"}
           </p>
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="flex gap-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="w-full gap-1.5"
-              onClick={() => setIsChatOpen(true)}
+              className="flex-1 gap-1.5"
+              onClick={() => {
+                const phone = lead.customerPhone?.replace(/\D/g, "") ?? "";
+                if (phone) {
+                  window.open(`https://wa.me/${phone}`, "_blank", "noopener,noreferrer");
+                }
+              }}
             >
               <MessageCircle className="h-3.5 w-3.5" />
               WhatsApp
             </Button>
             {lead.customerPhone ? (
-              <a href={`tel:${lead.customerPhone}`} className="w-full sm:flex-1">
+              <a href={`tel:${lead.customerPhone}`} className="flex-1">
                 <Button
                   type="button"
                   variant="outline"
@@ -628,7 +631,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="w-full gap-1.5"
+                className="flex-1 gap-1.5"
                 disabled
                 title="Phone not available"
               >
@@ -881,11 +884,11 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
       </div>
 
       {/* ══ Drawer / Modal ════════════════════════════════════════════════════ */}
-      <LeadWhatsAppChatDrawer
+      {/* <LeadWhatsAppChatDrawer
         isOpen={isChatOpen}
         lead={lead}
         onClose={() => setIsChatOpen(false)}
-      />
+      /> */}
 
       {isInvoiceModalOpen ? (
         <CreateInvoiceModal
