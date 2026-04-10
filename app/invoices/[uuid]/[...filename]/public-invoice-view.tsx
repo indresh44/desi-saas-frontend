@@ -206,8 +206,8 @@ export function PublicInvoiceView({
               {!pdfError && (
                 <div
                   ref={containerRef}
-                  className={`overflow-hidden transition-all duration-300 ${
-                    expanded ? "max-h-[800px]" : "max-h-[400px]"
+                  className={`transition-all duration-300 ${
+                    expanded ? "overflow-y-auto max-h-[80vh]" : "overflow-hidden max-h-[400px]"
                   }`}
                 >
                   {pdfWidth > 0 && (
