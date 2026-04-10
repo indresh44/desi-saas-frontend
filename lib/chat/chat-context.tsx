@@ -244,7 +244,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           content: response.reply,
           suggestions: response.suggestions,
           timestamp: new Date(),
-          pdf: null,
+          pdf: response.pdf ?? null,
         };
 
         setMessages((prev) => [...prev, confirmMessage]);

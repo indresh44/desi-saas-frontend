@@ -2,7 +2,9 @@
 
 import { useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import { Download, FileText, Loader2, Maximize2 } from "lucide-react";
+import sellNSettleIcon from "@/app/sellnsettle-icon.png";
 
 const PdfPreviewPage = dynamic(
   () =>
@@ -130,12 +132,12 @@ export function PublicInvoiceView({
       {/* Header */}
       <header className="border-b border-zinc-200 bg-white">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
-          <a
-            href="https://sellnsettle.com"
-            className="text-lg font-bold text-teal-700"
-          >
-            SellNSettle
-          </a>
+            <a href="https://sellnsettle.com" className="flex items-center justify-center gap-2">
+            <h1 className="flex items-center gap-2 text-lg font-bold text-[#E8862E]">
+              <Image src={sellNSettleIcon} alt="SellNSettle" width={24} height={24} />
+              SellNSettle
+            </h1>
+            </a>
           <span className="text-xs uppercase tracking-widest text-zinc-400">
             {docLabel}
           </span>
@@ -149,7 +151,7 @@ export function PublicInvoiceView({
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-zinc-900">
+                <h1 className="text-2xl font-bold text-primary">
                   {meta.invoice_number}
                 </h1>
                 <span
@@ -171,7 +173,7 @@ export function PublicInvoiceView({
               </p>
             </div>
             <div className="text-right">
-              <p className="text-3xl font-bold text-zinc-900">
+              <p className="text-3xl font-bold text-primary">
                 {formatRupees(meta.total_amount)}
               </p>
               <p className="mt-1 text-xs text-zinc-500">
@@ -259,7 +261,7 @@ export function PublicInvoiceView({
             Powered by{" "}
             <a
               href="https://sellnsettle.com"
-              className="font-medium text-teal-600 hover:text-teal-700"
+              className="font-medium text-[#E8862E] hover:text-[#E8862E]/80"
             >
               SellNSettle
             </a>{" "}

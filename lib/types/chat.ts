@@ -20,7 +20,7 @@ export interface ChatMessage {
   suggestions?: string[];
   timestamp: Date;
   pdf?: {
-    url: string;
+    url?: string;
     invoice_id: string;
     invoice_number: string;
   } | null;
@@ -61,6 +61,10 @@ export interface ChatConfirmResponse {
   thread_id: number;
   reply: string;
   suggestions: string[];
+  pdf?: {
+    invoice_id: string;
+    invoice_number: string;
+  } | null;
 }
 
 export interface ChatHistoryMessage {

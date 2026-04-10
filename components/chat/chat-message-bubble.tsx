@@ -2,6 +2,7 @@
 
 import { ActionCard } from "@/components/chat/action-card";
 import { ChatMarkdown } from "@/components/chat/chat-markdown";
+import { InvoiceShareCard } from "@/components/chat/invoice-share-card";
 import { PdfPreviewCard } from "@/components/chat/pdf-preview-card";
 import { ChatMessage } from "@/lib/types/chat";
 
@@ -83,7 +84,11 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
 
         {message.action && <ActionCard action={message.action} messageId={message.id} />}
 
-        {message.pdf && <PdfPreviewCard pdf={message.pdf} />}
+        {message.pdf && (
+          message.pdf.url
+            ? <PdfPreviewCard pdf={message.pdf as { url: string; invoice_id: string; invoice_number: string }} />
+            : <InvoiceShareCard invoiceId={message.pdf.invoice_id} invoiceNumber={message.pdf.invoice_number} />
+        )}
 
         <span className={`text-[10px] ${isUser ? "text-right text-muted-foreground" : "text-muted-foreground"}`}>
           {message.timestamp.toLocaleTimeString("en-IN", {

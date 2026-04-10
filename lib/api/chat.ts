@@ -442,6 +442,9 @@ export async function confirmChatAction(
     thread_id: data.thread_id,
     reply: data.reply,
     suggestions: data.suggestions,
+    pdf: data.pdf
+      ? { invoice_id: data.pdf.invoice_id, invoice_number: data.pdf.invoice_number }
+      : null,
   };
 }
 
