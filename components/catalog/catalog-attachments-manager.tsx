@@ -135,11 +135,11 @@ export function CatalogAttachmentsManager({ catalogItemId }: Props) {
   };
 
   return (
-    <div className="space-y-3 rounded-lg border border-zinc-200 p-3">
+    <div className="space-y-3 rounded-lg border border-border p-3">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h3 className="text-sm font-semibold text-zinc-900">Attachments</h3>
-          <p className="text-xs text-zinc-500">Upload multiple JPG, PNG, or PDF files (max 10MB each).</p>
+          <h3 className="text-sm font-semibold text-foreground">Attachments</h3>
+          <p className="text-xs text-muted-foreground">Upload multiple JPG, PNG, or PDF files (max 10MB each).</p>
         </div>
         <input
           ref={inputRef}
@@ -169,19 +169,19 @@ export function CatalogAttachmentsManager({ catalogItemId }: Props) {
       ) : null}
 
       {selectedPreviews.length > 0 ? (
-        <div className="space-y-2 rounded-md bg-zinc-50 p-2">
+        <div className="space-y-2 rounded-md bg-muted p-2">
           {selectedPreviews.map((item) => (
             <div key={`${item.name}-${item.size}`} className="flex items-center gap-2">
               {item.previewUrl ? (
                 <img src={item.previewUrl} alt={item.name} className="h-10 w-10 rounded object-cover" />
               ) : (
-                <div className="flex h-10 w-10 items-center justify-center rounded bg-zinc-200 text-zinc-600">
+                <div className="flex h-10 w-10 items-center justify-center rounded bg-border text-muted-foreground">
                   <FileText className="h-4 w-4" />
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-medium text-zinc-800">{item.name}</p>
-                <p className="text-xs text-zinc-500">{(item.size / 1024).toFixed(0)} KB</p>
+                <p className="truncate text-xs font-medium text-foreground">{item.name}</p>
+                <p className="text-xs text-muted-foreground">{(item.size / 1024).toFixed(0)} KB</p>
               </div>
             </div>
           ))}
@@ -194,9 +194,9 @@ export function CatalogAttachmentsManager({ catalogItemId }: Props) {
       ) : null}
 
       {isLoading ? (
-        <div className="h-10 animate-pulse rounded bg-zinc-100" />
+        <div className="h-10 animate-pulse rounded bg-muted" />
       ) : attachments.length === 0 ? (
-        <p className="text-xs text-zinc-500">No attachments added yet.</p>
+        <p className="text-xs text-muted-foreground">No attachments added yet.</p>
       ) : (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
           {attachments.map((attachment) => {
@@ -204,7 +204,7 @@ export function CatalogAttachmentsManager({ catalogItemId }: Props) {
             const isPdf = isPdfAttachment(attachment.filename);
 
             return (
-              <div key={attachment.id} className="rounded-md border border-zinc-200 p-2">
+              <div key={attachment.id} className="rounded-md border border-border p-2">
                 <a href={attachment.file_url} target="_blank" rel="noopener noreferrer" className="block">
                   {isImage ? (
                     <img
@@ -213,7 +213,7 @@ export function CatalogAttachmentsManager({ catalogItemId }: Props) {
                       className="h-24 w-full rounded object-cover"
                     />
                   ) : (
-                    <div className="flex h-24 w-full items-center justify-center rounded bg-zinc-100 text-zinc-600">
+                    <div className="flex h-24 w-full items-center justify-center rounded bg-muted text-muted-foreground">
                       {isPdf ? <FileText className="h-6 w-6" /> : <FileImage className="h-6 w-6" />}
                     </div>
                   )}
@@ -223,7 +223,7 @@ export function CatalogAttachmentsManager({ catalogItemId }: Props) {
                     href={attachment.file_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="line-clamp-2 text-xs text-zinc-700 hover:text-zinc-900"
+                    className="line-clamp-2 text-xs text-foreground hover:text-foreground"
                     title={attachment.filename}
                   >
                     {attachment.filename}
@@ -231,7 +231,7 @@ export function CatalogAttachmentsManager({ catalogItemId }: Props) {
                   <button
                     type="button"
                     onClick={() => onDelete(attachment.id)}
-                    className="text-zinc-400 hover:text-red-600"
+                    className="text-muted-foreground hover:text-red-600"
                     disabled={deletingId === attachment.id}
                     title="Delete attachment"
                   >

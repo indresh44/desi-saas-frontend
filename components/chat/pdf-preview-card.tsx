@@ -90,21 +90,21 @@ export function PdfPreviewCard({ pdf }: PdfPreviewCardProps) {
   }
 
   return (
-    <div className="mt-1.5 overflow-hidden rounded-lg border border-zinc-200 bg-white">
+    <div className="mt-1.5 overflow-hidden rounded-lg border border-border bg-card">
       <div
-        className="relative cursor-pointer bg-zinc-50"
+        className="relative cursor-pointer bg-muted"
         onClick={() => setExpanded((current) => !current)}
       >
         {pdfLoading && !pdfLoadError && (
           <div className="flex h-[200px] items-center justify-center">
-            <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         )}
 
         {pdfLoadError && (
           <div className="flex h-[120px] flex-col items-center justify-center gap-2">
-            <FileText className="h-8 w-8 text-zinc-300" />
-            <p className="text-[11px] text-zinc-400">Preview unavailable</p>
+            <FileText className="h-8 w-8 text-muted-foreground" />
+            <p className="text-[11px] text-muted-foreground">Preview unavailable</p>
           </div>
         )}
 
@@ -134,7 +134,7 @@ export function PdfPreviewCard({ pdf }: PdfPreviewCardProps) {
                 event.stopPropagation();
                 setExpanded((current) => !current);
               }}
-              className="flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[10px] font-medium text-zinc-500 shadow-sm ring-1 ring-zinc-200 transition-colors hover:bg-zinc-50"
+              className="flex items-center gap-1 rounded-full bg-card px-2.5 py-1 text-[10px] font-medium text-muted-foreground shadow-sm ring-1 ring-border transition-colors hover:bg-muted"
             >
               <Maximize2 className="h-3 w-3" />
               {expanded ? "Show less" : "Show more"}
@@ -143,19 +143,19 @@ export function PdfPreviewCard({ pdf }: PdfPreviewCardProps) {
         )}
       </div>
 
-      <div className="flex items-center gap-3 border-t border-zinc-100 px-3 py-2">
+      <div className="flex items-center gap-3 border-t border-border px-3 py-2">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-red-50">
           <FileText className="h-4 w-4 text-red-500" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-medium text-zinc-800">
+          <p className="truncate text-xs font-medium text-foreground">
             {pdf.invoice_number}.pdf
           </p>
         </div>
         <button
           type="button"
           onClick={handleDownload}
-          className="shrink-0 rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
+          className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-muted-foreground"
           aria-label="Open in new tab"
           title="Open in new tab"
         >
@@ -163,23 +163,23 @@ export function PdfPreviewCard({ pdf }: PdfPreviewCardProps) {
         </button>
       </div>
 
-      <div className="flex border-t border-zinc-100">
+      <div className="flex border-t border-border">
         <button
           type="button"
           onClick={() => handleDownload()}
-          className="flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50"
+          className="flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
         >
           <Download className="h-3.5 w-3.5" />
           Download
         </button>
 
-        <div className="w-px bg-zinc-100" />
+        <div className="w-px bg-muted" />
 
         <button
           type="button"
           onClick={() => void handleShare()}
           disabled={isSharing}
-          className="flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50"
+          className="flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted disabled:opacity-50"
         >
           {isSharing ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -189,7 +189,7 @@ export function PdfPreviewCard({ pdf }: PdfPreviewCardProps) {
           Share
         </button>
 
-        <div className="w-px bg-zinc-100" />
+        <div className="w-px bg-muted" />
 
         <button
           type="button"

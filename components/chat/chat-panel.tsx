@@ -26,7 +26,7 @@ export function ChatPanel() {
             </SheetTitle>
             <button
               onClick={closeChat}
-              className="rounded-md p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 sm:hidden"
+              className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-muted-foreground sm:hidden"
               aria-label="Close chat"
             >
               <X className="h-5 w-5" />

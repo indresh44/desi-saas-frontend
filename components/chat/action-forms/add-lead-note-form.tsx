@@ -15,8 +15,8 @@ export function AddLeadNoteForm({ data, onChange }: AddLeadNoteFormProps) {
   return (
     <div className="space-y-2">
       {data.lead_title ? (
-        <p className="text-xs text-zinc-600">
-          Lead: <span className="font-medium text-zinc-800">{String(data.lead_title)}</span>
+        <p className="text-xs text-muted-foreground">
+          Lead: <span className="font-medium text-foreground">{String(data.lead_title)}</span>
         </p>
       ) : null}
 

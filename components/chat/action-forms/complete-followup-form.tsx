@@ -14,17 +14,17 @@ export function CompleteFollowupForm({ data, onChange }: CompleteFollowupFormPro
 
   return (
     <div className="space-y-2">
-      <div className="text-xs text-zinc-600">
+      <div className="text-xs text-muted-foreground">
         {data.lead_title ? (
           <span>
-            Lead: <span className="font-medium text-zinc-800">{String(data.lead_title)}</span>
+            Lead: <span className="font-medium text-foreground">{String(data.lead_title)}</span>
           </span>
         ) : null}
         {data.lead_title && data.customer_name ? " · " : null}
-        {data.customer_name ? <span className="text-zinc-500">{String(data.customer_name)}</span> : null}
+        {data.customer_name ? <span className="text-muted-foreground">{String(data.customer_name)}</span> : null}
       </div>
 
-      <p className="text-[11px] text-zinc-400">
+      <p className="text-[11px] text-muted-foreground">
         {String(data.followup_type ?? "call")} · scheduled: {String(data.scheduled_at ?? "").slice(0, 10)}
       </p>
 

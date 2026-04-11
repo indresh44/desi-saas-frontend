@@ -104,9 +104,9 @@ export function CreateInvoiceForm({ data, onChange }: CreateInvoiceFormProps) {
   return (
     <div className="space-y-3">
       <div>
-        <p className="text-xs text-zinc-600">
+        <p className="text-xs text-muted-foreground">
           Customer:{" "}
-          <span className="font-medium text-zinc-800">{String(data.customer_name ?? "")}</span>
+          <span className="font-medium text-foreground">{String(data.customer_name ?? "")}</span>
         </p>
       </div>
 
@@ -118,10 +118,10 @@ export function CreateInvoiceForm({ data, onChange }: CreateInvoiceFormProps) {
           type="date"
         />
         <div>
-          <label className="mb-0.5 block text-[10px] font-medium uppercase tracking-wide text-amber-700">
+          <label className="mb-0.5 block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             Issued
           </label>
-          <p className="px-2.5 py-1.5 text-xs text-zinc-600">
+          <p className="px-2.5 py-1.5 text-xs text-muted-foreground">
             {data.issued_date
               ? new Date(String(data.issued_date)).toLocaleDateString("en-IN", {
                   day: "2-digit",
@@ -134,7 +134,7 @@ export function CreateInvoiceForm({ data, onChange }: CreateInvoiceFormProps) {
       </div>
 
       <div className="space-y-2">
-        <label className="block text-[10px] font-medium uppercase tracking-wide text-amber-700">
+        <label className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
           Items
         </label>
 
@@ -153,23 +153,23 @@ export function CreateInvoiceForm({ data, onChange }: CreateInvoiceFormProps) {
         <button
           type="button"
           onClick={addItem}
-          className="flex w-full items-center justify-center gap-1 rounded-md border border-dashed border-amber-300 py-1.5 text-[11px] font-medium text-amber-700 transition-colors hover:bg-amber-50"
+          className="flex w-full items-center justify-center gap-1 rounded-md border border-dashed border-primary py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted"
         >
           <Plus className="h-3 w-3" />
           Add Item
         </button>
       </div>
 
-      <div className="space-y-1 border-t border-amber-200 pt-2 text-right">
-        <div className="flex justify-between text-xs text-zinc-600">
+      <div className="space-y-1 border-t border-border pt-2 text-right">
+        <div className="flex justify-between text-xs text-muted-foreground">
           <span>Subtotal</span>
           <span>{formatCurrency(Number(data.subtotal ?? 0))}</span>
         </div>
-        <div className="flex justify-between text-xs text-zinc-600">
+        <div className="flex justify-between text-xs text-muted-foreground">
           <span>GST</span>
           <span>{formatCurrency(Number(data.tax_total ?? 0))}</span>
         </div>
-        <div className="flex justify-between text-sm font-semibold text-zinc-900">
+        <div className="flex justify-between text-sm font-semibold text-foreground">
           <span>Total</span>
           <span>{formatCurrency(Number(data.total_amount ?? 0))}</span>
         </div>
@@ -204,10 +204,10 @@ function InvoiceLineItemRow({
   formatCurrency,
 }: InvoiceLineItemRowProps) {
   const inputClass =
-    "w-full rounded border border-amber-200 bg-white px-2 py-1 text-xs text-zinc-800 focus:border-amber-300 focus:outline-none";
+    "w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground focus:border-primary focus:outline-none";
 
   return (
-    <div className="rounded-md border border-amber-200 bg-white p-2">
+    <div className="rounded-md border border-border bg-background p-2">
       <div className="mb-1.5 flex items-start justify-between gap-1">
         <input
           value={item.name}
@@ -219,7 +219,7 @@ function InvoiceLineItemRow({
           <button
             type="button"
             onClick={() => onRemove(index)}
-            className="mt-0.5 shrink-0 rounded p-0.5 text-zinc-400 hover:bg-red-50 hover:text-red-500"
+            className="mt-0.5 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-red-500"
             aria-label="Remove item"
           >
             <Trash2 className="h-3 w-3" />
@@ -229,7 +229,7 @@ function InvoiceLineItemRow({
 
       <div className="grid grid-cols-4 gap-1.5">
         <div>
-          <label className="mb-0.5 block text-[9px] text-zinc-400">Qty</label>
+          <label className="mb-0.5 block text-[9px] text-muted-foreground">Qty</label>
           <input
             type="number"
             min="0"
@@ -242,7 +242,7 @@ function InvoiceLineItemRow({
           />
         </div>
         <div>
-          <label className="mb-0.5 block text-[9px] text-zinc-400">Rate (Rs)</label>
+          <label className="mb-0.5 block text-[9px] text-muted-foreground">Rate (Rs)</label>
           <input
             type="number"
             min="0"
@@ -253,7 +253,7 @@ function InvoiceLineItemRow({
           />
         </div>
         <div>
-          <label className="mb-0.5 block text-[9px] text-zinc-400">Unit</label>
+          <label className="mb-0.5 block text-[9px] text-muted-foreground">Unit</label>
           <input
             value={item.unit}
             onChange={(event) => onUpdate(index, "unit", event.target.value)}
@@ -261,7 +261,7 @@ function InvoiceLineItemRow({
           />
         </div>
         <div>
-          <label className="mb-0.5 block text-[9px] text-zinc-400">GST%</label>
+          <label className="mb-0.5 block text-[9px] text-muted-foreground">GST%</label>
           <input
             type="number"
             min="0"
@@ -275,7 +275,7 @@ function InvoiceLineItemRow({
         </div>
       </div>
 
-      <div className="mt-1.5 text-right text-[11px] font-medium text-zinc-700">
+      <div className="mt-1.5 text-right text-[11px] font-medium text-foreground">
         {formatCurrency(item.line_total)}
       </div>
     </div>

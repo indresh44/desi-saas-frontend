@@ -44,13 +44,13 @@ export function CreateLeadForm({ data, onChange }: CreateLeadFormProps) {
       />
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="mb-0.5 block text-[10px] font-medium uppercase tracking-wide text-amber-700">
+          <label className="mb-0.5 block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             Source
           </label>
           <select
             value={isKnownSource ? currentSource : "other"}
             onChange={(e) => update("source", e.target.value)}
-            className="w-full rounded-md border border-amber-200 bg-white px-2.5 py-1.5 text-xs text-zinc-800 focus:border-amber-300 focus:outline-none"
+            className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-xs text-foreground focus:border-primary focus:outline-none"
           >
             {LEAD_SOURCES.map((source) => (
               <option key={source.value} value={source.value}>
@@ -96,12 +96,12 @@ export function ActionField({
   readOnly = false,
 }: ActionFieldProps) {
   const inputClass =
-    "w-full rounded-md border border-amber-200 bg-white px-2.5 py-1.5 text-xs text-zinc-800 placeholder:text-zinc-400 focus:border-amber-300 focus:outline-none disabled:bg-zinc-50 disabled:text-zinc-500";
+    "w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none disabled:bg-muted disabled:text-muted-foreground";
 
   return (
     <div>
       {label ? (
-        <label className="mb-0.5 block text-[10px] font-medium uppercase tracking-wide text-amber-700">
+        <label className="mb-0.5 block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
           {label}
         </label>
       ) : null}

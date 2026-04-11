@@ -14,7 +14,7 @@ type Props = {
 };
 
 const inputCls =
-  "w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:text-zinc-400";
+  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground";
 
 const ACCEPTED_FILE_TYPES = ["image/jpeg", "image/png", "application/pdf"];
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -163,17 +163,17 @@ export function RecordPaymentModal({
     <>
       <button
         type="button"
-        className="fixed inset-0 z-40 bg-zinc-900/40"
+        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
         aria-label="Close"
         onClick={isSubmitting ? undefined : onClose}
       />
 
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-lg rounded-2xl border border-zinc-200 bg-white shadow-2xl">
-          <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3">
+        <div className="w-full max-w-lg rounded-2xl border border-border bg-card shadow-2xl">
+          <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <div>
-              <h2 className="text-base font-semibold text-zinc-900">Record Payment</h2>
-              <p className="text-xs text-zinc-500">{invoice.invoiceNumber}</p>
+              <h2 className="text-base font-semibold text-foreground">Record Payment</h2>
+              <p className="text-xs text-muted-foreground">{invoice.invoiceNumber}</p>
             </div>
             <Button
               type="button"
@@ -194,7 +194,7 @@ export function RecordPaymentModal({
             ) : null}
 
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-zinc-700">Amount</label>
+              <label className="block text-sm font-medium text-foreground">Amount</label>
               <input
                 type="number"
                 min="0"
@@ -209,7 +209,7 @@ export function RecordPaymentModal({
             </div>
 
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-zinc-700">
+              <label className="block text-sm font-medium text-foreground">
                 Payment Method
               </label>
               <select
@@ -226,7 +226,7 @@ export function RecordPaymentModal({
             </div>
 
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-zinc-700">
+              <label className="block text-sm font-medium text-foreground">
                 Payment Date
               </label>
               <input
@@ -239,7 +239,7 @@ export function RecordPaymentModal({
             </div>
 
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-zinc-700">
+              <label className="block text-sm font-medium text-foreground">
                 {referenceLabel}
               </label>
               <input
@@ -252,7 +252,7 @@ export function RecordPaymentModal({
             </div>
 
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-zinc-700">
+              <label className="block text-sm font-medium text-foreground">
                 Receipt (optional)
               </label>
 
@@ -275,7 +275,7 @@ export function RecordPaymentModal({
               />
 
               {selectedFile ? (
-                <div className="mt-2 flex items-center gap-3 rounded-md bg-zinc-50 p-2">
+                <div className="mt-2 flex items-center gap-3 rounded-md bg-muted p-2">
                   {selectedFile.type.startsWith("image/") && previewUrl ? (
                     <img
                       src={previewUrl}
@@ -283,14 +283,14 @@ export function RecordPaymentModal({
                       className="h-12 w-12 rounded object-cover"
                     />
                   ) : (
-                    <div className="flex h-12 w-12 items-center justify-center rounded bg-zinc-200 text-xs text-zinc-600">
+                    <div className="flex h-12 w-12 items-center justify-center rounded bg-border text-xs text-muted-foreground">
                       PDF
                     </div>
                   )}
 
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm text-zinc-800">{selectedFile.name}</p>
-                    <p className="text-xs text-zinc-500">
+                    <p className="truncate text-sm text-foreground">{selectedFile.name}</p>
+                    <p className="text-xs text-muted-foreground">
                       {(selectedFile.size / 1024).toFixed(0)} KB
                     </p>
                   </div>
@@ -298,7 +298,7 @@ export function RecordPaymentModal({
                   <button
                     type="button"
                     onClick={resetFileSelection}
-                    className="text-xs text-zinc-500 hover:text-red-600"
+                    className="text-xs text-muted-foreground hover:text-red-600"
                     disabled={isSubmitting}
                   >
                     Remove
@@ -330,11 +330,11 @@ export function RecordPaymentModal({
                 </div>
               )}
               {fileError ? <p className="text-xs text-red-600">{fileError}</p> : null}
-              <p className="text-xs text-zinc-500">JPG, PNG, or PDF. Max 10MB.</p>
+              <p className="text-xs text-muted-foreground">JPG, PNG, or PDF. Max 10MB.</p>
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2 border-t border-zinc-200 px-4 py-3">
+          <div className="flex items-center justify-end gap-2 border-t border-border px-4 py-3">
             <Button
               type="button"
               variant="outline"

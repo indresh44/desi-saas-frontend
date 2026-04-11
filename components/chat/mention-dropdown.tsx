@@ -181,10 +181,10 @@ export const MentionDropdown = forwardRef<MentionDropdownHandle, MentionDropdown
     );
 
     return (
-      <div className="absolute bottom-full left-0 right-0 mb-1 max-h-[240px] overflow-y-auto rounded-lg border border-zinc-200 bg-white shadow-lg">
+      <div className="absolute bottom-full left-0 right-0 mb-1 max-h-[240px] overflow-y-auto rounded-lg border border-border bg-card shadow-lg">
         {mode === "categories" && (
           <div className="p-1">
-            <p className="px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-zinc-400">
+            <p className="px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
               Mention
             </p>
             {CATEGORIES.map((category, index) => {
@@ -196,11 +196,11 @@ export const MentionDropdown = forwardRef<MentionDropdownHandle, MentionDropdown
                   onClick={() => handleCategorySelect(category.key)}
                   className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${
                     index === highlightIndex
-                      ? "bg-zinc-100 text-zinc-900"
-                      : "text-zinc-700 hover:bg-zinc-50"
+                      ? "bg-muted text-foreground"
+                      : "text-foreground hover:bg-muted"
                   }`}
                 >
-                  <Icon className="h-4 w-4 text-zinc-400" />
+                  <Icon className="h-4 w-4 text-muted-foreground" />
                   {category.label}
                 </button>
               );
@@ -217,17 +217,17 @@ export const MentionDropdown = forwardRef<MentionDropdownHandle, MentionDropdown
                 setSelectedCategory(null);
                 setEntities([]);
               }}
-              className="mb-1 flex w-full items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-zinc-400 hover:text-zinc-600"
+              className="mb-1 flex w-full items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground hover:text-muted-foreground"
             >
               ← {CATEGORIES.find((category) => category.key === selectedCategory)?.label}
             </button>
 
             {isLoading && (
-              <p className="px-2 py-3 text-center text-xs text-zinc-400">Searching...</p>
+              <p className="px-2 py-3 text-center text-xs text-muted-foreground">Searching...</p>
             )}
 
             {!isLoading && entities.length === 0 && (
-              <p className="px-2 py-3 text-center text-xs text-zinc-400">
+              <p className="px-2 py-3 text-center text-xs text-muted-foreground">
                 {searchText ? `No results for "${searchText}"` : "No items found"}
               </p>
             )}
@@ -238,12 +238,12 @@ export const MentionDropdown = forwardRef<MentionDropdownHandle, MentionDropdown
                 type="button"
                 onClick={() => handleEntitySelect(entity)}
                 className={`flex w-full flex-col rounded-md px-2 py-1.5 text-left ${
-                  index === highlightIndex ? "bg-zinc-100" : "hover:bg-zinc-50"
+                  index === highlightIndex ? "bg-muted" : "hover:bg-muted"
                 }`}
               >
-                <span className="text-sm text-zinc-800">{entity.name}</span>
+                <span className="text-sm text-foreground">{entity.name}</span>
                 {entity.subtitle ? (
-                  <span className="text-[11px] text-zinc-400">{entity.subtitle}</span>
+                  <span className="text-[11px] text-muted-foreground">{entity.subtitle}</span>
                 ) : null}
               </button>
             ))}

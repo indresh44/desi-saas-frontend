@@ -15,14 +15,14 @@ export function ScheduleFollowupForm({ data, onChange }: ScheduleFollowupFormPro
   return (
     <div className="space-y-2">
       {data.lead_title || data.customer_name ? (
-        <p className="text-xs text-zinc-600">
+        <p className="text-xs text-muted-foreground">
           {data.lead_title ? (
             <>
-              Lead: <span className="font-medium text-zinc-800">{String(data.lead_title)}</span>
+              Lead: <span className="font-medium text-foreground">{String(data.lead_title)}</span>
             </>
           ) : null}
           {data.lead_title && data.customer_name ? " · " : null}
-          {data.customer_name ? <span className="text-zinc-500">{String(data.customer_name)}</span> : null}
+          {data.customer_name ? <span className="text-muted-foreground">{String(data.customer_name)}</span> : null}
         </p>
       ) : null}
 

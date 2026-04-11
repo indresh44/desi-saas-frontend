@@ -104,7 +104,7 @@ export function CustomerPhoneInput({
 
   return (
     <div className="relative">
-      <label className="block text-sm text-zinc-700">
+      <label className="block text-sm text-foreground">
         <span className="font-medium">Phone</span>
         <input
           value={phone}
@@ -113,12 +113,12 @@ export function CustomerPhoneInput({
           onBlur={handleBlur}
           placeholder="Enter phone number"
           disabled={disabled}
-          className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-0 transition focus:border-zinc-500 disabled:cursor-not-allowed disabled:bg-zinc-100"
+          className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none ring-0 transition focus:border-primary disabled:cursor-not-allowed disabled:bg-muted"
         />
       </label>
 
       {selectedCustomer ? (
-        <div className="mt-2 flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-600">
+        <div className="mt-2 flex items-center justify-between rounded-lg border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
           <span>
             Selected existing customer: {selectedCustomer.name} ({selectedCustomer.phone})
           </span>
@@ -136,9 +136,9 @@ export function CustomerPhoneInput({
       ) : null}
 
       {showDropdown ? (
-        <div className="absolute z-30 mt-1 w-full rounded-lg border border-zinc-200 bg-white p-1 shadow-lg">
+        <div className="absolute z-30 mt-1 w-full rounded-lg border border-border bg-card p-1 shadow-lg">
           {isLoading ? (
-            <div className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-500">
+            <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
               Searching customers...
             </div>
@@ -154,17 +154,17 @@ export function CustomerPhoneInput({
                 <button
                   key={customer.id}
                   type="button"
-                  className="w-full rounded-md px-3 py-2 text-left hover:bg-zinc-100"
+                  className="w-full rounded-md px-3 py-2 text-left hover:bg-muted"
                   onMouseDown={(event) => {
                     event.preventDefault();
                     onSelectCustomer(customer);
                     setIsOpen(false);
                   }}
                 >
-                  <p className="text-sm font-medium text-zinc-900">{customer.name}</p>
-                  <p className="text-xs text-zinc-600">{customer.phone}</p>
+                  <p className="text-sm font-medium text-foreground">{customer.name}</p>
+                  <p className="text-xs text-muted-foreground">{customer.phone}</p>
                   {customer.email ? (
-                    <p className="text-xs text-zinc-500">{customer.email}</p>
+                    <p className="text-xs text-muted-foreground">{customer.email}</p>
                   ) : null}
                 </button>
               ))}
@@ -172,7 +172,7 @@ export function CustomerPhoneInput({
           ) : null}
 
           {!isLoading && !error && results.length === 0 ? (
-            <div className="px-3 py-2 text-sm text-zinc-500">
+            <div className="px-3 py-2 text-sm text-muted-foreground">
               No customer found - will create new.
             </div>
           ) : null}

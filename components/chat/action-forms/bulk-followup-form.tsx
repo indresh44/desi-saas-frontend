@@ -35,24 +35,24 @@ export function BulkFollowupForm({ data, onChange }: BulkFollowupFormProps) {
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <ActionIcon className={`h-4 w-4 ${actionColor}`} />
-        <p className="text-xs font-medium text-zinc-800">
+        <p className="text-xs font-medium text-foreground">
           {actionLabel} · {count} {filterLabel} follow-ups
         </p>
       </div>
 
-      <div className="max-h-[120px] overflow-y-auto rounded-md border border-amber-200 bg-white">
+      <div className="max-h-[120px] overflow-y-auto rounded-md border border-border bg-background">
         {followups.map((followup, index) => (
           <div
             key={followup.followup_id}
             className={`flex items-center justify-between px-2.5 py-1.5 text-[11px] ${
-              index < followups.length - 1 ? "border-b border-amber-100" : ""
+              index < followups.length - 1 ? "border-b border-border" : ""
             }`}
           >
-            <span className="text-zinc-700">
+            <span className="text-foreground">
               {followup.lead_title || "Untitled"}{" "}
-              <span className="text-zinc-400">({followup.customer_name || "-"})</span>
+              <span className="text-muted-foreground">({followup.customer_name || "-"})</span>
             </span>
-            <span className="text-zinc-400">{String(followup.scheduled_at ?? "").slice(0, 10)}</span>
+            <span className="text-muted-foreground">{String(followup.scheduled_at ?? "").slice(0, 10)}</span>
           </div>
         ))}
       </div>

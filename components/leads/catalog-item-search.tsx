@@ -124,9 +124,9 @@ export function CatalogItemSearch({
 
   return (
     <div className="relative">
-      <label className="block text-xs font-medium text-zinc-600">Catalog</label>
+      <label className="block text-xs font-medium text-muted-foreground">Catalog</label>
       <div className="relative mt-1">
-        <Search className="pointer-events-none absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
+        <Search className="pointer-events-none absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -138,14 +138,14 @@ export function CatalogItemSearch({
             }
           }}
           placeholder={placeholder}
-          className="w-full rounded-lg border border-zinc-200 bg-white py-1.5 pl-8 pr-3 text-sm text-zinc-900 outline-none transition focus:border-zinc-500"
+          className="w-full rounded-lg border border-border bg-background py-1.5 pl-8 pr-3 text-sm text-foreground outline-none transition focus:border-primary"
         />
       </div>
 
       {showDropdown ? (
-        <div className="absolute left-0 right-0 z-10 mt-1 rounded-lg border border-zinc-200 bg-white p-1 shadow-lg">
+        <div className="absolute left-0 right-0 z-10 mt-1 rounded-lg border border-border bg-card p-1 shadow-lg">
           {isLoading ? (
-            <div className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-500">
+            <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
               Searching catalog...
             </div>
@@ -161,19 +161,19 @@ export function CatalogItemSearch({
                 <button
                   key={item.id}
                   type="button"
-                  className="w-full rounded-md px-3 py-2 text-left hover:bg-zinc-100"
+                  className="w-full rounded-md px-3 py-2 text-left hover:bg-muted"
                   onMouseDown={(event) => {
                     event.preventDefault();
                     handleSelect(item);
                   }}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <p className="truncate text-sm font-semibold text-zinc-900">{item.name}</p>
-                    <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600">
+                    <p className="truncate text-sm font-semibold text-foreground">{item.name}</p>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
                       {item.gstPercent}% GST
                     </span>
                   </div>
-                  <p className="mt-0.5 text-xs text-zinc-600">
+                  <p className="mt-0.5 text-xs text-muted-foreground">
                     {formatRupees(item.defaultRate)} / {formatUnit(item)}
                   </p>
                 </button>
@@ -182,9 +182,9 @@ export function CatalogItemSearch({
           ) : null}
 
           {!isLoading && !error && results.length === 0 ? (
-            <div className="px-3 py-2 text-sm text-zinc-500">
+            <div className="px-3 py-2 text-sm text-muted-foreground">
               <p>No items found</p>
-              <p className="text-xs text-zinc-400">
+              <p className="text-xs text-muted-foreground">
                 You can still type the details manually below
               </p>
             </div>

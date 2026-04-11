@@ -27,26 +27,26 @@ export function RecordPaymentForm({ data, onChange }: RecordPaymentFormProps) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between text-xs">
-        <span className="text-zinc-600">
+        <span className="text-muted-foreground">
           {String(data.invoice_number ?? "")}
           {data.customer_name ? (
-            <span className="text-zinc-400"> · {String(data.customer_name)}</span>
+            <span className="text-muted-foreground"> · {String(data.customer_name)}</span>
           ) : null}
         </span>
       </div>
 
-      <div className="rounded-md bg-amber-50 px-2.5 py-2 text-xs">
-        <div className="flex justify-between text-zinc-600">
+      <div className="rounded-md bg-muted px-2.5 py-2 text-xs">
+        <div className="flex justify-between text-muted-foreground">
           <span>Total</span>
           <span>{formatCurrency(totalAmount)}</span>
         </div>
         {alreadyPaid > 0 ? (
-          <div className="flex justify-between text-zinc-600">
+          <div className="flex justify-between text-muted-foreground">
             <span>Already paid</span>
             <span>- {formatCurrency(alreadyPaid)}</span>
           </div>
         ) : null}
-        <div className="mt-1 flex justify-between border-t border-amber-200 pt-1 font-medium text-zinc-800">
+        <div className="mt-1 flex justify-between border-t border-border pt-1 font-medium text-foreground">
           <span>Balance due</span>
           <span>{formatCurrency(balanceDue)}</span>
         </div>
@@ -61,13 +61,13 @@ export function RecordPaymentForm({ data, onChange }: RecordPaymentFormProps) {
 
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="mb-0.5 block text-[10px] font-medium uppercase tracking-wide text-amber-700">
+          <label className="mb-0.5 block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             Method
           </label>
           <select
             value={String(data.payment_method ?? "upi")}
             onChange={(event) => update("payment_method", event.target.value)}
-            className="w-full rounded-md border border-amber-200 bg-white px-2.5 py-1.5 text-xs text-zinc-800 focus:border-amber-300 focus:outline-none"
+            className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-xs text-foreground focus:border-primary focus:outline-none"
           >
             <option value="upi">UPI</option>
             <option value="cash">Cash</option>

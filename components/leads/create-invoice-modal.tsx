@@ -52,7 +52,7 @@ const createInvoiceSchema = z.object({
 });
 
 const cellInputCls =
-  "w-full border-none bg-transparent px-0 py-1.5 text-sm text-zinc-900 outline-none placeholder:text-zinc-400";
+  "w-full border-none bg-transparent px-0 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground";
 
 function createEmptyLineItem(): LineItem {
   return {
@@ -378,15 +378,15 @@ export function CreateInvoiceModal({ leadId, onSuccess, onClose, initialInvoice 
     <>
       <button
         type="button"
-        className="fixed inset-0 z-40 bg-zinc-900/40"
+        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
         aria-label="Close"
         onClick={onClose}
       />
 
       <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
-        <div className="flex max-h-[95vh] w-full flex-col rounded-t-xl border border-zinc-200 bg-white shadow-2xl sm:max-h-[90vh] sm:max-w-5xl sm:rounded-xl">
-          <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3">
-            <h2 className="text-base font-semibold text-zinc-900">
+        <div className="flex max-h-[95vh] w-full flex-col rounded-t-xl border border-border bg-card shadow-2xl sm:max-h-[90vh] sm:max-w-5xl sm:rounded-xl">
+          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+            <h2 className="text-base font-semibold text-foreground">
               {isEditMode ? "Edit Invoice" : "New Invoice"}
             </h2>
             <Button type="button" size="sm" variant="ghost" onClick={onClose}>
@@ -406,16 +406,16 @@ export function CreateInvoiceModal({ leadId, onSuccess, onClose, initialInvoice 
               {items.map((item) => (
                 <div
                   key={item.id}
-                  className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 space-y-2"
+                  className="rounded-xl border border-border bg-muted p-3 space-y-2"
                 >
                   {/* Name */}
                   <div>
-                    <label className="text-xs font-medium text-zinc-500">Item Name</label>
+                    <label className="text-xs font-medium text-muted-foreground">Item Name</label>
                     <div
                       ref={(el) => { nameCellRefs.current[item.id] = el; }}
                     >
                       <input
-                        className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/20"
+                        className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                         placeholder="Search or type..."
                         value={item.name}
                         onChange={(event) => handleNameChange(item.id, event.target.value)}
@@ -426,15 +426,15 @@ export function CreateInvoiceModal({ leadId, onSuccess, onClose, initialInvoice 
                         }}
                       />
                       {item.catalogItemId ? (
-                        <span className="mt-0.5 block text-xs text-zinc-400">from catalog</span>
+                        <span className="mt-0.5 block text-xs text-muted-foreground">from catalog</span>
                       ) : null}
                     </div>
                   </div>
                   {/* Description */}
                   <div>
-                    <label className="text-xs font-medium text-zinc-500">Description</label>
+                    <label className="text-xs font-medium text-muted-foreground">Description</label>
                     <input
-                      className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/20"
+                      className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                       placeholder="-"
                       value={item.description}
                       onChange={(event) => updateItem(item.id, { description: event.target.value })}
@@ -443,44 +443,44 @@ export function CreateInvoiceModal({ leadId, onSuccess, onClose, initialInvoice 
                   {/* Unit / Qty / Rate / GST row */}
                   <div className="grid grid-cols-4 gap-2">
                     <div>
-                      <label className="text-xs font-medium text-zinc-500">Unit</label>
+                      <label className="text-xs font-medium text-muted-foreground">Unit</label>
                       <input
-                        className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/20"
+                        className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                         placeholder="-"
                         value={item.unit}
                         onChange={(event) => updateItem(item.id, { unit: event.target.value })}
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-zinc-500">Qty</label>
+                      <label className="text-xs font-medium text-muted-foreground">Qty</label>
                       <input
                         type="number"
                         min="1"
                         step="1"
-                        className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/20"
+                        className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                         value={item.qty}
                         onChange={(event) => updateItem(item.id, { qty: Number(event.target.value) || 0 })}
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-zinc-500">Rate ₹</label>
+                      <label className="text-xs font-medium text-muted-foreground">Rate ₹</label>
                       <input
                         type="number"
                         min="0"
                         step="1"
-                        className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/20"
+                        className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                         value={item.unit_price || ""}
                         onChange={(event) => updateItem(item.id, { unit_price: Number(event.target.value) || 0 })}
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-zinc-500">GST %</label>
+                      <label className="text-xs font-medium text-muted-foreground">GST %</label>
                       <input
                         type="number"
                         min="0"
                         max="28"
                         step="1"
-                        className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/20"
+                        className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                         value={item.gstPercent}
                         onChange={(event) => updateItem(item.id, { gstPercent: Number(event.target.value) || 0 })}
                       />
@@ -488,14 +488,14 @@ export function CreateInvoiceModal({ leadId, onSuccess, onClose, initialInvoice 
                   </div>
                   {/* Total + remove */}
                   <div className="flex items-center justify-between pt-1">
-                    <span className="text-sm font-semibold text-zinc-900">
+                    <span className="text-sm font-semibold text-foreground">
                       Total: ₹{roundAmount(calcLineTotal(item)).toLocaleString("en-IN")}
                     </span>
                     {items.length > 1 ? (
                       <button
                         type="button"
                         onClick={() => removeItem(item.id)}
-                        className="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-400 hover:bg-red-50 hover:text-red-500"
+                        className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-red-50 hover:text-red-500"
                         aria-label="Remove line item"
                       >
                         ×
@@ -507,7 +507,7 @@ export function CreateInvoiceModal({ leadId, onSuccess, onClose, initialInvoice 
             </div>
 
             {/* ── Desktop: table (≥ sm) ── */}
-            <div className="hidden sm:block overflow-x-auto rounded-xl border border-zinc-200 bg-white">
+            <div className="hidden sm:block overflow-x-auto rounded-xl border border-border bg-card">
               <table className="min-w-full border-collapse text-sm">
                 <thead>
                   <tr className="border-b border-border/70 text-xs text-muted-foreground">
@@ -603,7 +603,7 @@ export function CreateInvoiceModal({ leadId, onSuccess, onClose, initialInvoice 
                             }
                           />
                         </td>
-                        <td className="whitespace-nowrap px-2 py-1 text-right text-sm font-medium text-zinc-900">
+                        <td className="whitespace-nowrap px-2 py-1 text-right text-sm font-medium text-foreground">
                           ₹{roundAmount(calcLineTotal(item)).toLocaleString("en-IN")}
                         </td>
                         <td className="py-1 text-center">
@@ -655,17 +655,17 @@ export function CreateInvoiceModal({ leadId, onSuccess, onClose, initialInvoice 
             </div>
 
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-zinc-700">Due Date</label>
+              <label className="block text-sm font-medium text-foreground">Due Date</label>
               <input
                 type="date"
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-900/20"
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                 value={dueDate}
                 onChange={(event) => setDueDate(event.target.value)}
               />
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2 border-t border-zinc-200 px-4 py-3">
+          <div className="flex items-center justify-end gap-2 border-t border-border px-4 py-3">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
@@ -686,10 +686,10 @@ export function CreateInvoiceModal({ leadId, onSuccess, onClose, initialInvoice 
                 width: dropdownAnchor.width,
                 zIndex: 9999,
               }}
-              className="rounded-lg border border-zinc-200 bg-white p-1 shadow-lg"
+              className="rounded-lg border border-border bg-card p-1 shadow-lg"
             >
               {isSearching ? (
-                <div className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-500">
+                <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Searching catalog...
                 </div>
@@ -705,16 +705,16 @@ export function CreateInvoiceModal({ leadId, onSuccess, onClose, initialInvoice 
                     <button
                       key={catalogItem.id}
                       type="button"
-                      className="flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left hover:bg-zinc-100"
+                      className="flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left hover:bg-muted"
                       onMouseDown={(event) => {
                         event.preventDefault();
                         handleCatalogSelect(activeSearchRowId!, catalogItem);
                       }}
                     >
-                      <span className="min-w-0 truncate text-sm font-medium text-zinc-900">
+                      <span className="min-w-0 truncate text-sm font-medium text-foreground">
                         {catalogItem.name}
                       </span>
-                      <span className="shrink-0 text-xs text-zinc-500">
+                      <span className="shrink-0 text-xs text-muted-foreground">
                         ₹{roundAmount(catalogItem.defaultRate).toLocaleString("en-IN")} /{" "}
                         {getCatalogUnitLabel(catalogItem)}
                       </span>
@@ -724,9 +724,9 @@ export function CreateInvoiceModal({ leadId, onSuccess, onClose, initialInvoice 
               ) : null}
 
               {!isSearching && !searchError && searchResults.length === 0 ? (
-                <div className="px-3 py-2 text-sm text-zinc-500">
+                <div className="px-3 py-2 text-sm text-muted-foreground">
                   <p>No items found</p>
-                  <p className="text-xs text-zinc-400">
+                  <p className="text-xs text-muted-foreground">
                     You can still type the details manually below
                   </p>
                 </div>

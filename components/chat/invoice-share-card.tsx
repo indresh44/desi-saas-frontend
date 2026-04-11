@@ -36,27 +36,27 @@ export function InvoiceShareCard({ invoiceId, invoiceNumber }: InvoiceShareCardP
   }
 
   return (
-    <div className="mt-1.5 overflow-hidden rounded-lg border border-zinc-200 bg-white">
+    <div className="mt-1.5 overflow-hidden rounded-lg border border-border bg-card">
       <div className="flex items-center gap-3 px-3 py-2.5">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-teal-50">
           <ExternalLink className="h-4 w-4 text-teal-600" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-medium text-zinc-800">
+          <p className="truncate text-xs font-medium text-foreground">
             {invoiceNumber}
           </p>
-          <p className="text-[11px] text-zinc-400">
+          <p className="text-[11px] text-muted-foreground">
             Share with your customer
           </p>
         </div>
       </div>
 
-      <div className="flex border-t border-zinc-100">
+      <div className="flex border-t border-border">
         <button
           type="button"
           onClick={() => void handleShare()}
           disabled={isSharing}
-          className="flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50"
+          className="flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted disabled:opacity-50"
         >
           {isSharing ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -66,7 +66,7 @@ export function InvoiceShareCard({ invoiceId, invoiceNumber }: InvoiceShareCardP
           Share
         </button>
 
-        <div className="w-px bg-zinc-100" />
+        <div className="w-px bg-muted" />
 
         <button
           type="button"

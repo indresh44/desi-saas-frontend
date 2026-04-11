@@ -29,7 +29,7 @@ export function ChatMarkdown({ content }: ChatMarkdownProps) {
           </a>
         ),
         code: ({ children }) => (
-          <code className="rounded bg-black/8 px-1 py-0.5 text-[11px] font-semibold font-mono text-sky-800 dark:bg-white/10 dark:text-sky-200">
+          <code className="rounded bg-black/8 px-1 py-0.5 text-[11px] font-semibold font-mono text-sky-800 dark:bg-card/10 dark:text-sky-200">
             {children}
           </code>
         ),
@@ -50,17 +50,17 @@ export function ChatMarkdown({ content }: ChatMarkdownProps) {
           </div>
         ),
         thead: ({ children }) => (
-          <thead className="bg-black/5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground dark:bg-white/5">
+          <thead className="bg-black/5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground dark:bg-card/5">
             {children}
           </thead>
         ),
         tbody: ({ children }) => (
-          <tbody className="divide-y divide-border/60 [&>tr:nth-child(even)]:bg-black/3 dark:[&>tr:nth-child(even)]:bg-white/4">
+          <tbody className="divide-y divide-border/60 [&>tr:nth-child(even)]:bg-black/3 dark:[&>tr:nth-child(even)]:bg-card/4">
             {children}
           </tbody>
         ),
         tr: ({ children }) => (
-          <tr className="transition-colors hover:bg-black/5 dark:hover:bg-white/6 [&>td:first-child]:font-medium [&>td:first-child]:text-inherit">
+          <tr className="transition-colors hover:bg-black/5 dark:hover:bg-card/6 [&>td:first-child]:font-medium [&>td:first-child]:text-inherit">
             {children}
           </tr>
         ),

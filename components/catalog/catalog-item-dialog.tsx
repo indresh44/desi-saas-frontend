@@ -210,21 +210,21 @@ export function CatalogItemDialog({
   if (!isOpen) return null;
 
   const inputClassName =
-    "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 disabled:opacity-50";
+    "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50";
 
   return (
     <>
       <div
-        className="fixed inset-0 z-30 bg-zinc-900/30"
+        className="fixed inset-0 z-30  backdrop-blur-xs"
         onClick={onClose}
         aria-hidden="true"
       />
 
       <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
-        <div className="w-full max-w-lg rounded-xl border border-zinc-200 bg-white shadow-2xl overflow-y-auto max-h-[90vh]">
-          <div className="flex items-start justify-between border-b border-zinc-200 px-4 py-3">
+        <div className="w-full max-w-lg rounded-xl border border-border bg-card shadow-2xl overflow-y-auto max-h-[90vh]">
+          <div className="flex items-start justify-between border-b border-border px-4 py-3">
             <div>
-              <h2 className="text-base font-semibold text-zinc-900">
+              <h2 className="text-base font-semibold text-foreground">
                 {isEditMode ? "Edit Item" : "Add Item"}
               </h2>
             </div>
@@ -247,7 +247,7 @@ export function CatalogItemDialog({
             )}
 
             <div className="space-y-1">
-              <label className="text-sm font-medium text-zinc-700">
+              <label className="text-sm font-medium text-foreground">
                 Name <span className="text-red-500">*</span>
               </label>
               <input
@@ -263,7 +263,7 @@ export function CatalogItemDialog({
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm font-medium text-zinc-700">
+              <label className="text-sm font-medium text-foreground">
                 Description
               </label>
               <textarea
@@ -276,7 +276,7 @@ export function CatalogItemDialog({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-sm font-medium text-zinc-700">
+                <label className="text-sm font-medium text-foreground">
                   Unit <span className="text-red-500">*</span>
                 </label>
                 <select {...form.register("unit")} className={inputClassName}>
@@ -295,7 +295,7 @@ export function CatalogItemDialog({
 
               {unitValue === "custom" && (
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-zinc-700">
+                  <label className="text-sm font-medium text-foreground">
                     Custom Unit Name <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -314,11 +314,11 @@ export function CatalogItemDialog({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-sm font-medium text-zinc-700">
+                <label className="text-sm font-medium text-foreground">
                   Default Rate (₹) <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                    <span className="absolute left-3 top-2 text-zinc-500">₹</span>
+                    <span className="absolute left-3 top-2 text-muted-foreground">₹</span>
                     <input
                         type="number"
                         step="0.01"
@@ -334,7 +334,7 @@ export function CatalogItemDialog({
               </div>
 
               <div className="space-y-1">
-                <label className="text-sm font-medium text-zinc-700">
+                <label className="text-sm font-medium text-foreground">
                   GST % <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -343,7 +343,7 @@ export function CatalogItemDialog({
                         {...form.register("gstPercent", { valueAsNumber: true })}
                         className={`${inputClassName} pr-8`}
                     />
-                    <span className="absolute right-3 top-2 text-zinc-500">%</span>
+                    <span className="absolute right-3 top-2 text-muted-foreground">%</span>
                 </div>
                 {form.formState.errors.gstPercent && (
                   <p className="text-xs text-red-600">
@@ -370,11 +370,11 @@ export function CatalogItemDialog({
             {isEditMode && initialData ? (
               <CatalogAttachmentsManager catalogItemId={initialData.id} />
             ) : (
-              <div className="space-y-2 rounded-lg border border-zinc-200 p-3">
+              <div className="space-y-2 rounded-lg border border-border p-3">
                 <div className="flex items-center justify-between gap-2">
                   <div>
-                    <p className="text-sm font-medium text-zinc-800">Attachments</p>
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-sm font-medium text-foreground">Attachments</p>
+                    <p className="text-xs text-muted-foreground">
                       Select multiple JPG, PNG, or PDF files. They upload after item is created.
                     </p>
                   </div>
@@ -387,7 +387,7 @@ export function CatalogItemDialog({
                       onChange={(event) => onSelectPendingFiles(event.target.files)}
                       disabled={isSubmitting}
                     />
-                    <span className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-zinc-200 px-3 py-1.5 text-xs text-zinc-700 hover:bg-zinc-50">
+                    <span className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs text-foreground hover:bg-muted">
                       <Upload className="h-3.5 w-3.5" />
                       Add files
                     </span>
@@ -403,12 +403,12 @@ export function CatalogItemDialog({
                     {pendingFiles.map((file) => (
                       <div
                         key={`${file.name}-${file.size}`}
-                        className="flex items-center justify-between rounded-md bg-zinc-50 px-2 py-1"
+                        className="flex items-center justify-between rounded-md bg-muted px-2 py-1"
                       >
-                        <p className="truncate text-xs text-zinc-700">{file.name}</p>
+                        <p className="truncate text-xs text-foreground">{file.name}</p>
                         <button
                           type="button"
-                          className="text-xs text-zinc-500 hover:text-red-600"
+                          className="text-xs text-muted-foreground hover:text-red-600"
                           onClick={() => removePendingFile(file.name)}
                           disabled={isSubmitting}
                         >
@@ -418,7 +418,7 @@ export function CatalogItemDialog({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-zinc-500">No files selected yet.</p>
+                  <p className="text-xs text-muted-foreground">No files selected yet.</p>
                 )}
               </div>
             )}

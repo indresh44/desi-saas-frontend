@@ -30,7 +30,7 @@ export function ActionCard({ action, messageId }: ActionCardProps) {
 
   if (action.status === "confirmed") {
     return (
-      <div className="mt-1.5 flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+      <div className="mt-1.5 flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs text-green-600">
         <Check className="h-3.5 w-3.5" />
         {action.display_label} confirmed
       </div>
@@ -39,7 +39,7 @@ export function ActionCard({ action, messageId }: ActionCardProps) {
 
   if (action.status === "cancelled") {
     return (
-      <div className="mt-1.5 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-400 line-through">
+      <div className="mt-1.5 rounded-lg border border-border bg-muted px-3 py-2 text-xs text-muted-foreground line-through">
         {action.display_label} cancelled
       </div>
     );
@@ -89,7 +89,7 @@ export function ActionCard({ action, messageId }: ActionCardProps) {
         return <SendReminderForm data={editedData} onChange={setEditedData} />;
       default:
         return (
-          <pre className="whitespace-pre-wrap text-xs text-zinc-600">
+          <pre className="whitespace-pre-wrap text-xs text-muted-foreground">
             {JSON.stringify(editedData, null, 2)}
           </pre>
         );
@@ -97,8 +97,8 @@ export function ActionCard({ action, messageId }: ActionCardProps) {
   }
 
   return (
-    <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50/50 p-3">
-      <p className="mb-2 text-xs font-medium text-amber-800">{action.display_label}</p>
+    <div className="mt-1.5 rounded-lg border border-border bg-card p-3">
+      <p className="mb-2 text-xs font-medium text-primary">{action.display_label}</p>
 
       {renderForm()}
 
@@ -120,7 +120,7 @@ export function ActionCard({ action, messageId }: ActionCardProps) {
           type="button"
           onClick={handleCancel}
           disabled={isConfirming}
-          className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted disabled:opacity-50"
         >
           <X className="h-3 w-3" />
           Cancel

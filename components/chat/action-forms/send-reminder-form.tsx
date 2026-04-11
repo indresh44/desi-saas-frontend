@@ -77,16 +77,16 @@ export function SendReminderForm({ data, onChange }: SendReminderFormProps) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between text-xs">
-        <span className="font-medium text-zinc-800">{String(data.customer_name ?? "")}</span>
+        <span className="font-medium text-foreground">{String(data.customer_name ?? "")}</span>
         <span className="font-medium text-red-600">{formatCurrency(outstanding)} due</span>
       </div>
 
       {data.invoice_numbers ? (
-        <p className="text-[11px] text-zinc-400">Invoices: {String(data.invoice_numbers)}</p>
+        <p className="text-[11px] text-muted-foreground">Invoices: {String(data.invoice_numbers)}</p>
       ) : null}
 
       <div>
-        <label className="mb-0.5 block text-[10px] font-medium uppercase tracking-wide text-amber-700">
+        <label className="mb-0.5 block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
           Tone
         </label>
         <div className="flex gap-1.5">

@@ -15,21 +15,21 @@ export function RescheduleFollowupForm({ data, onChange }: RescheduleFollowupFor
 
   return (
     <div className="space-y-2">
-      <div className="text-xs text-zinc-600">
+      <div className="text-xs text-muted-foreground">
         {data.lead_title ? (
           <span>
-            Lead: <span className="font-medium text-zinc-800">{String(data.lead_title)}</span>
+            Lead: <span className="font-medium text-foreground">{String(data.lead_title)}</span>
           </span>
         ) : null}
         {data.lead_title && data.customer_name ? " · " : null}
-        {data.customer_name ? <span className="text-zinc-500">{String(data.customer_name)}</span> : null}
+        {data.customer_name ? <span className="text-muted-foreground">{String(data.customer_name)}</span> : null}
       </div>
 
       <div className="flex items-center gap-2 text-xs">
-        <span className="rounded-full bg-zinc-200 px-2.5 py-1 text-zinc-600">
+        <span className="rounded-full bg-zinc-200 px-2.5 py-1 text-muted-foreground">
           {String(data.original_date ?? "").slice(0, 10) || "-"}
         </span>
-        <ArrowRight className="h-3.5 w-3.5 text-zinc-400" />
+        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
         <div className="grid flex-1 grid-cols-2 gap-1.5">
           <ActionField
             label=""

@@ -21,7 +21,7 @@ export function SuggestionChips({ suggestions }: SuggestionChipsProps) {
           type="button"
           onClick={() => void sendMessage(suggestion)}
           disabled={isLoading}
-          className="rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-600 transition-colors hover:border-zinc-300 hover:bg-zinc-50 disabled:opacity-50"
+          className="rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted disabled:opacity-50"
         >
           {suggestion}
         </button>

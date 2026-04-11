@@ -99,10 +99,10 @@ export function CustomerNameInput({
 
   return (
     <div className="relative">
-      <label className="block text-sm text-zinc-700">
+      <label className="block text-sm text-foreground">
         <span className="font-medium">Customer Name</span>
         <div className="relative mt-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={value}
             onChange={(event) => onValueChange(event.target.value)}
@@ -111,7 +111,7 @@ export function CustomerNameInput({
             placeholder="Type customer name"
             disabled={disabled}
             autoFocus={autoFocus}
-            className="w-full rounded-lg border border-zinc-300 bg-white py-2 pl-9 pr-3 text-sm text-zinc-900 outline-none ring-0 transition focus:border-zinc-500 disabled:cursor-not-allowed disabled:bg-zinc-100"
+            className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm text-foreground outline-none ring-0 transition focus:border-primary disabled:cursor-not-allowed disabled:bg-muted"
           />
         </div>
       </label>
@@ -136,9 +136,9 @@ export function CustomerNameInput({
       ) : null}
 
       {showDropdown ? (
-        <div className="absolute z-30 mt-1 w-full rounded-lg border border-zinc-200 bg-white p-1 shadow-lg">
+        <div className="absolute z-30 mt-1 w-full rounded-lg border border-border bg-card p-1 shadow-lg">
           {isLoading ? (
-            <div className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-500">
+            <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
               Searching customers...
             </div>
@@ -154,17 +154,17 @@ export function CustomerNameInput({
                 <button
                   key={customer.id}
                   type="button"
-                  className="w-full rounded-md px-3 py-2 text-left hover:bg-zinc-100"
+                  className="w-full rounded-md px-3 py-2 text-left hover:bg-muted"
                   onMouseDown={(event) => {
                     event.preventDefault();
                     onSelectCustomer(customer);
                     setIsOpen(false);
                   }}
                 >
-                  <p className="text-sm font-medium text-zinc-900">{customer.name}</p>
-                  <p className="text-xs text-zinc-600">{customer.phone}</p>
+                  <p className="text-sm font-medium text-foreground">{customer.name}</p>
+                  <p className="text-xs text-muted-foreground">{customer.phone}</p>
                   {customer.email ? (
-                    <p className="text-xs text-zinc-500">{customer.email}</p>
+                    <p className="text-xs text-muted-foreground">{customer.email}</p>
                   ) : null}
                 </button>
               ))}
@@ -172,7 +172,7 @@ export function CustomerNameInput({
           ) : null}
 
           {!isLoading && !error && results.length === 0 ? (
-            <div className="px-3 py-2 text-sm text-zinc-500">
+            <div className="px-3 py-2 text-sm text-muted-foreground">
               No existing customer found. We&apos;ll create a new one when you save.
             </div>
           ) : null}

@@ -38,7 +38,7 @@ export function AttachmentThumbnailStrip({
   emptyLabel = "No files",
 }: Props) {
   if (attachments.length === 0) {
-    return <span className="text-xs text-zinc-400">{emptyLabel}</span>;
+    return <span className="text-xs text-muted-foreground">{emptyLabel}</span>;
   }
 
   const visible = attachments.slice(0, maxVisible);
@@ -53,7 +53,7 @@ export function AttachmentThumbnailStrip({
               key={attachment.id}
               type="button"
               onClick={() => onSelect(index)}
-              className="relative h-10 w-10 overflow-hidden rounded border border-zinc-200 hover:border-zinc-400"
+              className="relative h-10 w-10 overflow-hidden rounded border border-border hover:border-zinc-400"
               title={attachment.filename}
             >
               <Image
@@ -87,7 +87,7 @@ export function AttachmentThumbnailStrip({
             key={attachment.id}
             type="button"
             onClick={() => onSelect(index)}
-            className="flex h-10 w-10 items-center justify-center rounded border border-zinc-200 bg-zinc-50 text-[10px] text-zinc-500 hover:bg-zinc-100"
+            className="flex h-10 w-10 items-center justify-center rounded border border-border bg-muted text-[10px] text-muted-foreground hover:bg-muted"
             title={attachment.filename}
           >
             FILE
@@ -99,7 +99,7 @@ export function AttachmentThumbnailStrip({
         <button
           type="button"
           onClick={() => onSelect(maxVisible - 1)}
-          className="flex h-10 min-w-10 items-center justify-center rounded border border-zinc-200 bg-zinc-50 px-2 text-xs text-zinc-600 hover:bg-zinc-100"
+          className="flex h-10 min-w-10 items-center justify-center rounded border border-border bg-muted px-2 text-xs text-muted-foreground hover:bg-muted"
           title={`${extra} more`}
         >
           +{extra}

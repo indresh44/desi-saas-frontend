@@ -107,7 +107,7 @@ function extractErrorMessage(err: unknown, fallback: string): string {
 }
 
 const inputCls =
-  "w-full rounded-lg border px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20";
+  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20";
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
@@ -762,9 +762,9 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
           onStatusChange={handleMeetingStatusChange}
         />
 
-        <section className="space-y-3 rounded-xl border border-zinc-200 bg-white p-4">
+        <section className="space-y-3 rounded-xl border border-border bg-card p-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-zinc-900">Tasks</h2>
+            <h2 className="text-sm font-semibold text-foreground">Tasks</h2>
             <Button
               type="button"
               size="sm"
@@ -776,7 +776,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
           </div>
 
           {showTaskForm ? (
-            <div className="space-y-2 rounded-lg border border-zinc-100 bg-zinc-50 p-2.5">
+            <div className="space-y-2 rounded-lg border border-zinc-100 bg-muted p-2.5">
               {taskError ? (
                 <p className="text-xs text-red-600">{taskError}</p>
               ) : null}
@@ -826,7 +826,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
           ) : null}
 
           {tasks.length === 0 ? (
-            <p className="text-xs text-zinc-400">No tasks.</p>
+            <p className="text-xs text-muted-foreground">No tasks.</p>
           ) : (
             <div className="space-y-2">
               {tasks.map((task) => {
@@ -836,13 +836,13 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
                     key={task.id}
                     className={`flex items-start gap-2 rounded-lg border p-2.5 ${
                       isDone
-                        ? "border-zinc-100 bg-zinc-50 opacity-60"
-                        : "border-zinc-200 bg-white"
+                        ? "border-zinc-100 bg-muted opacity-60"
+                        : "border-border bg-card"
                     }`}
                   >
                     <button
                       type="button"
-                      className="mt-0.5 shrink-0 text-zinc-400 hover:text-green-500 disabled:opacity-50"
+                      className="mt-0.5 shrink-0 text-muted-foreground hover:text-green-500 disabled:opacity-50"
                       disabled={isDone}
                       onClick={() => void handleTaskDone(task.id)}
                       aria-label="Mark task done"
@@ -856,14 +856,14 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
                     <div className="min-w-0 flex-1">
                       <p
                         className={`truncate text-xs font-medium ${
-                          isDone ? "text-zinc-400 line-through" : "text-zinc-800"
+                          isDone ? "text-muted-foreground line-through" : "text-foreground"
                         }`}
                       >
                         {task.title}
                       </p>
                       <div className="mt-0.5 flex items-center gap-1.5">
                         {task.dueDate ? (
-                          <span className="text-xs text-zinc-400">
+                          <span className="text-xs text-muted-foreground">
                             {formatDate(task.dueDate)}
                           </span>
                         ) : null}

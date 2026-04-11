@@ -237,16 +237,16 @@ export function CreateLeadDialog({
       <button
         type="button"
         aria-label="Close new enquiry dialog"
-        className="fixed inset-0 z-30 bg-zinc-900/30"
+        className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm"
         onClick={handleClose}
       />
 
       <div className="fixed inset-0 z-40 flex items-end justify-center md:items-center md:p-4">
-        <div className="flex h-[100dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-zinc-200 bg-white shadow-2xl md:h-auto md:max-h-[90vh] md:max-w-2xl md:rounded-2xl">
-          <div className="flex items-start justify-between border-b border-zinc-200 px-4 py-4 md:px-5">
+        <div className="flex h-[100dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-border bg-card shadow-2xl md:h-auto md:max-h-[90vh] md:max-w-2xl md:rounded-2xl">
+          <div className="flex items-start justify-between border-b border-border px-4 py-4 md:px-5">
             <div>
-              <h2 className="text-base font-semibold text-zinc-900">New Enquiry</h2>
-              <p className="text-sm text-zinc-500">
+              <h2 className="text-base font-semibold text-foreground">New Enquiry</h2>
+              <p className="text-sm text-muted-foreground">
                 Add the essentials now. Fill the rest only if needed.
               </p>
             </div>
@@ -319,7 +319,7 @@ export function CreateLeadDialog({
 
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-left text-sm font-medium text-zinc-700 transition hover:border-zinc-300 hover:bg-zinc-100"
+                  className="flex w-full items-center justify-between rounded-xl border border-border bg-muted px-3 py-3 text-left text-sm font-medium text-foreground transition hover:border-border hover:bg-muted"
                   onClick={() => setIsMoreDetailsOpen((current) => !current)}
                 >
                   <span>More details</span>
@@ -338,7 +338,7 @@ export function CreateLeadDialog({
                   }`}
                 >
                   <div className="overflow-hidden">
-                    <div className="grid gap-4 rounded-xl border border-zinc-200 bg-zinc-50/60 p-3 md:grid-cols-2">
+                    <div className="grid gap-4 rounded-xl border border-border bg-muted/60 p-3 md:grid-cols-2">
                       <Field
                         label="Source"
                         error={form.formState.errors.source?.message}
@@ -407,7 +407,7 @@ export function CreateLeadDialog({
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 border-t border-zinc-200 bg-white px-4 py-3 md:px-5">
+            <div className="flex items-center justify-end gap-2 border-t border-border bg-card px-4 py-3 md:px-5">
               <Button type="button" variant="outline" disabled={isSubmitting} onClick={handleClose}>
                 Cancel
               </Button>
@@ -423,7 +423,7 @@ export function CreateLeadDialog({
 }
 
 const inputClassName =
-  "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-0 transition focus:border-zinc-500 disabled:cursor-not-allowed disabled:bg-zinc-100";
+  "mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none ring-0 transition focus:border-primary disabled:cursor-not-allowed disabled:bg-muted";
 
 type FieldProps = {
   label: string;
@@ -433,7 +433,7 @@ type FieldProps = {
 
 function Field({ label, input, error }: FieldProps) {
   return (
-    <label className="block text-sm text-zinc-700">
+    <label className="block text-sm text-foreground">
       <span className="font-medium">{label}</span>
       {input}
       {error ? <p className="mt-1 text-xs text-red-600">{error}</p> : null}
