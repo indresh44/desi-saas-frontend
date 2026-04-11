@@ -37,6 +37,15 @@ export function CatalogAttachmentsManager({ catalogItemId }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
+  const sortedAttachments = useMemo(
+    () =>
+      [...attachments].sort((a, b) => {
+        if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      }),
+    [attachments]
+  );
+
   const selectedPreviews = useMemo(
     () =>
       selectedFiles.map((file) => ({
@@ -199,12 +208,20 @@ export function CatalogAttachmentsManager({ catalogItemId }: Props) {
         <p className="text-xs text-muted-foreground">No attachments added yet.</p>
       ) : (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-          {attachments.map((attachment) => {
+          {sortedAttachments.map((attachment, index) => {
             const isImage = isImageAttachment(attachment.filename);
             const isPdf = isPdfAttachment(attachment.filename);
+            const isCover =
+              attachment.is_primary ||
+              (index === 0 && !attachments.some((a) => a.is_primary));
 
             return (
-              <div key={attachment.id} className="rounded-md border border-border p-2">
+              <div key={attachment.id} className="relative rounded-md border border-border p-2">
+                {isCover && isImage && (
+                  <span className="absolute top-3 left-3 z-10 text-[9px] bg-black/60 text-white px-1.5 py-0.5 rounded">
+                    Cover
+                  </span>
+                )}
                 <a href={attachment.file_url} target="_blank" rel="noopener noreferrer" className="block">
                   {isImage ? (
                     <img
@@ -243,6 +260,10 @@ export function CatalogAttachmentsManager({ catalogItemId }: Props) {
           })}
         </div>
       )}
+
+      <p className="text-[11px] text-muted-foreground mt-1">
+        First photo becomes cover in package view. Clients see these when you share the invoice link.
+      </p>
     </div>
   );
 }

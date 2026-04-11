@@ -13,6 +13,7 @@ import {
   Share2,
   Upload,
 } from "lucide-react";
+import { InvoiceItemEnrichment } from "@/components/invoices/invoice-item-enrichment";
 import { PaymentAttachmentPreview } from "@/components/leads/payment-attachment-preview";
 import { Button } from "@/components/ui/button";
 import { fetchCustomers } from "@/lib/api/customers";
@@ -26,7 +27,7 @@ import {
 import { shareInvoicePdf, buildBrandedInvoiceUrl } from "@/lib/utils/share";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { Customer } from "@/lib/types/customer";
-import type { Invoice, InvoiceStatus, Payment, PaymentMethod } from "@/lib/types/invoice";
+import type { Invoice, InvoiceItem, InvoiceStatus, Payment, PaymentMethod } from "@/lib/types/invoice";
 
 export interface InvoiceListViewProps {
   customerId?: string;
@@ -402,6 +403,7 @@ export function InvoiceListView({
 
   const [shareLoadingByInvoice, setShareLoadingByInvoice] = useState<Record<string, boolean>>({});
   const [showPaymentFormByInvoice, setShowPaymentFormByInvoice] = useState<Record<string, boolean>>({});
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
   useEffect(() => {
     setSelectedCustomerId(customerId);
@@ -830,47 +832,121 @@ export function InvoiceListView({
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        <section className="overflow-x-auto">
-                          <table className="min-w-full text-left text-sm text-foreground">
-                            <thead>
-                              <tr className="border-b text-xs uppercase tracking-[0.12em] text-muted-foreground">
-                                <th className="py-2 pr-3">#</th>
-                                <th className="py-2 pr-3">Item</th>
-                                <th className="py-2 pr-3">Unit</th>
-                                <th className="py-2 pr-3">Qty</th>
-                                <th className="py-2 pr-3">Rate</th>
-                                <th className="py-2 pr-3">GST</th>
-                                <th className="py-2 text-right">Amount</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {lineItems.map((item, index) => (
-                                <tr key={item.id} className="border-b border-border last:border-b-0">
-                                  <td className="py-2 pr-3">{index + 1}</td>
-                                  <td className="py-2 pr-3 font-medium text-primary">{item.name || item.description}</td>
-                                  <td className="py-2 pr-3">{item.unit}</td>
-                                  <td className="py-2 pr-3">{item.quantity}</td>
-                                  <td className="py-2 pr-3">{formatRupees(Number(item.unitPrice))}</td>
-                                  <td className="py-2 pr-3">{item.gstPercent}%</td>
-                                  <td className="py-2 text-right font-medium text-primary">{formatRupees(Number(item.amount))}</td>
+                        <section>
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full text-left text-sm text-foreground">
+                              <thead>
+                                <tr className="border-b text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                                  <th className="py-2 w-6"></th>
+                                  <th className="py-2 pr-3">Item</th>
+                                  <th className="py-2 pr-3">Unit</th>
+                                  <th className="py-2 pr-3">Qty</th>
+                                  <th className="py-2 pr-3">Rate</th>
+                                  <th className="py-2 pr-3">GST</th>
+                                  <th className="py-2 text-right">Amount</th>
                                 </tr>
-                              ))}
-                            </tbody>
-                            <tfoot>
-                              <tr>
-                                <td colSpan={6} className="pt-3 text-right text-sm font-medium text-muted-foreground">Subtotal</td>
-                                <td className="pt-3 text-right text-sm font-semibold text-foreground">{formatRupees(Number(invoice.subtotal ?? 0))}</td>
-                              </tr>
-                              <tr>
-                                <td colSpan={6} className="pt-1 text-right text-sm font-medium text-muted-foreground">Tax</td>
-                                <td className="pt-1 text-right text-sm font-semibold text-foreground">{formatRupees(Number(invoice.taxTotal ?? 0))}</td>
-                              </tr>
-                              <tr>
-                                <td colSpan={6} className="pt-1 text-right text-sm font-medium text-muted-foreground">Total</td>
-                                <td className="pt-1 text-right text-base font-semibold text-primary">{formatRupees(Number(invoice.totalAmount))}</td>
-                              </tr>
-                            </tfoot>
-                          </table>
+                              </thead>
+                              <tbody>
+                                {lineItems.map((item) => {
+                                  const isItemExpanded = expandedItemId === item.id;
+                                  const hasEnrichment = item.deliverables && item.deliverables.length > 0;
+
+                                  return (
+                                    <tr key={item.id} className="border-b border-border last:border-b-0">
+                                      <td colSpan={7} className="p-0">
+                                        <div
+                                          role="button"
+                                          tabIndex={0}
+                                          className="grid grid-cols-[24px_1fr_60px_50px_80px_55px_80px] gap-1 px-1 py-2 cursor-pointer hover:bg-muted/50 transition-colors items-center"
+                                          onClick={() => setExpandedItemId(isItemExpanded ? null : item.id)}
+                                          onKeyDown={(e) => {
+                                            if (e.key === "Enter" || e.key === " ") {
+                                              e.preventDefault();
+                                              setExpandedItemId(isItemExpanded ? null : item.id);
+                                            }
+                                          }}
+                                        >
+                                          <div className="flex items-center justify-center">
+                                            <svg
+                                              className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${isItemExpanded ? "rotate-90" : ""}`}
+                                              viewBox="0 0 24 24"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              strokeWidth="2"
+                                            >
+                                              <path d="M9 18l6-6-6-6" />
+                                            </svg>
+                                          </div>
+                                          <div className="flex items-center gap-1.5 font-medium text-primary truncate">
+                                            {item.name || item.description}
+                                            {hasEnrichment && (
+                                              <span className="w-1.5 h-1.5 rounded-full bg-teal-500 shrink-0" />
+                                            )}
+                                          </div>
+                                          <div className="text-muted-foreground">{item.unit}</div>
+                                          <div>{item.quantity}</div>
+                                          <div>{formatRupees(Number(item.unitPrice))}</div>
+                                          <div className="text-muted-foreground">{item.gstPercent}%</div>
+                                          <div className="text-right font-medium text-primary">{formatRupees(Number(item.amount))}</div>
+                                        </div>
+                                        {isItemExpanded && (
+                                          <InvoiceItemEnrichment
+                                            item={item}
+                                            invoiceId={invoice.id}
+                                            invoiceStatus={invoice.status}
+                                            onItemUpdated={(updated: InvoiceItem) => {
+                                              setItemsByInvoice((prev) => ({
+                                                ...prev,
+                                                [invoice.id]: (prev[invoice.id] ?? []).map((it) =>
+                                                  it.id === updated.id ? updated : it
+                                                ),
+                                              }));
+                                            }}
+                                          />
+                                        )}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                              <tfoot>
+                                <tr>
+                                  <td colSpan={6} className="pt-3 text-right text-sm font-medium text-muted-foreground">Subtotal</td>
+                                  <td className="pt-3 text-right text-sm font-semibold text-foreground">{formatRupees(Number(invoice.subtotal ?? 0))}</td>
+                                </tr>
+                                <tr>
+                                  <td colSpan={6} className="pt-1 text-right text-sm font-medium text-muted-foreground">Tax</td>
+                                  <td className="pt-1 text-right text-sm font-semibold text-foreground">{formatRupees(Number(invoice.taxTotal ?? 0))}</td>
+                                </tr>
+                                <tr>
+                                  <td colSpan={6} className="pt-1 text-right text-sm font-medium text-muted-foreground">Total</td>
+                                  <td className="pt-1 text-right text-base font-semibold text-primary">{formatRupees(Number(invoice.totalAmount))}</td>
+                                </tr>
+                              </tfoot>
+                            </table>
+                          </div>
+
+                          {invoice.status === "draft" && lineItems.some((it) => it.deliverables && it.deliverables.length > 0) && (
+                            <div className="flex items-center justify-between px-3 py-2.5 border-t border-border/50 bg-muted/20 mt-2 rounded-lg">
+                              <div>
+                                <p className="text-xs font-medium">Package view</p>
+                                <p className="text-[11px] text-muted-foreground">
+                                  Clients see a visual package when opening the invoice link
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const link = `${window.location.origin}/invoices/public/${invoice.id}`;
+                                  void navigator.clipboard.writeText(link);
+                                }}
+                                className="text-xs px-3 py-1.5 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+                              >
+                                Copy package link
+                              </button>
+                            </div>
+                          )}
                         </section>
 
                         {payments.length ? (

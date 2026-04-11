@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Upload, X } from "lucide-react";
+import { Pencil, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   ACCEPTED_ATTACHMENT_FILE_TYPES,
@@ -20,6 +20,7 @@ import {
   CreateCatalogItemInput,
   UpdateCatalogItemInput,
 } from "@/lib/types/catalog-item";
+import { renderDeliverable } from "@/lib/utils/format";
 import { CatalogAttachmentsManager } from "./catalog-attachments-manager";
 
 const UNIT_OPTIONS = [
@@ -73,6 +74,10 @@ export function CatalogItemDialog({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [deliverables, setDeliverables] = useState<string[]>([]);
+  const [newDeliverable, setNewDeliverable] = useState("");
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState("");
   const isEditMode = !!initialData;
 
   const form = useForm<FormInput, undefined, FormData>({
@@ -111,6 +116,10 @@ export function CatalogItemDialog({
       setSubmitError(null);
       setPendingFiles([]);
       setFileError(null);
+      setDeliverables(initialData?.deliverables ?? []);
+      setNewDeliverable("");
+      setEditingIndex(null);
+      setEditValue("");
     }
   }, [isOpen, initialData, form]);
 
@@ -172,6 +181,8 @@ export function CatalogItemDialog({
         if (values.gstPercent !== initialData.gstPercent)
           updates.gst_percent = values.gstPercent;
 
+        updates.deliverables = deliverables.length > 0 ? deliverables : null;
+
         if (Object.keys(updates).length > 0) {
           await updateCatalogItem(initialData.id, updates);
         }
@@ -183,6 +194,7 @@ export function CatalogItemDialog({
           custom_unit: values.unit === "custom" ? values.customUnit : null,
           default_rate: values.defaultRate,
           gst_percent: values.gstPercent,
+          deliverables: deliverables.length > 0 ? deliverables : null,
         };
         const createdItem = await createCatalogItem(payload);
         if (pendingFiles.length > 0) {
@@ -351,6 +363,98 @@ export function CatalogItemDialog({
                   </p>
                 )}
               </div>
+            </div>
+
+            {/* ── Deliverables ── */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Deliverables</label>
+              <p className="text-xs text-muted-foreground">
+                What&apos;s included in this item. These copy to every invoice using it.
+              </p>
+
+              {deliverables.map((item, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <span className="text-muted-foreground text-sm">•</span>
+                  {editingIndex === index ? (
+                    <input
+                      className={`flex-1 ${inputClassName}`}
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          if (editValue.trim()) {
+                            setDeliverables((prev) =>
+                              prev.map((d, i) => (i === index ? editValue.trim() : d))
+                            );
+                          }
+                          setEditingIndex(null);
+                        }
+                        if (e.key === "Escape") setEditingIndex(null);
+                      }}
+                      autoFocus
+                    />
+                  ) : (
+                    <span className="flex-1 text-sm min-w-0 break-words">
+                      {renderDeliverable(item)}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingIndex(index);
+                      setEditValue(item);
+                    }}
+                    className="shrink-0 text-muted-foreground hover:text-foreground p-1"
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setDeliverables((prev) => prev.filter((_, i) => i !== index))
+                    }
+                    className="shrink-0 text-muted-foreground hover:text-destructive p-1"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+
+              <div className="flex items-center gap-2">
+                <input
+                  className={`flex-1 ${inputClassName}`}
+                  placeholder="e.g. **Cinematic reel** — 3-5 min highlight"
+                  value={newDeliverable}
+                  onChange={(e) => setNewDeliverable(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      if (newDeliverable.trim()) {
+                        setDeliverables((prev) => [...prev, newDeliverable.trim()]);
+                        setNewDeliverable("");
+                      }
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (newDeliverable.trim()) {
+                      setDeliverables((prev) => [...prev, newDeliverable.trim()]);
+                      setNewDeliverable("");
+                    }
+                  }}
+                  disabled={!newDeliverable.trim()}
+                  className="text-sm px-3 py-1.5 border rounded-md hover:bg-accent disabled:opacity-50"
+                >
+                  Add
+                </button>
+              </div>
+
+              <p className="text-[11px] text-muted-foreground">
+                Use **text** for bold in package view.
+              </p>
             </div>
 
             <div className="mt-4 flex justify-end gap-2">

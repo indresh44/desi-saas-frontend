@@ -34,6 +34,7 @@ type InvoiceItemApiResponse = {
   line_total?: number;
   amount?: number;
   sort_order?: number;
+  deliverables?: string[] | null;
 };
 
 type PaymentApiResponse = {
@@ -75,6 +76,7 @@ function toInvoiceItemModel(raw: InvoiceItemApiResponse): InvoiceItem {
     lineTotal,
     amount: lineTotal,
     sortOrder: raw.sort_order ?? null,
+    deliverables: raw.deliverables ?? null,
   };
 }
 
@@ -299,6 +301,18 @@ export async function uploadAttachment(
   file: File
 ): Promise<PaymentAttachment> {
   return uploadEntityAttachment(entityType as AttachmentEntityType, entityId, file);
+}
+
+export async function updateInvoiceItem(
+  invoiceId: string,
+  itemId: string,
+  payload: { deliverables?: string[] | null; name?: string; description?: string }
+): Promise<InvoiceItem> {
+  const { data } = await apiClient<InvoiceItemApiResponse>(
+    `/api/v1/invoices/${invoiceId}/items/${itemId}`,
+    { method: "PATCH", body: payload }
+  );
+  return toInvoiceItemModel(data);
 }
 
 export async function getInvoicePdf(

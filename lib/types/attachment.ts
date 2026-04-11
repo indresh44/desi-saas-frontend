@@ -4,6 +4,7 @@ export type AttachmentEntityType =
   | "catalog"
   | "quote"
   | "invoice"
+  | "invoice_item"
   | "task";
 
 export interface Attachment {
@@ -14,5 +15,7 @@ export interface Attachment {
   filename: string;
   file_url: string;
   file_size: number;
+  sort_order: number;
+  is_primary: boolean;
   created_at: string;
 }

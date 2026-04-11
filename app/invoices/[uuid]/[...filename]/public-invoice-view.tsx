@@ -1,10 +1,14 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { Download, FileText, Loader2, Maximize2 } from "lucide-react";
 import sellNSettleIcon from "@/app/sellnsettle-icon.png";
+import {
+  PackageView,
+  type PublicInvoiceItem,
+} from "@/components/invoices/public/package-view";
 
 const PdfPreviewPage = dynamic(
   () =>
@@ -24,6 +28,22 @@ interface InvoiceMeta {
   customer_name: string | null;
   business_name: string;
   items_count: number;
+}
+
+interface InvoiceDetail {
+  invoice: {
+    id: string;
+    invoice_number: string;
+    status: string;
+    subtotal: number;
+    tax_total: number;
+    total_amount: number;
+    due_date: string | null;
+    issued_date: string | null;
+  };
+  customer: { name: string | null };
+  business: { name: string };
+  items: PublicInvoiceItem[];
 }
 
 function formatRupees(amount: number): string {
@@ -73,6 +93,52 @@ export function PublicInvoiceView({
   const [pdfLoading, setPdfLoading] = useState(true);
   const [pdfError, setPdfError] = useState(false);
   const [expanded, setExpanded] = useState(false);
+
+  // Package view state
+  const [detail, setDetail] = useState<InvoiceDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(true);
+  const [view, setView] = useState<"package" | "estimate">("estimate");
+
+  // Fetch detail data for package view
+  useEffect(() => {
+    if (!meta) return;
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/public/invoices/${uuid}/detail`,
+          { cache: "no-store" }
+        );
+        if (!res.ok) return;
+        const data: InvoiceDetail = await res.json();
+        if (!cancelled) {
+          setDetail(data);
+          // Default to package view if any item has photos or deliverables
+          const hasPackage = data.items.some(
+            (it) =>
+              (it.deliverables && it.deliverables.length > 0) ||
+              (it.photos && it.photos.length > 0)
+          );
+          if (hasPackage) setView("package");
+        }
+      } catch {
+        // silently fall back to estimate view
+      } finally {
+        if (!cancelled) setDetailLoading(false);
+      }
+    }
+    void load();
+    return () => { cancelled = true; };
+  }, [meta, uuid]);
+
+  const hasPackageContent = useMemo(() => {
+    if (!detail) return false;
+    return detail.items.some(
+      (it) =>
+        (it.deliverables && it.deliverables.length > 0) ||
+        (it.photos && it.photos.length > 0)
+    );
+  }, [detail]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -144,116 +210,167 @@ export function PublicInvoiceView({
         </div>
       </header>
 
-      {/* Invoice info card */}
+      {/* Main content */}
       <main className="mx-auto max-w-3xl px-4 py-6">
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-          {/* Top row */}
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-primary">
-                  {meta.invoice_number}
-                </h1>
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${getStatusClass(meta.status)}`}
-                >
-                  {meta.status}
-                </span>
-              </div>
-              {meta.customer_name ? (
-                <p className="mt-1 text-sm text-zinc-500">
-                  For{" "}
-                  <span className="font-medium text-zinc-700">
-                    {meta.customer_name}
-                  </span>
-                </p>
-              ) : null}
-              <p className="mt-0.5 text-xs text-zinc-400">
-                From {meta.business_name}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-3xl font-bold text-primary">
-                {formatRupees(meta.total_amount)}
-              </p>
-              <p className="mt-1 text-xs text-zinc-500">
-                Due {formatDate(meta.due_date)}
-              </p>
+        {/* View toggle — only show if package content exists and detail loaded */}
+        {hasPackageContent && !detailLoading && (
+          <div className="flex justify-center mb-6">
+            <div className="inline-flex bg-zinc-100 rounded-lg p-1">
+              <button
+                type="button"
+                onClick={() => setView("package")}
+                className={`px-4 py-1.5 text-sm rounded-md transition-colors ${
+                  view === "package"
+                    ? "bg-white text-zinc-900 font-medium shadow-sm"
+                    : "text-zinc-500 hover:text-zinc-700"
+                }`}
+              >
+                Package
+              </button>
+              <button
+                type="button"
+                onClick={() => setView("estimate")}
+                className={`px-4 py-1.5 text-sm rounded-md transition-colors ${
+                  view === "estimate"
+                    ? "bg-white text-zinc-900 font-medium shadow-sm"
+                    : "text-zinc-500 hover:text-zinc-700"
+                }`}
+              >
+                Formal estimate
+              </button>
             </div>
           </div>
+        )}
 
-          {/* PDF viewer */}
-          <div className="mt-6 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50">
-            <div
-              className="relative cursor-pointer"
-              onClick={() => setExpanded((prev) => !prev)}
-            >
-              {pdfLoading && !pdfError && (
-                <div className="flex h-[300px] items-center justify-center">
-                  <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
-                </div>
-              )}
-
-              {pdfError && (
-                <div className="flex h-[200px] flex-col items-center justify-center gap-2">
-                  <FileText className="h-10 w-10 text-zinc-300" />
-                  <p className="text-sm text-zinc-400">
-                    PDF preview unavailable
-                  </p>
-                </div>
-              )}
-
-              {!pdfError && (
-                <div
-                  ref={containerRef}
-                  className={`transition-all duration-300 ${
-                    expanded ? "overflow-y-auto max-h-[80vh]" : "overflow-hidden max-h-[400px]"
-                  }`}
-                >
-                  {pdfWidth > 0 && (
-                    <PdfPreviewPage
-                      file={pdfUrl}
-                      width={pdfWidth}
-                      onLoadSuccess={() => setPdfLoading(false)}
-                      onLoadError={() => {
-                        setPdfLoading(false);
-                        setPdfError(true);
-                      }}
-                    />
-                  )}
-                </div>
-              )}
-
-              {!pdfError && !pdfLoading && (
-                <div className="absolute right-0 bottom-0 left-0 flex justify-center bg-gradient-to-t from-white/90 to-transparent pb-2 pt-8">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setExpanded((prev) => !prev);
-                    }}
-                    className="flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 shadow-sm ring-1 ring-zinc-200 transition-colors hover:bg-zinc-50"
+        {view === "package" && detail ? (
+          /* ── Package View ── */
+          <div>
+            <PackageView
+              business={detail.business}
+              customer={detail.customer}
+              invoice={{
+                invoiceNumber: detail.invoice.invoice_number,
+                totalAmount: detail.invoice.total_amount,
+                subtotal: detail.invoice.subtotal,
+                taxTotal: detail.invoice.tax_total,
+                dueDate: detail.invoice.due_date,
+                status: detail.invoice.status,
+              }}
+              items={detail.items}
+              onDownloadPdf={handleDownload}
+            />
+          </div>
+        ) : (
+          /* ── Formal Estimate View (existing) ── */
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+            {/* Top row */}
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-2xl font-bold text-primary">
+                    {meta.invoice_number}
+                  </h1>
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${getStatusClass(meta.status)}`}
                   >
-                    <Maximize2 className="h-3 w-3" />
-                    {expanded ? "Show less" : "Show more"}
-                  </button>
+                    {meta.status}
+                  </span>
                 </div>
-              )}
+                {meta.customer_name ? (
+                  <p className="mt-1 text-sm text-zinc-500">
+                    For{" "}
+                    <span className="font-medium text-zinc-700">
+                      {meta.customer_name}
+                    </span>
+                  </p>
+                ) : null}
+                <p className="mt-0.5 text-xs text-zinc-400">
+                  From {meta.business_name}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-3xl font-bold text-primary">
+                  {formatRupees(meta.total_amount)}
+                </p>
+                <p className="mt-1 text-xs text-zinc-500">
+                  Due {formatDate(meta.due_date)}
+                </p>
+              </div>
+            </div>
+
+            {/* PDF viewer */}
+            <div className="mt-6 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50">
+              <div
+                className="relative cursor-pointer"
+                onClick={() => setExpanded((prev) => !prev)}
+              >
+                {pdfLoading && !pdfError && (
+                  <div className="flex h-[300px] items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
+                  </div>
+                )}
+
+                {pdfError && (
+                  <div className="flex h-[200px] flex-col items-center justify-center gap-2">
+                    <FileText className="h-10 w-10 text-zinc-300" />
+                    <p className="text-sm text-zinc-400">
+                      PDF preview unavailable
+                    </p>
+                  </div>
+                )}
+
+                {!pdfError && (
+                  <div
+                    ref={containerRef}
+                    className={`transition-all duration-300 ${
+                      expanded ? "overflow-y-auto max-h-[80vh]" : "overflow-hidden max-h-[400px]"
+                    }`}
+                  >
+                    {pdfWidth > 0 && (
+                      <PdfPreviewPage
+                        file={pdfUrl}
+                        width={pdfWidth}
+                        onLoadSuccess={() => setPdfLoading(false)}
+                        onLoadError={() => {
+                          setPdfLoading(false);
+                          setPdfError(true);
+                        }}
+                      />
+                    )}
+                  </div>
+                )}
+
+                {!pdfError && !pdfLoading && (
+                  <div className="absolute right-0 bottom-0 left-0 flex justify-center bg-gradient-to-t from-white/90 to-transparent pb-2 pt-8">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpanded((prev) => !prev);
+                      }}
+                      className="flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 shadow-sm ring-1 ring-zinc-200 transition-colors hover:bg-zinc-50"
+                    >
+                      <Maximize2 className="h-3 w-3" />
+                      {expanded ? "Show less" : "Show more"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Download button */}
+            <div className="mt-4 flex justify-center">
+              <button
+                type="button"
+                onClick={handleDownload}
+                className="flex items-center gap-2 rounded-lg bg-teal-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-700"
+              >
+                <Download className="h-4 w-4" />
+                Download {docLabel}
+              </button>
             </div>
           </div>
-
-          {/* Download button */}
-          <div className="mt-4 flex justify-center">
-            <button
-              type="button"
-              onClick={handleDownload}
-              className="flex items-center gap-2 rounded-lg bg-teal-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-700"
-            >
-              <Download className="h-4 w-4" />
-              Download {docLabel}
-            </button>
-          </div>
-        </div>
+        )}
 
         {/* Footer CTA */}
         <div className="mt-8 text-center">

@@ -8,6 +8,7 @@ export interface CatalogItemApiResponse {
   default_rate: number;
   gst_percent: number;
   is_active: boolean;
+  deliverables: string[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -22,6 +23,7 @@ export interface CatalogItem {
   defaultRate: number;
   gstPercent: number;
   isActive: boolean;
+  deliverables: string[] | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -33,6 +35,7 @@ export interface CreateCatalogItemInput {
   custom_unit?: string | null;
   default_rate: number;
   gst_percent: number;
+  deliverables?: string[] | null;
 }
 
 export interface UpdateCatalogItemInput {
@@ -42,6 +45,7 @@ export interface UpdateCatalogItemInput {
   custom_unit?: string | null;
   default_rate?: number;
   gst_percent?: number;
+  deliverables?: string[] | null;
 }
 
 export function toCatalogItemModel(raw: CatalogItemApiResponse): CatalogItem {
@@ -55,6 +59,7 @@ export function toCatalogItemModel(raw: CatalogItemApiResponse): CatalogItem {
     defaultRate: Number(raw.default_rate),
     gstPercent: Number(raw.gst_percent),
     isActive: raw.is_active,
+    deliverables: raw.deliverables ?? null,
     createdAt: raw.created_at,
     updatedAt: raw.updated_at,
   };

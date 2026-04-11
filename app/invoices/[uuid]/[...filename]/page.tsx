@@ -25,6 +25,26 @@ async function fetchMeta(uuid: string): Promise<InvoiceMeta | null> {
   }
 }
 
+async function fetchCoverPhoto(uuid: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/public/invoices/${uuid}/detail`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    for (const item of data.items ?? []) {
+      const photos = item.photos ?? [];
+      if (photos.length > 0) {
+        const primary = photos.find((p: { is_primary: boolean }) => p.is_primary);
+        return (primary ?? photos[0]).file_url;
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 function formatRupees(amount: number): string {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -47,7 +67,10 @@ export async function generateMetadata({
   params: Promise<{ uuid: string }>;
 }): Promise<Metadata> {
   const { uuid } = await params;
-  const meta = await fetchMeta(uuid);
+  const [meta, coverPhoto] = await Promise.all([
+    fetchMeta(uuid),
+    fetchCoverPhoto(uuid),
+  ]);
 
   if (!meta) {
     return {
@@ -61,6 +84,8 @@ export async function generateMetadata({
   const title = `${docLabel} ${meta.invoice_number} — ${formatRupees(meta.total_amount)}`;
   const description = `From ${meta.business_name}${meta.customer_name ? ` for ${meta.customer_name}` : ""} | Due ${formatDate(meta.due_date)} | ${meta.items_count} item${meta.items_count !== 1 ? "s" : ""}`;
 
+  const ogImage = coverPhoto ?? `https://sellnsettle.com/_og/invoice/${uuid}`;
+
   return {
     title,
     description,
@@ -72,7 +97,7 @@ export async function generateMetadata({
       siteName: "SellNSettle",
       images: [
         {
-          url: `https://sellnsettle.com/_og/invoice/${uuid}`,
+          url: ogImage,
           width: 1200,
           height: 630,
           alt: `${docLabel} ${meta.invoice_number}`,
@@ -83,7 +108,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title,
       description,
-      images: [`https://sellnsettle.com/_og/invoice/${uuid}`],
+      images: [ogImage],
     },
   };
 }

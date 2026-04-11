@@ -15,6 +15,7 @@ export interface InvoiceItem {
   lineTotal: number;
   amount: number;
   sortOrder: number | null;
+  deliverables: string[] | null;
 }
 
 export interface Invoice {
@@ -72,6 +73,7 @@ export interface InvoiceApiResponse {
     line_total?: number;
     amount?: number;
     sort_order?: number;
+    deliverables?: string[] | null;
   }[];
 }
 
