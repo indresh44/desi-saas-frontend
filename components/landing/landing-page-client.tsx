@@ -439,6 +439,24 @@ export default function LandingPageClient() {
         @keyframes popIn { from{opacity:0;transform:translateY(8px) scale(.96)} to{opacity:1;transform:translateY(0) scale(1)} }
         @keyframes dotPulse { 0%,80%,100%{transform:scale(.6);opacity:.3}40%{transform:scale(1);opacity:1} }
         @keyframes blobPulse { 0%,100%{transform:scale(1);opacity:.2}50%{transform:scale(1.05);opacity:.3} }
+        @keyframes lampSwing { 0%,100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+        @keyframes lampGlow { 0%,100% { opacity: 0.25; } 50% { opacity: 0.5; } }
+        @keyframes sofaCushion { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(0.95); } }
+        @keyframes frameTilt { 0%,100% { transform: rotate(0deg); } 30% { transform: rotate(2deg); } 70% { transform: rotate(-1.5deg); } }
+        @keyframes plantSway { 0%,100% { transform: rotate(0deg); } 25% { transform: rotate(3deg); } 75% { transform: rotate(-3deg); } }
+        @keyframes swatchPop { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+        @keyframes pencilDraw { 0%,100% { transform: rotate(-40deg) translateX(0); } 50% { transform: rotate(-40deg) translateX(4px); } }
+        @keyframes rugPattern { 0%,100% { opacity: 0.5; } 50% { opacity: 0.8; } }
+        @keyframes bookSlide { 0%,80% { transform: translateX(0); } 90% { transform: translateX(3px); } 100% { transform: translateX(0); } }
+        @keyframes camShutter { 0%,85% { transform: scale(1); } 90% { transform: scale(0.7); } 95% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        @keyframes camFlash { 0%,84% { opacity: 0; } 90% { opacity: 1; } 100% { opacity: 0; } }
+        @keyframes camBody { 0%,100% { transform: translateY(0); } 90% { transform: translateY(-3px); } 95% { transform: translateY(1px); } }
+        @keyframes camStar1 { 0%,80% { opacity: 0; transform: scale(0); } 88% { opacity: 1; transform: scale(1.2); } 100% { opacity: 0; transform: scale(0); } }
+        @keyframes camHeart { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+        @keyframes arrowFly { 0% { transform: translate(50px, -35px); opacity: 0; } 40% { opacity: 1; } 70%,100% { transform: translate(0, 0); opacity: 1; } }
+        @keyframes targetRipple { 0% { r: 8; opacity: 0.6; } 100% { r: 30; opacity: 0; } }
+        @keyframes coinBounce { 0%,100% { transform: translateY(0); } 30% { transform: translateY(-10px); } 60% { transform: translateY(-3px); } }
+        @keyframes checkPop { 0%,60% { transform: scale(0); } 75% { transform: scale(1.2); } 100% { transform: scale(1); } }
         .persona-stagger:nth-child(2) { margin-top: 0; }
         .persona-stagger:nth-child(3) { margin-top: 0; }
         @media (min-width: 768px) {
@@ -658,51 +676,62 @@ export default function LandingPageClient() {
           </div>
         </section>
 
-        {/* ═══ COMPARISON — no Vyapar name (#4), with skew ═══ */}
-        <section id="comparison" aria-label="Comparison" className="skew-section" style={{ padding: "72px 24px", background: C.navy, color: "#fff", transform: "skewY(2deg)" }}>
+        {/* ═══ FEATURES GRID — replaces comparison section ═══ */}
+        <section id="features-grid" aria-label="Features grid" className="skew-section" style={{ padding: "72px 24px", background: C.navy, color: "#fff", transform: "skewY(2deg)" }}>
           <div style={{ transform: "skewY(-2deg)", maxWidth: 960, margin: "0 auto", padding: "24px 0" }}>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
               <h2 style={{ fontFamily: FH, fontSize: "clamp(28px, 5vw, 56px)", fontWeight: 900, letterSpacing: -2, marginBottom: 12 }}>
-                Billing app se <span style={{ color: C.gold, fontStyle: "italic", textDecoration: "underline", textDecorationColor: C.coral }}>kaise alag?</span>
+                Sab kuch <span style={{ color: C.coral, fontStyle: "italic", textDecoration: "underline", textDecorationColor: C.gold }}>ek jagah.</span>
               </h2>
-              <p style={{ fontSize: 16, fontWeight: 600, opacity: 0.5 }}>SellNSettle isn&apos;t just for billing; it&apos;s for managing your whole day.</p>
+              <p style={{ fontSize: 16, fontWeight: 600, opacity: 0.5 }}>Everything your business needs, in one smart diary.</p>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: 28 }}>
-              <div style={{ padding: 32, border: "3px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.03)", transform: "rotate(-0.5deg)" }}>
-                <h3 style={{ fontSize: 26, fontWeight: 900, marginBottom: 36, display: "flex", alignItems: "center", gap: 12, fontFamily: FH }}>
-                  <Icon name="description" style={{ opacity: 0.4 }} /> Generic Billing Apps
-                </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" style={{ gap: 16 }}>
                 {[
-                  { t: "Starts at Billing", d: "You have to wait until the deal is closed." },
-                  { t: "Manual Data Entry", d: "Tapping through 20 menus just to add one item." },
-                ].map((item) => (
-                  <div key={item.t} style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 24 }}>
-                    <Icon name="close" style={{ color: C.coral }} />
-                    <div>
-                      <p style={{ fontWeight: 900, fontSize: 20, marginBottom: 4, fontFamily: FH }}>{item.t}</p>
-                      <p style={{ opacity: 0.5, fontSize: 14 }}>{item.d}</p>
-                    </div>
-                  </div>
+                { icon: "chat", color: C.coral, title: "AI chat", desc: "Hindi, English, Hinglish — just type what you need." },
+                { icon: "people", color: C.teal, title: "Lead tracking", desc: "Every enquiry tracked from hello to closed deal." },
+                { icon: "receipt_long", color: C.coral, title: "Invoices & quotes", desc: "Generate, send, and track — all from chat." },
+                { icon: "whatsapp", color: C.teal, title: "WhatsApp share", desc: "Send invoices directly to clients via WhatsApp.", customSvg: true },
+                { icon: "notifications_active", color: C.teal, title: "Follow-up reminders", desc: "Never forget a callback. AI reminds you on time." },
+                { icon: "currency_rupee", color: C.gold, title: "Payment tracking", desc: "Record payments, track outstanding, see who owes what." },
+                { icon: "bar_chart", color: C.coral, title: "Business analytics", desc: "Revenue, overdue, pipeline — ask and AI answers." },
+                { icon: "devices", color: C.gold, title: "Web + mobile + dark mode", desc: "Works on any device, any screen, day or night." },
+                { icon: "layers", color: C.coral, title: "40+ AI tools", desc: "From reminders to reports — your AI assistant handles it all." },
+                ].map((f, i) => (
+                <div key={i} style={{
+                background: "rgba(255,255,255,0.04)",
+                border: `3px solid rgba(255,255,255,0.12)`,
+                padding: "24px 20px",
+                boxShadow: shadow(4, 4, C.gold),
+                }}>
+                <div className="flex sm:flex-col items-center sm:items-start gap-3 sm:gap-0 mb-4 sm:mb-0">
+                <div style={{
+                  width: 40, height: 40, background: f.color,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  marginBottom: 0, border: `2px solid ${C.navy}`, flexShrink: 0,
+                }}>
+                  {f.customSvg ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="22" height="22">
+                    <path fill="#fff" d="M476.9 161.1C435 119.1 379.2 96 319.9 96C197.5 96 97.9 195.6 97.9 318C97.9 357.1 108.1 395.3 127.5 429L96 544L213.7 513.1C246.1 530.8 282.6 540.1 319.8 540.1L319.9 540.1C442.2 540.1 544 440.5 544 318.1C544 258.8 518.8 203.1 476.9 161.1zM319.9 502.7C286.7 502.7 254.2 493.8 225.9 477L219.2 473L149.4 491.3L168 423.2L163.6 416.2C145.1 386.8 135.4 352.9 135.4 318C135.4 216.3 218.2 133.5 320 133.5C369.3 133.5 415.6 152.7 450.4 187.6C485.2 222.5 506.6 268.8 506.5 318.1C506.5 419.9 421.6 502.7 319.9 502.7zM421.1 364.5C415.6 361.7 388.3 348.3 383.2 346.5C378.1 344.6 374.4 343.7 370.7 349.3C367 354.9 356.4 367.3 353.1 371.1C349.9 374.8 346.6 375.3 341.1 372.5C308.5 356.2 287.1 343.4 265.6 306.5C259.9 296.7 271.3 297.4 281.9 276.2C283.7 272.5 282.8 269.3 281.4 266.5C280 263.7 268.9 236.4 264.3 225.3C259.8 214.5 255.2 216 251.8 215.8C248.6 215.6 244.9 215.6 241.2 215.6C237.5 215.6 231.5 217 226.4 222.5C221.3 228.1 207 241.5 207 268.8C207 296.1 226.9 322.5 229.6 326.2C232.4 329.9 268.7 385.9 324.4 410C359.6 425.2 373.4 426.5 391 423.9C401.7 422.3 423.8 410.5 428.4 397.5C433 384.5 433 373.4 431.6 371.1C430.3 368.6 426.6 367.2 421.1 364.5z"/>
+                  </svg>
+                  ) : (
+                  <Icon name={f.icon} style={{ color: f.color === C.gold ? C.navy : "#fff", fontSize: 22 }} />
+                  )}
+                </div>
+                <h3 style={{ fontWeight: 900, fontSize: 18, marginBottom: 0, fontFamily: FH }}>{f.title}</h3>
+                </div>
+                <p style={{ opacity: 0.55, fontWeight: 600, fontSize: 13, lineHeight: 1.5, marginTop: 12 }}>{f.desc}</p>
+                </div>
                 ))}
-              </div>
-              <div style={{ padding: 32, border: `3px solid ${C.gold}`, background: "#fff", color: C.navy, transform: "rotate(0.5deg)", boxShadow: shadow(8, 8, C.gold) }}>
-                <h3 style={{ fontSize: 26, fontWeight: 900, marginBottom: 36, color: C.coral, display: "flex", alignItems: "center", gap: 12, fontFamily: FH }}>
-                  <Icon name="stars" /> SellNSettle
-                </h3>
-                {[
-                  { t: "Starts at Hello", d: "Track from first enquiry to final settlement." },
-                  { t: "Chat-based Workflow", d: "Zero forms. Just tell the AI what to do." },
-                  { t: "End-to-End Automation", d: "Enquiry → Follow-up → Quote → Invoice." },
-                ].map((item) => (
-                  <div key={item.t} style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 24 }}>
-                    <Icon name="check_circle" style={{ color: C.teal, fontSize: 28 }} />
-                    <div>
-                      <p style={{ fontWeight: 900, fontSize: 20, marginBottom: 4, fontFamily: FH }}>{item.t}</p>
-                      <p style={{ color: `${C.navy}aa`, fontWeight: 700, fontSize: 14 }}>{item.d}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            </div>
+            <div style={{
+              textAlign: "center", marginTop: 28,
+              padding: "14px 24px",
+              border: "2px dashed rgba(255,255,255,0.2)",
+            }}>
+              <p style={{ fontSize: 14, fontWeight: 600, opacity: 0.5, margin: 0 }}>
+                <span style={{ color: C.gold, fontWeight: 900, opacity: 1 }}>Coming soon</span>
+                {" — "}WhatsApp integration, voice input, aur bahut kuch ✦
+              </p>
             </div>
           </div>
         </section>
@@ -718,9 +747,145 @@ export default function LandingPageClient() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3" style={{ gap: 32 }}>
               {[
-                { emoji: "🏠", bg: "#fce4ec", title: "Interior Designers", desc: "Manage multiple site enquiries, send quotes on-site, track material orders.", sc: C.coral, rot: 0.5, mt: 0 },
-                { emoji: "📸", bg: "#e0f2f1", title: "Photographers", desc: "Track shoot dates, send booking confirmations, collect advances automatically.", sc: C.teal, rot: -0.5, mt: 36 },
-                { emoji: "🎯", bg: "#fff8e1", title: "Freelancers & Coaches", desc: "Record payments instantly, send professional invoices, automate follow-ups.", sc: C.gold, rot: 1, mt: 72 },
+                {
+                  bg: "#fce4ec", title: "Interior Designers",
+                  desc: "Manage multiple site enquiries, send quotes on-site, track material orders.",
+                  sc: C.coral, rot: 0.5, mt: 0,
+                  illustration: (
+                    <svg width="180" height="130" viewBox="0 0 200 170" role="img" aria-label="Room interior">
+                      <rect x="10" y="10" width="180" height="130" fill="#fff" stroke="#0a192f" strokeWidth="3" />
+                      <line x1="10" y1="10" x2="10" y2="140" stroke="#0a192f" strokeWidth="4" />
+                      <line x1="10" y1="140" x2="190" y2="140" stroke="#0a192f" strokeWidth="4" />
+                      <rect x="16" y="120" width="168" height="20" fill="#d4af37" stroke="#0a192f" strokeWidth="2.5" opacity="0.3" />
+                      <g style={{ animation: "rugPattern 4s ease-in-out infinite" }}>
+                        <line x1="40" y1="124" x2="40" y2="136" stroke="#0a192f" strokeWidth="1" opacity="0.3" />
+                        <line x1="60" y1="124" x2="60" y2="136" stroke="#0a192f" strokeWidth="1" opacity="0.3" />
+                        <line x1="80" y1="124" x2="80" y2="136" stroke="#0a192f" strokeWidth="1" opacity="0.3" />
+                        <line x1="100" y1="124" x2="100" y2="136" stroke="#0a192f" strokeWidth="1" opacity="0.3" />
+                        <line x1="120" y1="124" x2="120" y2="136" stroke="#0a192f" strokeWidth="1" opacity="0.3" />
+                        <line x1="140" y1="124" x2="140" y2="136" stroke="#0a192f" strokeWidth="1" opacity="0.3" />
+                        <line x1="160" y1="124" x2="160" y2="136" stroke="#0a192f" strokeWidth="1" opacity="0.3" />
+                      </g>
+                      <g style={{ animation: "sofaCushion 4s ease-in-out infinite" }}>
+                        <rect x="22" y="88" width="80" height="32" fill="#FF6B6B" stroke="#0a192f" strokeWidth="3" />
+                        <rect x="22" y="72" width="80" height="20" fill="#FF6B6B" stroke="#0a192f" strokeWidth="2.5" />
+                        <line x1="49" y1="72" x2="49" y2="92" stroke="#0a192f" strokeWidth="2" />
+                        <line x1="75" y1="72" x2="75" y2="92" stroke="#0a192f" strokeWidth="2" />
+                        <rect x="22" y="72" width="10" height="48" fill="#c0392b" stroke="#0a192f" strokeWidth="2" />
+                        <rect x="92" y="72" width="10" height="48" fill="#c0392b" stroke="#0a192f" strokeWidth="2" />
+                      </g>
+                      <rect x="34" y="78" width="16" height="12" fill="#2EC4B6" stroke="#0a192f" strokeWidth="2" />
+                      <rect x="74" y="80" width="14" height="10" fill="#d4af37" stroke="#0a192f" strokeWidth="2" />
+                      <g style={{ animation: "lampSwing 3.5s ease-in-out infinite", transformOrigin: "145px 10px" }}>
+                        <line x1="145" y1="10" x2="145" y2="42" stroke="#0a192f" strokeWidth="2.5" />
+                        <polygon points="133,42 157,42 152,60 138,60" fill="#d4af37" stroke="#0a192f" strokeWidth="2.5" />
+                        <g style={{ animation: "lampGlow 3.5s ease-in-out infinite" }}>
+                          <polygon points="136,60 154,60 162,88 128,88" fill="#d4af37" opacity="0.2" stroke="none" />
+                        </g>
+                      </g>
+                      <g transform="translate(118, 88)">
+                        <rect x="0" y="0" width="14" height="32" fill="#fff" stroke="#0a192f" strokeWidth="2" />
+                        <g style={{ animation: "bookSlide 5s ease-in-out infinite" }}>
+                          <rect x="2" y="2" width="4" height="28" fill="#2EC4B6" stroke="#0a192f" strokeWidth="1" />
+                        </g>
+                        <rect x="7" y="4" width="3" height="24" fill="#FF6B6B" stroke="#0a192f" strokeWidth="1" />
+                        <rect x="10" y="6" width="3" height="22" fill="#d4af37" stroke="#0a192f" strokeWidth="1" />
+                      </g>
+                      <g style={{ animation: "frameTilt 5s ease-in-out infinite", transformOrigin: "50px 36px" }}>
+                        <rect x="30" y="22" width="40" height="30" fill="#e0f2f1" stroke="#0a192f" strokeWidth="3" />
+                        <line x1="38" y1="44" x2="45" y2="36" stroke="#2EC4B6" strokeWidth="2" />
+                        <line x1="45" y1="36" x2="52" y2="40" stroke="#2EC4B6" strokeWidth="2" />
+                        <line x1="52" y1="40" x2="62" y2="30" stroke="#2EC4B6" strokeWidth="2" />
+                        <circle cx="58" cy="28" r="3" fill="#d4af37" stroke="#0a192f" strokeWidth="1.5" />
+                      </g>
+                      <g style={{ animation: "frameTilt 5s ease-in-out 1s infinite", transformOrigin: "95px 30px" }}>
+                        <rect x="78" y="20" width="22" height="26" fill="#fff8e1" stroke="#0a192f" strokeWidth="2.5" />
+                        <rect x="82" y="24" width="14" height="18" fill="#FF6B6B" opacity="0.3" />
+                        <rect x="84" y="28" width="10" height="10" fill="#2EC4B6" opacity="0.4" />
+                      </g>
+                      <g style={{ animation: "plantSway 3s ease-in-out infinite", transformOrigin: "174px 120px" }}>
+                        <rect x="168" y="104" width="12" height="16" fill="#FF6B6B" stroke="#0a192f" strokeWidth="2" />
+                        <line x1="174" y1="104" x2="174" y2="86" stroke="#0a192f" strokeWidth="2" />
+                        <ellipse cx="168" cy="86" rx="8" ry="10" fill="#2EC4B6" stroke="#0a192f" strokeWidth="2" />
+                        <ellipse cx="180" cy="88" rx="7" ry="8" fill="#2EC4B6" stroke="#0a192f" strokeWidth="2" />
+                        <ellipse cx="174" cy="80" rx="6" ry="9" fill="#2EC4B6" stroke="#0a192f" strokeWidth="2" />
+                      </g>
+                      <g style={{ animation: "swatchPop 3s ease-in-out infinite" }} transform="translate(164, 18)">
+                        <rect x="0" y="0" width="12" height="10" fill="#FF6B6B" stroke="#0a192f" strokeWidth="1.5" />
+                        <rect x="0" y="10" width="12" height="10" fill="#2EC4B6" stroke="#0a192f" strokeWidth="1.5" />
+                        <rect x="0" y="20" width="12" height="10" fill="#d4af37" stroke="#0a192f" strokeWidth="1.5" />
+                      </g>
+                      <g style={{ animation: "pencilDraw 3s ease-in-out infinite", transformOrigin: "16px 155px" }} transform="translate(10, 148)">
+                        <rect x="0" y="0" width="28" height="6" fill="#d4af37" stroke="#0a192f" strokeWidth="1.5" />
+                        <polygon points="28,0 34,3 28,6" fill="#0a192f" />
+                        <rect x="0" y="0" width="6" height="6" fill="#FF6B6B" stroke="#0a192f" strokeWidth="1" />
+                      </g>
+                    </svg>
+                  ),
+                },
+                {
+                  bg: "#e0f2f1", title: "Photographers",
+                  desc: "Track shoot dates, send booking confirmations, collect advances automatically.",
+                  sc: C.teal, rot: -0.5, mt: 36,
+                  illustration: (
+                    <svg width="180" height="130" viewBox="0 0 160 140" role="img" aria-label="Camera with flash">
+                      <g style={{ animation: "camBody 3.5s ease-in-out infinite" }}>
+                        <rect x="28" y="42" width="104" height="72" fill="#0a192f" stroke="#0a192f" strokeWidth="4" />
+                        <rect x="50" y="30" width="36" height="16" fill="#0a192f" stroke="#0a192f" strokeWidth="3" />
+                        <polygon points="86,38 96,30 96,46" fill="#0a192f" />
+                        <circle cx="80" cy="78" r="26" fill="#2EC4B6" stroke="#d4af37" strokeWidth="4" />
+                        <g style={{ animation: "camShutter 3.5s ease-in-out infinite" }}>
+                          <circle cx="80" cy="78" r="16" fill="#fff" stroke="#0a192f" strokeWidth="3" />
+                          <circle cx="80" cy="78" r="8" fill="#0a192f" />
+                          <circle cx="76" cy="74" r="3" fill="#fff" opacity="0.7" />
+                        </g>
+                        <rect x="102" y="48" width="14" height="10" fill="#FF6B6B" stroke="#0a192f" strokeWidth="2" />
+                        <circle cx="46" cy="50" r="5" fill="#d4af37" stroke="#0a192f" strokeWidth="2" />
+                      </g>
+                      <g style={{ animation: "camFlash 3.5s ease-in-out infinite" }}>
+                        <polygon points="80,8 76,26 84,26" fill="#d4af37" stroke="#0a192f" strokeWidth="2" />
+                        <polygon points="60,14 68,28 56,24" fill="#d4af37" stroke="#0a192f" strokeWidth="1.5" />
+                        <polygon points="100,14 92,28 104,24" fill="#d4af37" stroke="#0a192f" strokeWidth="1.5" />
+                      </g>
+                      <g style={{ animation: "camStar1 3.5s ease-in-out infinite" }} transform="translate(130,24)">
+                        <polygon points="0,-8 2,-2 8,-2 3,2 5,8 0,4 -5,8 -3,2 -8,-2 -2,-2" fill="#FF6B6B" stroke="#0a192f" strokeWidth="1.5" />
+                      </g>
+                      <g style={{ animation: "camHeart 2s ease-in-out infinite" }} transform="translate(140,60)">
+                        <path d="M0,4 C0,0 -6,-4 -6,0 C-6,4 0,10 0,10 C0,10 6,4 6,0 C6,-4 0,0 0,4Z" fill="#FF6B6B" stroke="#0a192f" strokeWidth="1.5" />
+                      </g>
+                    </svg>
+                  ),
+                },
+                {
+                  bg: "#fff8e1", title: "Freelancers & Coaches",
+                  desc: "Record payments instantly, send professional invoices, automate follow-ups.",
+                  sc: C.gold, rot: 1, mt: 72,
+                  illustration: (
+                    <svg width="180" height="130" viewBox="0 0 160 140" role="img" aria-label="Target with arrow">
+                      <circle cx="80" cy="70" r="44" fill="#fff" stroke="#0a192f" strokeWidth="4" />
+                      <circle cx="80" cy="70" r="32" fill="#FF6B6B" stroke="#0a192f" strokeWidth="3" />
+                      <circle cx="80" cy="70" r="20" fill="#fff" stroke="#0a192f" strokeWidth="3" />
+                      <circle cx="80" cy="70" r="10" fill="#FF6B6B" stroke="#0a192f" strokeWidth="2.5" />
+                      <circle cx="80" cy="70" r="3" fill="#0a192f" />
+                      <circle cx="80" cy="70" r="8" fill="none" stroke="#d4af37" strokeWidth="2" style={{ animation: "targetRipple 3s ease-out 0.8s infinite" }} />
+                      <g style={{ animation: "arrowFly 3s ease-out infinite" }}>
+                        <line x1="42" y1="86" x2="78" y2="72" stroke="#0a192f" strokeWidth="3.5" />
+                        <polygon points="80,70 74,66 74,74" fill="#d4af37" stroke="#0a192f" strokeWidth="2" />
+                        <polygon points="40,88 34,82 34,92" fill="#FF6B6B" stroke="#0a192f" strokeWidth="1.5" />
+                        <line x1="34" y1="84" x2="30" y2="82" stroke="#0a192f" strokeWidth="2" />
+                        <line x1="34" y1="90" x2="30" y2="92" stroke="#0a192f" strokeWidth="2" />
+                      </g>
+                      <g style={{ animation: "coinBounce 3s ease-in-out 0.4s infinite", transformOrigin: "138px 20px" }}>
+                        <circle cx="138" cy="20" r="12" fill="#d4af37" stroke="#0a192f" strokeWidth="3" />
+                        <text x="138" y="25" textAnchor="middle" fill="#0a192f" fontSize="14" fontWeight="900">₹</text>
+                      </g>
+                      <g style={{ animation: "checkPop 3s ease-out infinite", transformOrigin: "22px 20px" }}>
+                        <rect x="10" y="8" width="24" height="24" fill="#2EC4B6" stroke="#0a192f" strokeWidth="3" />
+                        <polyline points="16,20 20,26 30,14" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="square" />
+                      </g>
+                    </svg>
+                  ),
+                },
               ].map((p) => (
                 <div key={p.title} className="group persona-stagger">
                   <div
@@ -736,10 +901,12 @@ export default function LandingPageClient() {
                       className="transition-transform duration-500 group-hover:scale-110"
                       style={{
                         height: 200, background: p.bg,
-                        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 64,
+                        display: "flex", alignItems: "center", justifyContent: "center",
                       }}
                       role="img" aria-label={p.title}
-                    >{p.emoji}</div>
+                    >
+                      {p.illustration}
+                    </div>
                     <div style={{ padding: "20px 24px", background: "#fff", borderTop: `4px solid ${C.navy}` }}>
                       <h3 style={{ fontSize: 24, fontWeight: 900, fontStyle: "italic", fontFamily: FH, marginBottom: 8 }}>{p.title}</h3>
                       <p style={{ color: `${C.navy}aa`, fontWeight: 600, fontSize: 13, lineHeight: 1.4 }}>{p.desc}</p>
