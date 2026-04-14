@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -18,16 +19,28 @@ export function ChatMarkdown({ content }: ChatMarkdownProps) {
         h3: ({ children }) => <p className="mb-1.5 font-semibold last:mb-0">{children}</p>,
         strong: ({ children }) => <strong className="font-semibold text-inherit">{children}</strong>,
         em: ({ children }) => <em className="italic">{children}</em>,
-        a: ({ href, children }) => (
-          <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sky-700 underline underline-offset-2 hover:text-sky-800 dark:text-sky-300 dark:hover:text-sky-200"
-          >
-            {children}
-          </a>
-        ),
+        a: ({ href, children }) => {
+          const linkClass =
+            "text-sky-700 underline underline-offset-2 hover:text-sky-800 dark:text-sky-300 dark:hover:text-sky-200";
+          const isInternal = typeof href === "string" && href.startsWith("/");
+          if (isInternal) {
+            return (
+              <Link href={href} className={linkClass}>
+                {children}
+              </Link>
+            );
+          }
+          return (
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={linkClass}
+            >
+              {children}
+            </a>
+          );
+        },
         code: ({ children }) => (
           <code className="rounded bg-black/8 px-1 py-0.5 text-[11px] font-semibold font-mono text-sky-800 dark:bg-card/10 dark:text-sky-200">
             {children}
