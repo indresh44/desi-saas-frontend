@@ -72,7 +72,8 @@ const posts = [
 
 export default function BlogPage() {
   return (
-    <main className="max-w-4xl mx-auto px-6 py-24">
+    <div className="bg-white text-zinc-900 min-h-screen">
+      <main className="max-w-4xl mx-auto px-6 py-24">
       <h1 className="text-4xl font-extrabold text-zinc-900 mb-4 tracking-tight font-[var(--font-plus-jakarta)]">
         Blog
       </h1>
@@ -105,6 +106,7 @@ export default function BlogPage() {
           </Link>
         ))}
       </div>
-    </main>
+      </main>
+    </div>
   );
 }
