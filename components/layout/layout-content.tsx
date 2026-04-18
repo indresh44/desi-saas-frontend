@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { useAuth } from "@/lib/auth/auth-context";
 
-const PUBLIC_ROUTES = ["/", "/login", "/register", "/blog"];
+const PUBLIC_ROUTES = ["/", "/login", "/register", "/blog", "/privacy-policy", "/terms-and-conditions"];
 const FULL_SCREEN_ROUTES = ["/onboarding"];
 
 // Public invoice view: /invoices/{uuid}/filename.pdf
