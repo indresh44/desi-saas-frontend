@@ -42,7 +42,7 @@ export function FooterSection() {
           </li>
           <li>
             <a
-              href="#"
+              href="/privacy-policy"
               className="text-xs text-white/40 hover:text-white/75 no-underline transition-colors"
             >
               Privacy
@@ -50,7 +50,7 @@ export function FooterSection() {
           </li>
           <li>
             <a
-              href="#"
+              href="/terms-and-conditions"
               className="text-xs text-white/40 hover:text-white/75 no-underline transition-colors"
             >
               Terms

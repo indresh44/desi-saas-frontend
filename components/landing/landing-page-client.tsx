@@ -1012,15 +1012,12 @@ export default function LandingPageClient() {
           <div className="md:col-span-7 grid grid-cols-2 md:grid-cols-3" style={{ gap: 32 }}>
             <div>
               <h4 style={{ fontWeight: 900, marginBottom: 20, letterSpacing: 2, textTransform: "uppercase", fontSize: 15, borderBottom: `4px solid ${C.coral}`, display: "inline-block", paddingBottom: 4, fontFamily: FH }}>Company</h4>
-              {["Privacy Policy", "Terms of Service"].map((l) => (
-                <p key={l} style={{ color: `${C.navy}99`, fontWeight: 700, marginBottom: 12, cursor: "pointer", fontSize: 14 }}>{l}</p>
-              ))}
+              <Link href="/privacy-policy" style={{ display: "block", color: `${C.navy}99`, fontWeight: 700, marginBottom: 12, cursor: "pointer", fontSize: 14, textDecoration: "none" }}>Privacy Policy</Link>
+              <Link href="/terms-and-conditions" style={{ display: "block", color: `${C.navy}99`, fontWeight: 700, marginBottom: 12, cursor: "pointer", fontSize: 14, textDecoration: "none" }}>Terms of Service</Link>
             </div>
             <div>
               <h4 style={{ fontWeight: 900, marginBottom: 20, letterSpacing: 2, textTransform: "uppercase", fontSize: 15, borderBottom: `4px solid ${C.teal}`, display: "inline-block", paddingBottom: 4, fontFamily: FH }}>Support</h4>
-              {["Contact Us", "Help Center"].map((l) => (
-                <p key={l} style={{ color: `${C.navy}99`, fontWeight: 700, marginBottom: 12, cursor: "pointer", fontSize: 14 }}>{l}</p>
-              ))}
+              <a href="mailto:support@sellnsettle.com" style={{ display: "block", color: `${C.navy}99`, fontWeight: 700, marginBottom: 12, cursor: "pointer", fontSize: 14, textDecoration: "none" }}>Contact Us</a>
             </div>
           </div>
         </div>
