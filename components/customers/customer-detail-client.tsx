@@ -9,19 +9,16 @@ import { Button } from "@/components/ui/button";
 import { fetchCustomerSummary, updateCustomer } from "@/lib/api/customers";
 import { fetchInvoices } from "@/lib/api/invoices";
 import { fetchLeads } from "@/lib/api/leads";
-import { fetchMeetings, updateMeeting } from "@/lib/api/meetings";
 import type { CustomerSummary } from "@/lib/types/customer";
 import type { Invoice, InvoiceStatus } from "@/lib/types/invoice";
 import type { Lead } from "@/lib/types/lead";
-import type { Meeting } from "@/lib/types/meeting";
 
-type TabKey = "overview" | "leads" | "invoices" | "meetings";
+type TabKey = "overview" | "leads" | "invoices";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "overview", label: "Overview" },
   { key: "leads", label: "Leads" },
   { key: "invoices", label: "Invoices" },
-  { key: "meetings", label: "Meetings" },
 ];
 
 function formatRupees(value: number): string {
@@ -52,13 +49,6 @@ function normalizePhone(phone: string): string {
   return phone.replace(/\D/g, "");
 }
 
-function getMeetingStatusClass(status: Meeting["status"]): string {
-  if (status === "scheduled") return "bg-blue-50 text-blue-700";
-  if (status === "completed") return "bg-green-50 text-green-700";
-  if (status === "cancelled") return "bg-muted text-muted-foreground";
-  return "bg-red-50 text-red-600";
-}
-
 function isActiveLead(lead: Lead): boolean {
   const stageName = (lead.stageName ?? "").toLowerCase();
   if (!stageName) {
@@ -78,7 +68,6 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [summary, setSummary] = useState<CustomerSummary | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [pendingInvoices, setPendingInvoices] = useState<Invoice[]>([]);
   const [invoiceStatusPreset, setInvoiceStatusPreset] = useState<"all" | InvoiceStatus>("all");
 
@@ -95,7 +84,7 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
 
   useEffect(() => {
     const tab = searchParams.get("tab");
-    if (tab === "overview" || tab === "leads" || tab === "invoices" || tab === "meetings") {
+    if (tab === "overview" || tab === "leads" || tab === "invoices") {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -112,16 +101,14 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
     setErrorMessage(null);
 
     try {
-      const [summaryData, leadsData, meetingsData, invoicesData] = await Promise.all([
+      const [summaryData, leadsData, invoicesData] = await Promise.all([
         fetchCustomerSummary(customerId),
         fetchLeads({ customer_id: customerId }),
-        fetchMeetings({ customer_id: customerId, from_date: "2020-01-01", limit: 100, offset: 0 }),
         fetchInvoices({ customer_id: customerId, limit: 100, offset: 0 }),
       ]);
 
       setSummary(summaryData);
       setLeads(leadsData);
-      setMeetings(meetingsData.meetings);
       setPendingInvoices(invoicesData.items.filter((invoice) => isPendingInvoice(invoice.status)).slice(0, 5));
     } catch (error) {
       if (
@@ -144,17 +131,6 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
   }, [loadData]);
 
   const activeLeads = useMemo(() => leads.filter((lead) => isActiveLead(lead)), [leads]);
-  const upcomingMeetings = useMemo(
-    () =>
-      meetings
-        .filter(
-          (meeting) =>
-            meeting.status === "scheduled" &&
-            new Date(meeting.scheduledAt).getTime() >= Date.now()
-        )
-        .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()),
-    [meetings]
-  );
 
   const startEdit = () => {
     if (!summary) {
@@ -199,15 +175,6 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
       }
     } finally {
       setIsSavingCustomer(false);
-    }
-  };
-
-  const updateMeetingStatus = async (meetingId: string, status: Meeting["status"]) => {
-    try {
-      await updateMeeting(meetingId, { status });
-      await loadData();
-    } catch {
-      setErrorMessage("Unable to update meeting status.");
     }
   };
 
@@ -305,15 +272,6 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
           >
             <p className="text-lg font-semibold text-primary">{summary.activeLeads} active</p>
             <p className="text-xs text-muted-foreground">Leads ({summary.totalLeads} total)</p>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => switchTab("meetings")}
-            className="rounded-lg border bg-muted px-3 py-3 text-left"
-          >
-            <p className="text-lg font-semibold text-primary">{summary.upcomingMeetings} upcoming</p>
-            <p className="text-xs text-muted-foreground">Meetings</p>
           </button>
         </div>
       </header>
@@ -426,24 +384,6 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
             )}
           </section>
 
-          <section className="rounded-xl border bg-card p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">Upcoming Meetings</h3>
-              <button type="button" className="text-xs text-primary hover:underline" onClick={() => switchTab("meetings")}>View All</button>
-            </div>
-            {upcomingMeetings.length ? (
-              <div className="space-y-2">
-                {upcomingMeetings.slice(0, 3).map((meeting) => (
-                  <div key={meeting.id} className="rounded-lg border border-border bg-muted px-3 py-2">
-                    <p className="text-sm font-medium text-primary">{meeting.title}</p>
-                    <p className="text-xs text-muted-foreground">{formatDateTime(meeting.scheduledAt)}  |  {meeting.durationMinutes} min</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">No upcoming meetings.</p>
-            )}
-          </section>
         </div>
       ) : null}
 
@@ -473,52 +413,6 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
           showSummaryBar={true}
           initialStatusFilter={invoiceStatusPreset}
         />
-      ) : null}
-
-      {activeTab === "meetings" ? (
-        <section className="space-y-3 rounded-xl border bg-card p-4">
-          {meetings.length ? (
-            <div className="space-y-2">
-              {meetings
-                .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
-                .map((meeting) => (
-                  <div key={meeting.id} className="rounded-lg border px-3 py-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-semibold text-primary">{meeting.title}</p>
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getMeetingStatusClass(meeting.status)}`}>
-                        {meeting.status}
-                      </span>
-                      <span className="text-xs text-muted-foreground">{formatDateTime(meeting.scheduledAt)}</span>
-                    </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                      <span>{meeting.durationMinutes} min</span>
-                      {meeting.notes ? <span>{meeting.notes}</span> : null}
-                    </div>
-                    {meeting.status === "scheduled" ? (
-                      <div className="mt-2 flex items-center gap-3 border-t border-border pt-2">
-                        <button
-                          type="button"
-                          className="text-xs text-green-600 hover:underline"
-                          onClick={() => void updateMeetingStatus(meeting.id, "completed")}
-                        >
-                          Mark done
-                        </button>
-                        <button
-                          type="button"
-                          className="text-xs text-muted-foreground hover:underline"
-                          onClick={() => void updateMeetingStatus(meeting.id, "cancelled")}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    ) : null}
-                  </div>
-                ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">No meetings found for this customer.</p>
-          )}
-        </section>
       ) : null}
 
       {isEditOpen ? (

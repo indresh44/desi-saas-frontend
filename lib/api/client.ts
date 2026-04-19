@@ -121,11 +121,26 @@ export async function apiClient<T>(
     let errorMessage = fallbackMessage;
 
     try {
-      const errorBody = (await parseJsonResponse<{ message?: string; detail?: string }>(
-        response
-      )) ?? { message: undefined, detail: undefined };
-      if (errorBody.message || errorBody.detail) {
-        errorMessage = errorBody.message || errorBody.detail || fallbackMessage;
+      const errorBody = (await parseJsonResponse<{
+        message?: string;
+        detail?: string | Array<{ loc?: unknown[]; msg?: string; type?: string }>;
+      }>(response)) ?? { message: undefined, detail: undefined };
+
+      if (typeof errorBody.message === "string" && errorBody.message) {
+        errorMessage = errorBody.message;
+      } else if (typeof errorBody.detail === "string" && errorBody.detail) {
+        errorMessage = errorBody.detail;
+      } else if (Array.isArray(errorBody.detail) && errorBody.detail.length > 0) {
+        // Pydantic validation errors come as an array of { loc, msg, type }
+        errorMessage = errorBody.detail
+          .map((item) => {
+            const field = Array.isArray(item.loc)
+              ? item.loc.filter((part) => part !== "body").join(".")
+              : "";
+            const msg = typeof item.msg === "string" ? item.msg : "Invalid value";
+            return field ? `${field}: ${msg}` : msg;
+          })
+          .join("; ");
       }
     } catch {
       errorMessage = response.statusText || fallbackMessage;

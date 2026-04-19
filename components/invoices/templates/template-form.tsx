@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { Loader2, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DeliverablesEditor } from "@/components/invoices/templates/deliverables-editor";
 import { searchCatalogItems } from "@/lib/api/catalog-items";
 import {
   createTemplate,
@@ -23,6 +24,7 @@ type LineItem = {
   qty: number;
   unit_price: number;
   gstPercent: number;
+  deliverables: string[];
 };
 
 const UNIT_LABELS: Record<string, string> = {
@@ -52,6 +54,7 @@ function emptyRow(): LineItem {
     qty: 1,
     unit_price: 0,
     gstPercent: 0,
+    deliverables: [],
   };
 }
 
@@ -74,6 +77,7 @@ export function TemplateForm({ templateId }: Props) {
   const [items, setItems] = useState<LineItem[]>([emptyRow()]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 
   // catalog search
   const nameRefs = useRef<Record<string, HTMLElement | null>>({});
@@ -106,6 +110,7 @@ export function TemplateForm({ templateId }: Props) {
                 qty: it.quantity,
                 unit_price: it.unitPrice,
                 gstPercent: it.gstPercent,
+                deliverables: it.deliverables ?? [],
               }))
             : [emptyRow()]
         );
@@ -222,6 +227,7 @@ export function TemplateForm({ templateId }: Props) {
       unit: catalogUnitLabel(catalog),
       unit_price: catalog.defaultRate,
       gstPercent: catalog.gstPercent,
+      deliverables: Array.isArray(catalog.deliverables) ? [...catalog.deliverables] : [],
     });
     setSearchOpen(false);
     setResults([]);
@@ -248,6 +254,7 @@ export function TemplateForm({ templateId }: Props) {
       quantity: it.qty,
       unit_price: it.unit_price,
       gst_percent: it.gstPercent,
+      deliverables: it.deliverables.length > 0 ? it.deliverables : null,
       sort_order: idx,
     }));
 
@@ -344,7 +351,8 @@ export function TemplateForm({ templateId }: Props) {
                   min="1"
                   step="1"
                   className="mt-1 w-full rounded-lg border bg-background px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  value={item.qty}
+                  value={item.qty || ""}
+                  onFocus={(e) => e.currentTarget.select()}
                   onChange={(e) => updateItem(item.id, { qty: Number(e.target.value) || 0 })}
                 />
               </div>
@@ -356,6 +364,7 @@ export function TemplateForm({ templateId }: Props) {
                   step="1"
                   className="mt-1 w-full rounded-lg border bg-background px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                   value={item.unit_price || ""}
+                  onFocus={(e) => e.currentTarget.select()}
                   onChange={(e) => updateItem(item.id, { unit_price: Number(e.target.value) || 0 })}
                 />
               </div>
@@ -367,12 +376,27 @@ export function TemplateForm({ templateId }: Props) {
                   max="28"
                   step="1"
                   className="mt-1 w-full rounded-lg border bg-background px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  value={item.gstPercent}
+                  value={item.gstPercent || ""}
+                  onFocus={(e) => e.currentTarget.select()}
                   onChange={(e) => updateItem(item.id, { gstPercent: Number(e.target.value) || 0 })}
                 />
               </div>
             </div>
             <div className="flex items-center justify-between pt-1">
+              <button
+                type="button"
+                onClick={() =>
+                  setExpandedRowId(expandedRowId === item.id ? null : item.id)
+                }
+                className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+              >
+                {expandedRowId === item.id ? (
+                  <ChevronDown className="h-3.5 w-3.5" />
+                ) : (
+                  <ChevronRight className="h-3.5 w-3.5" />
+                )}
+                Deliverables{item.deliverables.length > 0 ? ` (${item.deliverables.length})` : ""}
+              </button>
               <span className="text-sm font-semibold text-foreground">
                 Total: ₹{formatRupees(item.qty * item.unit_price)}
               </span>
@@ -387,6 +411,14 @@ export function TemplateForm({ templateId }: Props) {
                 </button>
               ) : null}
             </div>
+            {expandedRowId === item.id ? (
+              <div className="rounded-lg border border-border/50 bg-background/60 p-2">
+                <DeliverablesEditor
+                  deliverables={item.deliverables}
+                  onChange={(next) => updateItem(item.id, { deliverables: next })}
+                />
+              </div>
+            ) : null}
           </div>
         ))}
       </div>
@@ -403,12 +435,13 @@ export function TemplateForm({ templateId }: Props) {
               <th className="w-[12%] px-2 py-2 text-left font-medium">Unit Price (₹)</th>
               <th className="w-[8%] px-2 py-2 text-left font-medium">GST %</th>
               <th className="w-[12%] px-2 py-2 text-right font-medium">Total</th>
-              <th className="w-[28px] px-1 py-2" />
+              <th className="w-[64px] px-1 py-2" />
             </tr>
           </thead>
           <tbody>
             {items.map((item) => (
-              <tr key={item.id} className="border-b align-top last:border-b-0">
+              <Fragment key={item.id}>
+              <tr className="border-b align-top">
                 <td
                   className="px-2 py-1"
                   ref={(el) => { nameRefs.current[item.id] = el; }}
@@ -446,7 +479,8 @@ export function TemplateForm({ templateId }: Props) {
                     min="1"
                     step="1"
                     className={`${cellCls} w-12`}
-                    value={item.qty}
+                    value={item.qty || ""}
+                    onFocus={(e) => e.currentTarget.select()}
                     onChange={(e) => updateItem(item.id, { qty: Number(e.target.value) || 0 })}
                   />
                 </td>
@@ -457,6 +491,7 @@ export function TemplateForm({ templateId }: Props) {
                     step="1"
                     className={`${cellCls} w-20`}
                     value={item.unit_price || ""}
+                    onFocus={(e) => e.currentTarget.select()}
                     onChange={(e) => updateItem(item.id, { unit_price: Number(e.target.value) || 0 })}
                   />
                 </td>
@@ -467,7 +502,8 @@ export function TemplateForm({ templateId }: Props) {
                     max="28"
                     step="1"
                     className={`${cellCls} w-11`}
-                    value={item.gstPercent}
+                    value={item.gstPercent || ""}
+                    onFocus={(e) => e.currentTarget.select()}
                     onChange={(e) => updateItem(item.id, { gstPercent: Number(e.target.value) || 0 })}
                   />
                 </td>
@@ -475,18 +511,50 @@ export function TemplateForm({ templateId }: Props) {
                   ₹{formatRupees(item.qty * item.unit_price)}
                 </td>
                 <td className="py-1 text-center">
-                  {items.length > 1 ? (
+                  <div className="inline-flex items-center gap-1">
                     <button
                       type="button"
-                      onClick={() => removeItem(item.id)}
-                      className="p-0.5 text-lg leading-none text-muted-foreground/50 hover:text-destructive"
-                      aria-label="Remove line item"
+                      onClick={() =>
+                        setExpandedRowId(expandedRowId === item.id ? null : item.id)
+                      }
+                      className={`p-0.5 text-muted-foreground hover:text-foreground ${item.deliverables.length > 0 ? "text-foreground" : ""}`}
+                      aria-label="Toggle deliverables"
+                      title={
+                        item.deliverables.length > 0
+                          ? `${item.deliverables.length} deliverable${item.deliverables.length === 1 ? "" : "s"}`
+                          : "Add deliverables"
+                      }
                     >
-                      ×
+                      {expandedRowId === item.id ? (
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      ) : (
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      )}
                     </button>
-                  ) : null}
+                    {items.length > 1 ? (
+                      <button
+                        type="button"
+                        onClick={() => removeItem(item.id)}
+                        className="p-0.5 text-lg leading-none text-muted-foreground/50 hover:text-destructive"
+                        aria-label="Remove line item"
+                      >
+                        ×
+                      </button>
+                    ) : null}
+                  </div>
                 </td>
               </tr>
+              {expandedRowId === item.id ? (
+                <tr className="border-b last:border-b-0">
+                  <td colSpan={8} className="bg-muted/30 px-4 py-3">
+                    <DeliverablesEditor
+                      deliverables={item.deliverables}
+                      onChange={(next) => updateItem(item.id, { deliverables: next })}
+                    />
+                  </td>
+                </tr>
+              ) : null}
+              </Fragment>
             ))}
           </tbody>
         </table>

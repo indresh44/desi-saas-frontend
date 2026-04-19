@@ -545,7 +545,8 @@ export function CreateInvoiceModal({
                         min="1"
                         step="1"
                         className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-                        value={item.qty}
+                        value={item.qty || ""}
+                        onFocus={(event) => event.currentTarget.select()}
                         onChange={(event) => updateItem(item.id, { qty: Number(event.target.value) || 0 })}
                       />
                     </div>
@@ -557,6 +558,7 @@ export function CreateInvoiceModal({
                         step="1"
                         className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                         value={item.unit_price || ""}
+                        onFocus={(event) => event.currentTarget.select()}
                         onChange={(event) => updateItem(item.id, { unit_price: Number(event.target.value) || 0 })}
                       />
                     </div>
@@ -568,7 +570,8 @@ export function CreateInvoiceModal({
                         max="28"
                         step="1"
                         className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-                        value={item.gstPercent}
+                        value={item.gstPercent || ""}
+                        onFocus={(event) => event.currentTarget.select()}
                         onChange={(event) => updateItem(item.id, { gstPercent: Number(event.target.value) || 0 })}
                       />
                     </div>
@@ -659,7 +662,8 @@ export function CreateInvoiceModal({
                             min="1"
                             step="1"
                             className={`${cellInputCls} w-12`}
-                            value={item.qty}
+                            value={item.qty || ""}
+                            onFocus={(event) => event.currentTarget.select()}
                             onChange={(event) =>
                               updateItem(item.id, { qty: Number(event.target.value) || 0 })
                             }
@@ -672,6 +676,7 @@ export function CreateInvoiceModal({
                             step="1"
                             className={`${cellInputCls} w-20`}
                             value={item.unit_price || ""}
+                            onFocus={(event) => event.currentTarget.select()}
                             onChange={(event) =>
                               updateItem(item.id, { unit_price: Number(event.target.value) || 0 })
                             }
@@ -684,7 +689,8 @@ export function CreateInvoiceModal({
                             max="28"
                             step="1"
                             className={`${cellInputCls} w-11`}
-                            value={item.gstPercent}
+                            value={item.gstPercent || ""}
+                            onFocus={(event) => event.currentTarget.select()}
                             onChange={(event) =>
                               updateItem(item.id, { gstPercent: Number(event.target.value) || 0 })
                             }
