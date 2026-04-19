@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Loader2, X } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { PricingModeBanner } from "@/components/invoices/templates/pricing-mode-banner";
 import { searchCatalogItems } from "@/lib/api/catalog-items";
+import { fetchTemplatePriced } from "@/lib/api/invoice-templates";
 import { createInvoice, updateInvoice } from "@/lib/api/invoices";
 import type { CatalogItem } from "@/lib/types/catalog-item";
 import type { Invoice, InvoiceItem } from "@/lib/types/invoice";
+import type { PricingMode, TemplatePricedResponse } from "@/lib/types/invoice-template";
 
 type LineItem = {
   id: string;
@@ -92,6 +95,8 @@ type Props = {
   onSuccess: () => void;
   onClose: () => void;
   initialInvoice?: Invoice | null;
+  initialTemplateId?: string | null;
+  onSaveAsTemplate?: () => void;
 };
 
 function createLineItemFromInvoiceItem(item: InvoiceItem): LineItem {
@@ -107,7 +112,27 @@ function createLineItemFromInvoiceItem(item: InvoiceItem): LineItem {
   };
 }
 
-export function CreateInvoiceModal({ leadId, onSuccess, onClose, initialInvoice }: Props) {
+function lineItemsFromPricedTemplate(priced: TemplatePricedResponse): LineItem[] {
+  return priced.items.map((item) => ({
+    id: crypto.randomUUID(),
+    catalogItemId: item.catalog_item_id,
+    name: item.name,
+    description: item.description,
+    unit: item.unit,
+    qty: item.quantity,
+    unit_price: item.unit_price,
+    gstPercent: item.gst_percent,
+  }));
+}
+
+export function CreateInvoiceModal({
+  leadId,
+  onSuccess,
+  onClose,
+  initialInvoice,
+  initialTemplateId,
+  onSaveAsTemplate,
+}: Props) {
   const isEditMode = !!initialInvoice;
   const [items, setItems] = useState<LineItem[]>(() =>
     initialInvoice?.items?.length
@@ -117,6 +142,9 @@ export function CreateInvoiceModal({ leadId, onSuccess, onClose, initialInvoice 
   const [dueDate, setDueDate] = useState(initialInvoice?.dueDate ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [templatePriced, setTemplatePriced] = useState<TemplatePricedResponse | null>(null);
+  const [pricingMode, setPricingMode] = useState<PricingMode>("template");
+  const [pricingLoading, setPricingLoading] = useState(false);
   const [activeSearchRowId, setActiveSearchRowId] = useState<string | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<CatalogItem[]>([]);
@@ -146,6 +174,56 @@ export function CreateInvoiceModal({ leadId, onSuccess, onClose, initialInvoice 
     setSearchError(null);
     setDropdownAnchor(null);
   }, [initialInvoice]);
+
+  useEffect(() => {
+    if (!initialTemplateId || initialInvoice) {
+      setTemplatePriced(null);
+      return;
+    }
+    let cancelled = false;
+    setPricingLoading(true);
+    setPricingMode("template");
+    fetchTemplatePriced(initialTemplateId, "template")
+      .then((priced) => {
+        if (cancelled) return;
+        setTemplatePriced(priced);
+        setItems(lineItemsFromPricedTemplate(priced));
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        const msg =
+          typeof err === "object" && err && "message" in err
+            ? String((err as { message: unknown }).message)
+            : "Unable to load template.";
+        setError(msg);
+      })
+      .finally(() => {
+        if (!cancelled) setPricingLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [initialTemplateId, initialInvoice]);
+
+  const togglePricingMode = useCallback(async () => {
+    if (!initialTemplateId || !templatePriced) return;
+    const nextMode: PricingMode = pricingMode === "template" ? "catalog" : "template";
+    setPricingLoading(true);
+    try {
+      const priced = await fetchTemplatePriced(initialTemplateId, nextMode);
+      setTemplatePriced(priced);
+      setPricingMode(nextMode);
+      setItems(lineItemsFromPricedTemplate(priced));
+    } catch (err) {
+      const msg =
+        typeof err === "object" && err && "message" in err
+          ? String((err as { message: unknown }).message)
+          : "Unable to refresh prices.";
+      setError(msg);
+    } finally {
+      setPricingLoading(false);
+    }
+  }, [initialTemplateId, pricingMode, templatePriced]);
 
   const updateDropdownAnchor = (id: string) => {
     const cell = nameCellRefs.current[id];
@@ -395,6 +473,15 @@ export function CreateInvoiceModal({ leadId, onSuccess, onClose, initialInvoice 
           </div>
 
           <div className="flex-1 space-y-4 overflow-y-auto p-4">
+            {templatePriced ? (
+              <PricingModeBanner
+                templateName={templatePriced.template_name}
+                templateSavedAt={templatePriced.template_saved_at}
+                mode={pricingMode}
+                onToggle={() => void togglePricingMode()}
+                disabled={pricingLoading}
+              />
+            ) : null}
             {error ? (
               <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
                 {error}
@@ -665,13 +752,22 @@ export function CreateInvoiceModal({ leadId, onSuccess, onClose, initialInvoice 
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2 border-t border-border px-4 py-3">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="button" onClick={handleSubmit} disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : isEditMode ? "Update Invoice" : "Save Invoice"}
-            </Button>
+          <div className="flex items-center justify-between gap-2 border-t border-border px-4 py-3">
+            <div>
+              {isEditMode && onSaveAsTemplate ? (
+                <Button type="button" variant="outline" onClick={onSaveAsTemplate}>
+                  Save as template
+                </Button>
+              ) : null}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="button" onClick={handleSubmit} disabled={isSubmitting}>
+                {isSubmitting ? "Saving..." : isEditMode ? "Update Invoice" : "Save Invoice"}
+              </Button>
+            </div>
           </div>
         </div>
       </div>

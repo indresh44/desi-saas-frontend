@@ -30,4 +30,10 @@ export const API_ENDPOINTS = {
   customerSummary: (id: string) => `/api/v1/customers/${id}/summary`,
   invoiceById: (id: string) => `/api/v1/invoices/${id}`,
   invoiceItemsById: (id: string) => `/api/v1/invoices/${id}/items`,
+  invoiceTemplates: "/api/v1/invoice-templates",
+  invoiceTemplateById: (id: string) => `/api/v1/invoice-templates/${id}`,
+  invoiceTemplateFromInvoice: (invoiceId: string) =>
+    `/api/v1/invoice-templates/from-invoice/${invoiceId}`,
+  invoiceTemplateDuplicate: (id: string) => `/api/v1/invoice-templates/${id}/duplicate`,
+  invoiceTemplatePriced: (id: string) => `/api/v1/invoice-templates/${id}/priced`,
 } as const;

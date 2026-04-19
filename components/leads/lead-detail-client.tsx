@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   ArrowLeft,
   CheckCircle2,
+  ChevronDown,
   Circle,
   FileText,
   Loader2,
@@ -14,9 +15,17 @@ import {
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { LeadWhatsAppChatDrawer } from "@/components/whatsapp/lead-whatsapp-chat-drawer";
 import { CreateInvoiceModal } from "@/components/leads/create-invoice-modal";
 import { InvoiceCard } from "@/components/leads/invoice-card";
+import { SaveAsTemplateDialog } from "@/components/invoices/templates/save-as-template-dialog";
+import { TemplatePickerDialog } from "@/components/invoices/templates/template-picker-dialog";
 import { LeadNotes } from "@/components/leads/lead-notes";
 import { useLookupMaps } from "@/hooks/use-lookup-maps";
 import { fetchLeads, moveLeadStage, updateLeadNotes } from "@/lib/api/leads";
@@ -124,6 +133,9 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
   // const [isChatOpen, setIsChatOpen] = useState(false);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [pendingTemplateId, setPendingTemplateId] = useState<string | null>(null);
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+  const [saveAsTemplateInvoice, setSaveAsTemplateInvoice] = useState<Invoice | null>(null);
 
   // Activity form
   const [showActivityForm, setShowActivityForm] = useState(false);
@@ -236,12 +248,29 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
 
   const handleCreateInvoice = useCallback(() => {
     setEditingInvoice(null);
+    setPendingTemplateId(null);
+    setIsInvoiceModalOpen(true);
+  }, []);
+
+  const handleCreateFromTemplate = useCallback(() => {
+    setTemplatePickerOpen(true);
+  }, []);
+
+  const handleTemplatePicked = useCallback((templateId: string) => {
+    setTemplatePickerOpen(false);
+    setEditingInvoice(null);
+    setPendingTemplateId(templateId);
     setIsInvoiceModalOpen(true);
   }, []);
 
   const handleEditInvoice = useCallback((invoice: Invoice) => {
     setEditingInvoice(invoice);
+    setPendingTemplateId(null);
     setIsInvoiceModalOpen(true);
+  }, []);
+
+  const handleSaveInvoiceAsTemplate = useCallback((invoice: Invoice) => {
+    setSaveAsTemplateInvoice(invoice);
   }, []);
 
   const handleSaveNotes = useCallback(async (notes: string) => {
@@ -551,15 +580,36 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold text-primary">Invoices</h2>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={handleCreateInvoice}
-            >
-              <Plus className="h-3.5 w-3.5" />
-              New Invoice
-            </Button>
+            <div className="inline-flex items-center gap-0.5">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleCreateInvoice}
+                className="rounded-r-none"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                New Invoice
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    aria-label="More invoice options"
+                    className="rounded-l-none border-l-0 px-2"
+                  >
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onSelect={handleCreateFromTemplate}>
+                    Start from template...
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
           {invoices.length === 0 ? (
@@ -572,6 +622,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
                   invoice={inv}
                   customerName={lead.customerName ?? "Customer"}
                   onEdit={handleEditInvoice}
+                  onSaveAsTemplate={handleSaveInvoiceAsTemplate}
                   onPaymentRecorded={() => {
                     void refreshInvoices();
                   }}
@@ -894,8 +945,33 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
         <CreateInvoiceModal
           leadId={leadId}
           initialInvoice={editingInvoice}
+          initialTemplateId={pendingTemplateId}
           onSuccess={() => void handleInvoiceModalSuccess()}
-          onClose={handleInvoiceModalClose}
+          onClose={() => {
+            handleInvoiceModalClose();
+            setPendingTemplateId(null);
+          }}
+          onSaveAsTemplate={
+            editingInvoice ? () => setSaveAsTemplateInvoice(editingInvoice) : undefined
+          }
+        />
+      ) : null}
+
+      <TemplatePickerDialog
+        open={templatePickerOpen}
+        title="Start invoice from template"
+        onClose={() => setTemplatePickerOpen(false)}
+        onSelect={(template) => handleTemplatePicked(template.id)}
+      />
+
+      {saveAsTemplateInvoice ? (
+        <SaveAsTemplateDialog
+          open={saveAsTemplateInvoice !== null}
+          invoiceId={saveAsTemplateInvoice.id}
+          invoiceNumber={saveAsTemplateInvoice.invoiceNumber}
+          defaultName={`${lead.title ?? "Template"}`}
+          onClose={() => setSaveAsTemplateInvoice(null)}
+          onSaved={() => setSaveAsTemplateInvoice(null)}
         />
       ) : null}
     </div>

@@ -1,8 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { InvoiceListView } from "@/components/invoices/invoice-list-view";
+import { TemplatesTab } from "@/components/invoices/templates/templates-tab";
+
+type Tab = "invoices" | "templates";
 
 export default function InvoiceListPageClient() {
   const router = useRouter();
@@ -10,14 +13,16 @@ export default function InvoiceListPageClient() {
 
   const customerId = searchParams.get("customer_id") ?? undefined;
   const customerName = searchParams.get("customer_name") ?? "Customer";
+  const initialTab: Tab = searchParams.get("tab") === "templates" ? "templates" : "invoices";
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
 
   const title = useMemo(() => {
-    if (!customerId) {
-      return "Invoices";
-    }
-
+    if (!customerId) return "Invoices";
     return `${customerName}'s Invoices`;
   }, [customerId, customerName]);
+
+  // Customer-filtered views don't show the templates tab (templates aren't per-customer)
+  const showTabs = !customerId;
 
   return (
     <section className="space-y-6">
@@ -39,12 +44,45 @@ export default function InvoiceListPageClient() {
         </div>
       ) : null}
 
-      <InvoiceListView
-        customerId={customerId}
-        showCustomerColumn={!customerId}
-        showFilters={true}
-        showSummaryBar={true}
-      />
+      {showTabs ? (
+        <div className="inline-flex rounded-lg border bg-muted p-1">
+          <button
+            type="button"
+            onClick={() => setActiveTab("invoices")}
+            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+              activeTab === "invoices"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+            aria-pressed={activeTab === "invoices"}
+          >
+            Invoices
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("templates")}
+            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+              activeTab === "templates"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+            aria-pressed={activeTab === "templates"}
+          >
+            Templates
+          </button>
+        </div>
+      ) : null}
+
+      {activeTab === "invoices" || customerId ? (
+        <InvoiceListView
+          customerId={customerId}
+          showCustomerColumn={!customerId}
+          showFilters={true}
+          showSummaryBar={true}
+        />
+      ) : (
+        <TemplatesTab />
+      )}
     </section>
   );
 }

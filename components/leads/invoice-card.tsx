@@ -1,10 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckCircle, ChevronDown, ChevronUp, Download, Loader2, Pencil, Plus, RefreshCw, Share2 } from "lucide-react";
+import { BookmarkPlus, CheckCircle, ChevronDown, ChevronUp, Download, Loader2, MoreVertical, Pencil, Plus, RefreshCw, Share2 } from "lucide-react";
 import { InvoiceItemEnrichment } from "@/components/invoices/invoice-item-enrichment";
 import { PaymentAttachmentPreview } from "@/components/leads/payment-attachment-preview";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { RecordPaymentModal } from "@/components/leads/record-payment-modal";
 import { fetchInvoicePayments, updateInvoiceStatus } from "@/lib/api/invoices";
 import { shareInvoicePdf, buildBrandedInvoiceUrl } from "@/lib/utils/share";
@@ -17,6 +23,7 @@ type Props = {
   onEdit?: (invoice: Invoice) => void;
   onPaymentRecorded: () => void;
   onStatusChanged?: (invoice: Invoice) => void;
+  onSaveAsTemplate?: (invoice: Invoice) => void;
 };
 
 function toSafeNumber(value: unknown): number {
@@ -79,6 +86,7 @@ export function InvoiceCard({
   onEdit,
   onPaymentRecorded,
   onStatusChanged,
+  onSaveAsTemplate,
 }: Props) {
   const { business } = useAuth();
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -358,6 +366,22 @@ export function InvoiceCard({
               </div>
             ) : null}
           </div>
+
+          {onSaveAsTemplate ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button type="button" size="sm" variant="outline" aria-label="More actions">
+                  <MoreVertical className="h-3.5 w-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => onSaveAsTemplate(invoice)}>
+                  <BookmarkPlus className="h-3.5 w-3.5" />
+                  Save as template
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
 
           {shareMessage ? (
             <span className="text-xs text-green-600">{shareMessage}</span>
