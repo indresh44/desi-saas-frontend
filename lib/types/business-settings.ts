@@ -21,6 +21,7 @@ export interface BusinessSettings {
   invoiceNotes: string | null;
   invoiceFooter: string | null;
   preferredLanguage: string;
+  timezone: string;
   createdAt: string;
 }
 
@@ -47,6 +48,7 @@ export interface BusinessSettingsApiResponse {
   invoice_notes: string | null;
   invoice_footer: string | null;
   preferred_language: string;
+  timezone: string;
   created_at: string;
 }
 
@@ -70,6 +72,7 @@ export interface UpdateBusinessSettingsInput {
   invoice_notes?: string;
   invoice_footer?: string;
   preferred_language?: string;
+  timezone?: string;
 }
 
 export function toBusinessSettings(raw: BusinessSettingsApiResponse): BusinessSettings {
@@ -96,6 +99,7 @@ export function toBusinessSettings(raw: BusinessSettingsApiResponse): BusinessSe
     invoiceNotes: raw.invoice_notes,
     invoiceFooter: raw.invoice_footer,
     preferredLanguage: raw.preferred_language ?? "hinglish",
+    timezone: raw.timezone ?? "Asia/Kolkata",
     createdAt: raw.created_at,
   };
 }

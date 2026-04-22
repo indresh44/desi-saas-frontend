@@ -65,7 +65,23 @@ type ProfileForm = {
   gstNumber: string;
   gstMode: "inclusive" | "exclusive" | "";
   preferredLanguage: "hinglish" | "english" | "hindi";
+  timezone: string;
 };
+
+const COMMON_TIMEZONES: { value: string; label: string }[] = [
+  { value: "Asia/Kolkata", label: "India Standard Time (IST)" },
+  { value: "Asia/Dubai", label: "Gulf Standard Time (GST, UAE)" },
+  { value: "Asia/Singapore", label: "Singapore / Malaysia (SGT)" },
+  { value: "Asia/Bangkok", label: "Indochina Time (ICT)" },
+  { value: "Asia/Tokyo", label: "Japan Standard Time (JST)" },
+  { value: "Europe/London", label: "UK (GMT / BST)" },
+  { value: "Europe/Berlin", label: "Central Europe (CET / CEST)" },
+  { value: "America/New_York", label: "US Eastern (EST / EDT)" },
+  { value: "America/Chicago", label: "US Central (CST / CDT)" },
+  { value: "America/Los_Angeles", label: "US Pacific (PST / PDT)" },
+  { value: "Australia/Sydney", label: "Australia Eastern (AEST / AEDT)" },
+  { value: "UTC", label: "UTC" },
+];
 
 type InvoiceForm = {
   invoicePrefix: string;
@@ -90,6 +106,7 @@ function toProfileForm(settings: BusinessSettings): ProfileForm {
     gstNumber: settings.gstNumber ?? "",
     gstMode: settings.gstMode === "inclusive" || settings.gstMode === "exclusive" ? settings.gstMode : "",
     preferredLanguage: settings.preferredLanguage === "english" || settings.preferredLanguage === "hindi" ? settings.preferredLanguage : "hinglish",
+    timezone: settings.timezone || "Asia/Kolkata",
   };
 }
 
@@ -206,6 +223,7 @@ export default function SettingsPageClient() {
     }
     if (profileForm.gstMode !== (settings.gstMode ?? "")) payload.gst_mode = profileForm.gstMode || "exclusive";
     if (profileForm.preferredLanguage !== (settings.preferredLanguage ?? "hinglish")) payload.preferred_language = profileForm.preferredLanguage;
+    if (profileForm.timezone !== (settings.timezone ?? "Asia/Kolkata")) payload.timezone = profileForm.timezone;
 
     if (Object.keys(payload).length === 0) {
       setSuccessMessage("No profile changes to save.");
@@ -454,6 +472,27 @@ export default function SettingsPageClient() {
                 <option value="hinglish">Hinglish (Hindi + English mix)</option>
                 <option value="english">English</option>
                 <option value="hindi">Hindi</option>
+              </select>
+            }
+          />
+
+          <Field
+            label="Time zone"
+            hint="Used for today's follow-ups, dashboard day totals, and activity log dates."
+            input={
+              <select
+                value={profileForm.timezone}
+                onChange={(event) => handleProfileChange("timezone", event.target.value)}
+                className={inputClassName}
+              >
+                {COMMON_TIMEZONES.some((tz) => tz.value === profileForm.timezone) ? null : (
+                  <option value={profileForm.timezone}>{profileForm.timezone}</option>
+                )}
+                {COMMON_TIMEZONES.map((tz) => (
+                  <option key={tz.value} value={tz.value}>
+                    {tz.label} — {tz.value}
+                  </option>
+                ))}
               </select>
             }
           />
@@ -743,10 +782,11 @@ type FieldProps = {
   label: string;
   input: React.ReactNode;
   error?: string;
+  hint?: string;
   required?: boolean;
 };
 
-function Field({ label, input, error, required = false }: FieldProps) {
+function Field({ label, input, error, hint, required = false }: FieldProps) {
   return (
     <label className="block text-sm text-foreground">
       <span className="font-medium">
@@ -754,6 +794,7 @@ function Field({ label, input, error, required = false }: FieldProps) {
         {required ? <span className="ml-1 text-red-600">*</span> : null}
       </span>
       {input}
+      {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
       {error ? <p className="mt-1 text-xs text-red-600">{error}</p> : null}
     </label>
   );

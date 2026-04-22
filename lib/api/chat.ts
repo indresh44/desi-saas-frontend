@@ -266,12 +266,12 @@ function mapConfirmPayload(payload: ChatConfirmRequest): ChatConfirmRequest {
   }
 
   if (payload.action_type === "schedule_followup") {
+    // Send date + time as separate fields. The backend combines them in the
+    // business's configured timezone. Do NOT pre-build scheduled_at here —
+    // JS has no way to know the business's timezone, so any offset we'd
+    // append would be wrong when the user's browser TZ differs.
     const scheduledDate = String(payload.confirmed_data.scheduled_date ?? "");
     const scheduledTime = String(payload.confirmed_data.scheduled_time ?? "");
-    const scheduledAt =
-      scheduledDate && scheduledTime
-        ? `${scheduledDate}T${scheduledTime}:00+00:00`
-        : null;
 
     return {
       ...payload,
@@ -279,7 +279,7 @@ function mapConfirmPayload(payload: ChatConfirmRequest): ChatConfirmRequest {
       confirmed_data: {
         lead_id: payload.confirmed_data.lead_id,
         scheduled_date: scheduledDate,
-        scheduled_at: scheduledAt,
+        scheduled_time: scheduledTime,
         note: payload.confirmed_data.notes ?? "",
       },
     };
