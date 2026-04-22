@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { MessageCircle, Pencil, Plus, Search } from "lucide-react";
+import { MessageCircle, Pencil, Phone, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createCustomer, fetchCustomers, updateCustomer } from "@/lib/api/customers";
 import { fetchCustomerOutstanding } from "@/lib/api/invoices";
@@ -550,13 +550,31 @@ export default function CustomersPageClient() {
                             )}
                           </div>
                         </div>
-                        <div className="mt-3 flex flex-wrap gap-3">
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {customer.phone ? (
+                            <a
+                              href={`tel:${customer.phone}`}
+                              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-100 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/50"
+                            >
+                              <Phone className="h-4 w-4 fill-current" />
+                              Call
+                            </a>
+                          ) : null}
+                          <button
+                            type="button"
+                            onClick={() => handleWhatsApp(customer.phone)}
+                            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50"
+                          >
+                            <MessageCircle className="h-4 w-4 fill-current" />
+                            WhatsApp
+                          </button>
                           <button
                             type="button"
                             onClick={() => handleStartEdit(customer)}
                             className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium text-foreground transition hover:bg-accent disabled:cursor-not-allowed disabled:text-muted-foreground"
                             disabled={isAnotherRowEditing || isSavingEdit}
                           >
+                            <Pencil className="h-4 w-4" />
                             Edit
                           </button>
                           <Link
@@ -565,13 +583,6 @@ export default function CustomersPageClient() {
                           >
                             View Details →
                           </Link>
-                          <button
-                            type="button"
-                            onClick={() => handleWhatsApp(customer.phone)}
-                            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100"
-                          >
-                            WhatsApp
-                          </button>
                         </div>
                       </>
                     )}
@@ -680,6 +691,23 @@ export default function CustomersPageClient() {
                               </>
                             ) : (
                               <>
+                                {customer.phone ? (
+                                  <a
+                                    href={`tel:${customer.phone}`}
+                                    className="inline-flex items-center gap-1 text-sm font-medium text-blue-700 transition hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-200"
+                                  >
+                                    <Phone className="h-4 w-4" />
+                                    Call
+                                  </a>
+                                ) : null}
+                                <button
+                                  type="button"
+                                  onClick={() => handleWhatsApp(customer.phone)}
+                                  className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 transition hover:text-emerald-800 dark:text-emerald-300 dark:hover:text-emerald-200"
+                                >
+                                  <MessageCircle className="h-4 w-4" />
+                                  WhatsApp
+                                </button>
                                 <button
                                   type="button"
                                   onClick={() => handleStartEdit(customer)}
@@ -695,14 +723,6 @@ export default function CustomersPageClient() {
                                 >
                                   View Details -&gt;
                                 </Link>
-                                <button
-                                  type="button"
-                                  onClick={() => handleWhatsApp(customer.phone)}
-                                  className="inline-flex items-center gap-1 text-sm font-medium text-foreground transition hover:text-foreground"
-                                >
-                                  <MessageCircle className="h-4 w-4" />
-                                  WhatsApp
-                                </button>
                               </>
                             )}
                           </div>
