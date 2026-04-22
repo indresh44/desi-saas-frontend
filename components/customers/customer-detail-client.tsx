@@ -224,16 +224,24 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
-              <Button type="button" variant="outline">
-                <MessageCircle className="h-4 w-4" />
-                WhatsApp
+            <a href={callHref}>
+              <Button
+                type="button"
+                variant="outline"
+                className="border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/50 dark:hover:text-blue-200"
+              >
+                <Phone className="h-4 w-4 fill-current" />
+                Call
               </Button>
             </a>
-            <a href={callHref}>
-              <Button type="button" variant="outline">
-                <Phone className="h-4 w-4" />
-                Call
+            <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
+              <Button
+                type="button"
+                variant="outline"
+                className="border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 dark:hover:text-emerald-200"
+              >
+                <MessageCircle className="h-4 w-4 fill-current" />
+                WhatsApp
               </Button>
             </a>
             <Button type="button" variant="outline" onClick={startEdit}>
