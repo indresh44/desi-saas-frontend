@@ -82,7 +82,15 @@ export default function LoginPageClient() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-primary">Password</label>
+              <div className="flex items-baseline justify-between">
+                <label className="text-sm font-medium text-primary">Password</label>
+                <Link
+                  href="/forgot-password"
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <input
                 type="password"
                 {...register("password")}

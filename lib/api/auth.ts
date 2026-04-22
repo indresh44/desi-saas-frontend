@@ -58,3 +58,17 @@ export async function logoutUser(refreshToken: string): Promise<void> {
     // logout should not block user sign-out UX
   }
 }
+
+export async function requestPasswordReset(email: string): Promise<{ message: string }> {
+  return authFetch<{ message: string }>("/password-reset/request", { email });
+}
+
+export async function confirmPasswordReset(
+  token: string,
+  newPassword: string,
+): Promise<{ message: string }> {
+  return authFetch<{ message: string }>("/password-reset/confirm", {
+    token,
+    new_password: newPassword,
+  });
+}

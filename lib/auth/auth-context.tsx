@@ -44,7 +44,7 @@ interface AuthContextValue {
   logout: () => Promise<void>;
 }
 
-const PUBLIC_ROUTES = ["/", "/login", "/register", "/blog", "/onboarding", "/privacy-policy", "/terms-and-conditions"];
+const PUBLIC_ROUTES = ["/", "/login", "/register", "/forgot-password", "/reset-password", "/blog", "/onboarding", "/privacy-policy", "/terms-and-conditions"];
 const AUTH_ONLY_ROUTES = ["/login", "/register"];
 const INVOICE_VIEW_PATTERN = /^\/invoices\/[0-9a-f-]{36}\/.+/;
 
