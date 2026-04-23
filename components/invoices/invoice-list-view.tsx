@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { AddAdjustmentDialog } from "@/components/invoices/add-adjustment-dialog";
 import { ApproveInvoiceDialog } from "@/components/invoices/approve-invoice-dialog";
+import { CancelInvoiceDialog } from "@/components/invoices/cancel-invoice-dialog";
 import { InvoiceItemEnrichment } from "@/components/invoices/invoice-item-enrichment";
 import { PaymentAttachmentPreview } from "@/components/leads/payment-attachment-preview";
 import { RecordPaymentModal } from "@/components/leads/record-payment-modal";
@@ -29,6 +30,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { fetchCustomers } from "@/lib/api/customers";
 import {
+  cancelInvoice,
   deleteInvoiceAdjustment,
   fetchInvoiceAdjustments,
   fetchInvoiceItems,
@@ -67,6 +69,7 @@ const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
   { value: "approved", label: "Approved" },
   { value: "partial", label: "Partial" },
   { value: "paid", label: "Paid" },
+  { value: "cancelled", label: "Cancelled" },
 ];
 
 const DATE_OPTIONS: { value: DatePreset; label: string }[] = [
@@ -106,6 +109,7 @@ function statusClassName(status: InvoiceStatus): string {
   if (status === "approved") return "bg-teal-100 text-teal-700";
   if (status === "sent") return "bg-blue-100 text-blue-700";
   if (status === "partial") return "bg-amber-100 text-amber-700";
+  if (status === "cancelled") return "bg-rose-100 text-rose-700";
   return "bg-muted text-muted-foreground";
 }
 
@@ -210,6 +214,8 @@ export function InvoiceListView({
   >({});
   const [approveDialogInvoice, setApproveDialogInvoice] = useState<Invoice | null>(null);
   const [adjustmentDialogInvoice, setAdjustmentDialogInvoice] = useState<Invoice | null>(null);
+  const [cancelDialogInvoice, setCancelDialogInvoice] = useState<Invoice | null>(null);
+  const [showCancelled, setShowCancelled] = useState(false);
 
   const [shareLoadingByInvoice, setShareLoadingByInvoice] = useState<Record<string, boolean>>({});
   const [statusChangingByInvoice, setStatusChangingByInvoice] = useState<Record<string, boolean>>({});
@@ -293,6 +299,7 @@ export function InvoiceListView({
           status: statusFilter === "all" ? undefined : statusFilter,
           from_date: dateRange.from,
           to_date: dateRange.to,
+          include_cancelled: showCancelled || statusFilter === "cancelled",
           limit: 20,
           offset: nextOffset,
         });
@@ -325,7 +332,7 @@ export function InvoiceListView({
         }
       }
     },
-    [customFromDate, customToDate, datePreset, invoices.length, leadId, selectedCustomerId, statusFilter]
+    [customFromDate, customToDate, datePreset, invoices.length, leadId, selectedCustomerId, showCancelled, statusFilter]
   );
 
   useEffect(() => {
@@ -443,6 +450,18 @@ export function InvoiceListView({
     }, 700);
   };
 
+  const handleCancelInvoice = async (invoice: Invoice, reason: string | null) => {
+    const updated = await cancelInvoice(invoice.id, reason ?? undefined);
+    setInvoices((prev) => {
+      // If cancelled rows aren't visible in the current view, drop it; otherwise
+      // replace it in place so the user sees the new status immediately.
+      if (!showCancelled && statusFilter !== "cancelled") {
+        return prev.filter((inv) => inv.id !== invoice.id);
+      }
+      return prev.map((inv) => (inv.id === updated.id ? updated : inv));
+    });
+  };
+
   const handleAdjustmentSaved = async (invoiceId: string) => {
     // Refetch the list + the expanded invoice's adjustments so totals & status refresh.
     const [adjustments] = await Promise.all([
@@ -484,8 +503,8 @@ export function InvoiceListView({
 
       {showFilters ? (
         <div className="space-y-3 rounded-xl border bg-card p-4">
-          <div className="flex flex-wrap gap-2">
-            {STATUS_OPTIONS.map((option) => (
+          <div className="flex flex-wrap items-center gap-2">
+            {STATUS_OPTIONS.filter((opt) => opt.value !== "cancelled").map((option) => (
               <button
                 key={option.value}
                 type="button"
@@ -499,6 +518,15 @@ export function InvoiceListView({
                 {option.label}
               </button>
             ))}
+            <label className="ml-auto inline-flex cursor-pointer items-center gap-1.5 rounded-full border bg-card px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground">
+              <input
+                type="checkbox"
+                checked={showCancelled || statusFilter === "cancelled"}
+                onChange={(e) => setShowCancelled(e.target.checked)}
+                className="h-3 w-3"
+              />
+              Show cancelled
+            </label>
           </div>
 
           <div className="grid gap-3 md:grid-cols-[1fr_1fr]">
@@ -634,8 +662,16 @@ export function InvoiceListView({
               ? `https://wa.me/91${normalizePhone(invoice.customerPhone)}?text=${whatsappMessage}`
               : null;
 
+            const isCancelled = invoice.status === "cancelled";
+
             return (
-              <article key={invoice.id} className="overflow-hidden rounded-xl border bg-card">
+              <article
+                key={invoice.id}
+                className={`overflow-hidden rounded-xl border bg-card ${
+                  isCancelled ? "opacity-60" : ""
+                }`}
+                title={isCancelled && invoice.cancelledReason ? `Cancelled: ${invoice.cancelledReason}` : undefined}
+              >
                 <div
                   role="button"
                   tabIndex={0}
@@ -681,7 +717,7 @@ export function InvoiceListView({
                   </span>
 
                   <div className="ml-auto flex flex-wrap items-center gap-2" onClick={(event) => event.stopPropagation()}>
-                    {(invoice.status === "draft" || invoice.status === "sent") ? (
+                    {invoice.status === "cancelled" ? null : (invoice.status === "draft" || invoice.status === "sent") ? (
                       <Button
                         type="button"
                         size="sm"
@@ -727,7 +763,7 @@ export function InvoiceListView({
                       </a>
                     ) : null}
 
-                    {invoice.status !== "paid" ? (
+                    {invoice.status !== "paid" && invoice.status !== "cancelled" ? (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button type="button" size="sm" variant="outline" aria-label="More actions">
@@ -745,6 +781,17 @@ export function InvoiceListView({
                           {invoice.leadId ? (
                             <DropdownMenuItem onSelect={() => handleAddMoreToDeal(invoice)}>
                               Add more to this deal
+                            </DropdownMenuItem>
+                          ) : null}
+                          {(invoice.status === "draft" ||
+                            invoice.status === "sent" ||
+                            invoice.status === "approved") &&
+                          amountPaid === 0 ? (
+                            <DropdownMenuItem
+                              onSelect={() => setCancelDialogInvoice(invoice)}
+                              destructive
+                            >
+                              Cancel invoice…
                             </DropdownMenuItem>
                           ) : null}
                         </DropdownMenuContent>
@@ -1038,6 +1085,17 @@ export function InvoiceListView({
           onSaved={() => void handleAdjustmentSaved(adjustmentDialogInvoice.id)}
         />
       ) : null}
+
+      <CancelInvoiceDialog
+        open={cancelDialogInvoice !== null}
+        invoiceNumber={cancelDialogInvoice?.invoiceNumber}
+        onClose={() => setCancelDialogInvoice(null)}
+        onConfirm={async (reason) => {
+          if (cancelDialogInvoice) {
+            await handleCancelInvoice(cancelDialogInvoice, reason);
+          }
+        }}
+      />
     </section>
   );
 }

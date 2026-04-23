@@ -1,4 +1,4 @@
-export type InvoiceStatus = "draft" | "sent" | "approved" | "partial" | "paid";
+export type InvoiceStatus = "draft" | "sent" | "approved" | "partial" | "paid" | "cancelled";
 export type PaymentMethod = "upi" | "cash" | "bank_transfer" | "card";
 export type InvoiceAdjustmentType = "discount" | "write_off";
 
@@ -61,6 +61,8 @@ export interface Invoice {
   issuedDate: string;
   dueDate: string;
   createdAt: string;
+  cancelledAt?: string | null;
+  cancelledReason?: string | null;
   customerName?: string | null;
   customerPhone?: string | null;
   leadTitle?: string | null;
@@ -83,6 +85,8 @@ export interface InvoiceApiResponse {
   issued_date: string;
   due_date: string;
   created_at: string;
+  cancelled_at?: string | null;
+  cancelled_reason?: string | null;
   customer_name?: string | null;
   customer_phone?: string | null;
   lead_title?: string | null;

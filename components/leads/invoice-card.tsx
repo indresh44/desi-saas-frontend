@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { BookmarkPlus, CheckCircle, ChevronDown, ChevronUp, Download, Loader2, MoreVertical, Pencil, Plus, RefreshCw, Share2 } from "lucide-react";
 import { AddAdjustmentDialog } from "@/components/invoices/add-adjustment-dialog";
 import { ApproveInvoiceDialog } from "@/components/invoices/approve-invoice-dialog";
+import { CancelInvoiceDialog } from "@/components/invoices/cancel-invoice-dialog";
 import { InvoiceItemEnrichment } from "@/components/invoices/invoice-item-enrichment";
 import { PaymentAttachmentPreview } from "@/components/leads/payment-attachment-preview";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { RecordPaymentModal } from "@/components/leads/record-payment-modal";
 import {
+  cancelInvoice,
   deleteInvoiceAdjustment,
   fetchInvoiceAdjustments,
   fetchInvoicePayments,
@@ -115,6 +117,7 @@ export function InvoiceCard({
   const [adjustments, setAdjustments] = useState<InvoiceAdjustment[]>([]);
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [adjustmentDialogOpen, setAdjustmentDialogOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const [localItems, setLocalItems] = useState(invoice.items ?? []);
 
@@ -224,6 +227,11 @@ export function InvoiceCard({
       ? "text-amber-600"
       : "text-muted-foreground";
   const canEditInvoice = invoice.status === "draft" && !!onEdit;
+
+  const handleCancelInvoice = async (reason: string | null) => {
+    const updated = await cancelInvoice(invoice.id, reason ?? undefined);
+    onStatusChanged?.(updated);
+  };
 
   const handleStatusChange = async (targetStatus: "sent" | "approved") => {
     setStatusChanging(targetStatus as InvoiceStatus);
@@ -405,33 +413,50 @@ export function InvoiceCard({
             ) : null}
           </div>
 
-          {(onSaveAsTemplate ||
-            (invoice.status === "sent" ||
+          {(() => {
+            const canAdjust =
+              invoice.status === "sent" ||
               invoice.status === "approved" ||
-              invoice.status === "partial")) ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button type="button" size="sm" variant="outline" aria-label="More actions">
-                  <MoreVertical className="h-3.5 w-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {(invoice.status === "sent" ||
-                  invoice.status === "approved" ||
-                  invoice.status === "partial") ? (
-                  <DropdownMenuItem onSelect={() => setAdjustmentDialogOpen(true)}>
-                    Add adjustment…
-                  </DropdownMenuItem>
-                ) : null}
-                {onSaveAsTemplate ? (
-                  <DropdownMenuItem onSelect={() => onSaveAsTemplate(invoice)}>
-                    <BookmarkPlus className="h-3.5 w-3.5" />
-                    Save as template
-                  </DropdownMenuItem>
-                ) : null}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : null}
+              invoice.status === "partial";
+            const canCancel =
+              (invoice.status === "draft" ||
+                invoice.status === "sent" ||
+                invoice.status === "approved") &&
+              totalPaid === 0;
+            const showMenu =
+              Boolean(onSaveAsTemplate) || canAdjust || canCancel;
+            if (!showMenu) return null;
+            return (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button type="button" size="sm" variant="outline" aria-label="More actions">
+                    <MoreVertical className="h-3.5 w-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {canAdjust ? (
+                    <DropdownMenuItem onSelect={() => setAdjustmentDialogOpen(true)}>
+                      Add adjustment…
+                    </DropdownMenuItem>
+                  ) : null}
+                  {onSaveAsTemplate ? (
+                    <DropdownMenuItem onSelect={() => onSaveAsTemplate(invoice)}>
+                      <BookmarkPlus className="h-3.5 w-3.5" />
+                      Save as template
+                    </DropdownMenuItem>
+                  ) : null}
+                  {canCancel ? (
+                    <DropdownMenuItem
+                      onSelect={() => setCancelDialogOpen(true)}
+                      destructive
+                    >
+                      Cancel invoice…
+                    </DropdownMenuItem>
+                  ) : null}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            );
+          })()}
 
           {shareMessage ? (
             <span className="text-xs text-green-600">{shareMessage}</span>
@@ -713,6 +738,13 @@ export function InvoiceCard({
           await loadPayments();
           onPaymentRecorded();
         }}
+      />
+
+      <CancelInvoiceDialog
+        open={cancelDialogOpen}
+        invoiceNumber={invoice.invoiceNumber}
+        onClose={() => setCancelDialogOpen(false)}
+        onConfirm={(reason) => handleCancelInvoice(reason)}
       />
     </>
   );

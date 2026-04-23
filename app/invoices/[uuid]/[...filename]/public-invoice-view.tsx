@@ -72,6 +72,8 @@ function getStatusClass(status: string): string {
       return "bg-blue-100 text-blue-700";
     case "partial":
       return "bg-amber-100 text-amber-700";
+    case "cancelled":
+      return "bg-rose-100 text-rose-700";
     default:
       return "bg-zinc-100 text-zinc-600";
   }
@@ -218,8 +220,17 @@ export function PublicInvoiceView({
 
       {/* Main content */}
       <main className="mx-auto max-w-3xl px-4 py-6">
+        {meta.status === "cancelled" && (
+          <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+            <p className="font-semibold">This invoice has been cancelled by {meta.business_name}.</p>
+            <p className="mt-0.5 text-xs text-rose-700">
+              It is no longer valid. Please contact {meta.business_name} if you have questions.
+            </p>
+          </div>
+        )}
+
         {/* View toggle — only show if package content exists and detail loaded */}
-        {hasPackageContent && !detailLoading && (
+        {meta.status !== "cancelled" && hasPackageContent && !detailLoading && (
           <div className="flex justify-center mb-6">
             <div className="inline-flex bg-zinc-100 rounded-lg p-1">
               <button

@@ -100,6 +100,8 @@ function toInvoiceModel(raw: InvoiceApiResponse): Invoice {
     issuedDate: raw.issued_date,
     dueDate: raw.due_date,
     createdAt: raw.created_at,
+    cancelledAt: raw.cancelled_at ?? null,
+    cancelledReason: raw.cancelled_reason ?? null,
     customerName: raw.customer_name ?? null,
     customerPhone: raw.customer_phone ?? null,
     leadTitle: raw.lead_title ?? null,
@@ -154,6 +156,7 @@ export async function fetchInvoices(filters?: {
   status?: string;
   from_date?: string;
   to_date?: string;
+  include_cancelled?: boolean;
   limit?: number;
   offset?: number;
 }): Promise<InvoiceListResult> {
@@ -163,6 +166,7 @@ export async function fetchInvoices(filters?: {
     status: filters?.status,
     from_date: filters?.from_date,
     to_date: filters?.to_date,
+    include_cancelled: filters?.include_cancelled ? "true" : undefined,
     limit: filters?.limit?.toString(),
     offset: filters?.offset?.toString(),
   });
@@ -251,6 +255,20 @@ export async function updateInvoiceStatus(
     body: { invoice: { status } },
   });
 
+  return toInvoiceModel(result.data);
+}
+
+export async function cancelInvoice(
+  invoiceId: string,
+  reason?: string,
+): Promise<Invoice> {
+  const result = await apiClient<InvoiceApiResponse>(
+    `/api/v1/invoices/${invoiceId}/cancel`,
+    {
+      method: "POST",
+      body: { reason: reason ?? null },
+    },
+  );
   return toInvoiceModel(result.data);
 }
 
