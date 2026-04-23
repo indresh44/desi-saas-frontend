@@ -1,28 +1,30 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
-  Camera,
+  CheckCircle,
   ChevronDown,
   ChevronRight,
   Download,
-  FileText,
+  ExternalLink,
   Loader2,
   MessageCircle,
+  Pencil,
+  Plus,
   RefreshCw,
   Share2,
-  Upload,
 } from "lucide-react";
 import { InvoiceItemEnrichment } from "@/components/invoices/invoice-item-enrichment";
 import { PaymentAttachmentPreview } from "@/components/leads/payment-attachment-preview";
+import { RecordPaymentModal } from "@/components/leads/record-payment-modal";
 import { Button } from "@/components/ui/button";
 import { fetchCustomers } from "@/lib/api/customers";
 import {
-  createPayment,
   fetchInvoiceItems,
   fetchInvoicePayments,
   fetchInvoices,
-  uploadAttachment,
+  updateInvoiceStatus,
 } from "@/lib/api/invoices";
 import { shareInvoicePdf, buildBrandedInvoiceUrl } from "@/lib/utils/share";
 import { useAuth } from "@/lib/auth/auth-context";
@@ -40,12 +42,6 @@ export interface InvoiceListViewProps {
 
 type DatePreset = "all" | "this_month" | "last_month" | "this_quarter" | "custom";
 type StatusFilter = "all" | InvoiceStatus;
-
-type InlinePaymentFormProps = {
-  invoice: Invoice;
-  remainingBalance: number;
-  onSuccess: () => Promise<void>;
-};
 
 const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "All" },
@@ -103,12 +99,15 @@ function paymentMethodLabel(value: PaymentMethod): string {
   return "Card";
 }
 
-function normalizePhone(phone: string): string {
-  return phone.replace(/\D/g, "");
+function paymentMethodClass(value: PaymentMethod): string {
+  if (value === "upi") return "bg-fuchsia-100 text-fuchsia-700";
+  if (value === "cash") return "bg-green-100 text-green-700";
+  if (value === "bank_transfer") return "bg-blue-100 text-blue-700";
+  return "bg-orange-100 text-orange-700";
 }
 
-function getTodayDate(): string {
-  return new Date().toISOString().slice(0, 10);
+function normalizePhone(phone: string): string {
+  return phone.replace(/\D/g, "");
 }
 
 function getDateRangeForPreset(
@@ -156,218 +155,6 @@ function getDateRangeForPreset(
   };
 }
 
-function InlinePaymentForm({ invoice, remainingBalance, onSuccess }: InlinePaymentFormProps) {
-  const [amount, setAmount] = useState(remainingBalance > 0 ? String(remainingBalance) : "");
-  const [method, setMethod] = useState<PaymentMethod>("upi");
-  const [paymentDate, setPaymentDate] = useState(getTodayDate);
-  const [reference, setReference] = useState("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const cameraInputRef = useRef<HTMLInputElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    setAmount(remainingBalance > 0 ? String(remainingBalance) : "");
-  }, [remainingBalance, invoice.id]);
-
-  useEffect(() => {
-    if (!selectedFile || !selectedFile.type.startsWith("image/")) {
-      setPreviewUrl(null);
-      return;
-    }
-
-    const url = URL.createObjectURL(selectedFile);
-    setPreviewUrl(url);
-
-    return () => {
-      URL.revokeObjectURL(url);
-    };
-  }, [selectedFile]);
-
-  const selectFile = (file: File | null) => {
-    if (!file) {
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      setErrorMessage("Receipt file must be under 10MB.");
-      return;
-    }
-
-    setErrorMessage(null);
-    setSelectedFile(file);
-  };
-
-  const resetFile = () => {
-    setSelectedFile(null);
-    setPreviewUrl(null);
-    if (cameraInputRef.current) {
-      cameraInputRef.current.value = "";
-    }
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const submit = async () => {
-    const parsedAmount = Number(amount);
-    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-      setErrorMessage("Amount must be greater than zero.");
-      return;
-    }
-
-    if (parsedAmount > remainingBalance) {
-      setErrorMessage("Amount cannot exceed balance due.");
-      return;
-    }
-
-    setIsSubmitting(true);
-    setErrorMessage(null);
-
-    try {
-      const payment = await createPayment({
-        invoice_id: invoice.id,
-        amount: parsedAmount,
-        payment_method: method,
-        payment_date: paymentDate,
-        ...(reference.trim() ? { reference: reference.trim() } : {}),
-      });
-
-      if (selectedFile) {
-        await uploadAttachment("payment", payment.id, selectedFile);
-      }
-
-      setReference("");
-      resetFile();
-      await onSuccess();
-    } catch (error) {
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "message" in error &&
-        typeof (error as { message: unknown }).message === "string"
-      ) {
-        setErrorMessage((error as { message: string }).message);
-      } else {
-        setErrorMessage("Unable to record payment.");
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="space-y-3 rounded-xl border bg-muted p-3">
-      <div className="grid gap-2 md:grid-cols-[1.1fr_1fr_1fr_1fr_auto_auto]">
-        <input
-          type="number"
-          min="0"
-          max={remainingBalance}
-          step="0.01"
-          value={amount}
-          onChange={(event) => setAmount(event.target.value)}
-          className={inputClassName}
-          placeholder="Amount"
-          disabled={isSubmitting}
-        />
-
-        <select
-          value={method}
-          onChange={(event) => setMethod(event.target.value as PaymentMethod)}
-          className={inputClassName}
-          disabled={isSubmitting}
-        >
-          <option value="upi">UPI</option>
-          <option value="cash">Cash</option>
-          <option value="bank_transfer">Bank Transfer</option>
-          <option value="card">Card</option>
-        </select>
-
-        <input
-          type="date"
-          value={paymentDate}
-          onChange={(event) => setPaymentDate(event.target.value)}
-          className={inputClassName}
-          disabled={isSubmitting}
-        />
-
-        <input
-          type="text"
-          value={reference}
-          onChange={(event) => setReference(event.target.value)}
-          className={inputClassName}
-          placeholder="Reference"
-          disabled={isSubmitting}
-        />
-
-        <div className="flex items-center gap-2">
-          <input
-            ref={cameraInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            onChange={(event) => selectFile(event.target.files?.[0] ?? null)}
-            disabled={isSubmitting}
-          />
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,application/pdf"
-            className="hidden"
-            onChange={(event) => selectFile(event.target.files?.[0] ?? null)}
-            disabled={isSubmitting}
-          />
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => cameraInputRef.current?.click()}
-            disabled={isSubmitting}
-          >
-            <Camera className="h-3.5 w-3.5" />
-            Photo
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isSubmitting}
-          >
-            <Upload className="h-3.5 w-3.5" />
-            File
-          </Button>
-        </div>
-
-        <Button type="button" onClick={() => void submit()} disabled={isSubmitting}>
-          {isSubmitting ? "Recording..." : "Record Payment"}
-        </Button>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-        <span>Balance: {formatRupees(Math.max(remainingBalance, 0))}</span>
-        {selectedFile ? (
-          <span className="inline-flex items-center gap-2 rounded bg-card px-2 py-1 text-foreground">
-            {previewUrl ? <img src={previewUrl} alt="Receipt" className="h-6 w-6 rounded object-cover" /> : <FileText className="h-3.5 w-3.5" />}
-            {selectedFile.name}
-            <button type="button" onClick={resetFile} className="text-muted-foreground hover:text-red-600">
-              Remove
-            </button>
-          </span>
-        ) : null}
-      </div>
-
-      {errorMessage ? (
-        <p className="text-xs text-red-600">{errorMessage}</p>
-      ) : null}
-    </div>
-  );
-}
-
 export function InvoiceListView({
   customerId,
   leadId,
@@ -376,6 +163,7 @@ export function InvoiceListView({
   showSummaryBar = true,
   initialStatusFilter = "all",
 }: InvoiceListViewProps) {
+  const router = useRouter();
   const { business } = useAuth();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [total, setTotal] = useState(0);
@@ -402,7 +190,9 @@ export function InvoiceListView({
   const [paymentsByInvoice, setPaymentsByInvoice] = useState<Record<string, Payment[]>>({});
 
   const [shareLoadingByInvoice, setShareLoadingByInvoice] = useState<Record<string, boolean>>({});
-  const [showPaymentFormByInvoice, setShowPaymentFormByInvoice] = useState<Record<string, boolean>>({});
+  const [statusChangingByInvoice, setStatusChangingByInvoice] = useState<Record<string, boolean>>({});
+  const [paymentModalInvoice, setPaymentModalInvoice] = useState<Invoice | null>(null);
+  const [redirectingTo, setRedirectingTo] = useState<string | null>(null);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -561,6 +351,7 @@ export function InvoiceListView({
   };
 
   const onPaymentRecorded = async (invoiceId: string) => {
+    setPaymentModalInvoice(null);
     const [payments] = await Promise.all([
       fetchInvoicePayments(invoiceId),
       loadInvoices("reset"),
@@ -591,6 +382,24 @@ export function InvoiceListView({
       );
     } finally {
       setShareLoadingByInvoice((prev) => ({ ...prev, [invoice.id]: false }));
+    }
+  };
+
+  const handleEditItems = (invoice: Invoice) => {
+    if (!invoice.leadId) return;
+    setRedirectingTo(invoice.leadTitle ?? "lead");
+    setTimeout(() => {
+      router.push(`/leads/${invoice.leadId}?invoice=${invoice.id}&edit=1`);
+    }, 700);
+  };
+
+  const handleApprove = async (invoice: Invoice) => {
+    setStatusChangingByInvoice((prev) => ({ ...prev, [invoice.id]: true }));
+    try {
+      const updated = await updateInvoiceStatus(invoice.id, "approved");
+      setInvoices((prev) => prev.map((inv) => (inv.id === updated.id ? updated : inv)));
+    } finally {
+      setStatusChangingByInvoice((prev) => ({ ...prev, [invoice.id]: false }));
     }
   };
 
@@ -777,7 +586,19 @@ export function InvoiceListView({
                   <div className="min-w-36 font-semibold text-primary">{invoice.invoiceNumber}</div>
 
                   {showCustomerColumn ? (
-                    <div className="min-w-40 text-sm text-foreground">{invoice.customerName ?? "-"}</div>
+                    <div className="min-w-40">
+                      <div className="text-sm text-foreground">{invoice.customerName ?? "-"}</div>
+                      {invoice.leadTitle && invoice.leadId ? (
+                        <a
+                          href={`/leads/${invoice.leadId}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          {invoice.leadTitle}
+                        </a>
+                      ) : null}
+                    </div>
                   ) : null}
 
                   <div className="text-sm text-muted-foreground">{formatDate(invoice.issuedDate)}</div>
@@ -791,6 +612,22 @@ export function InvoiceListView({
                   </span>
 
                   <div className="ml-auto flex flex-wrap items-center gap-2" onClick={(event) => event.stopPropagation()}>
+                    {(invoice.status === "draft" || invoice.status === "sent") ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="border-teal-200 text-teal-700 hover:bg-teal-50"
+                        onClick={() => void handleApprove(invoice)}
+                        disabled={statusChangingByInvoice[invoice.id]}
+                      >
+                        {statusChangingByInvoice[invoice.id]
+                          ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                          : <CheckCircle className="h-3.5 w-3.5" />}
+                        Approve
+                      </Button>
+                    ) : null}
+
                     <Button
                       type="button"
                       size="sm"
@@ -820,6 +657,7 @@ export function InvoiceListView({
                         </Button>
                       </a>
                     ) : null}
+
                   </div>
                 </div>
 
@@ -834,96 +672,94 @@ export function InvoiceListView({
                       <div className="space-y-4">
                         <section>
                           <div className="overflow-x-auto">
-                            <table className="min-w-full text-left text-sm text-foreground">
-                              <thead>
-                                <tr className="border-b text-xs uppercase tracking-[0.12em] text-muted-foreground">
-                                  <th className="py-2 w-6"></th>
-                                  <th className="py-2 pr-3">Item</th>
-                                  <th className="py-2 pr-3">Unit</th>
-                                  <th className="py-2 pr-3">Qty</th>
-                                  <th className="py-2 pr-3">Rate</th>
-                                  <th className="py-2 pr-3">GST</th>
-                                  <th className="py-2 text-right">Amount</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {lineItems.map((item) => {
-                                  const isItemExpanded = expandedItemId === item.id;
-                                  const hasEnrichment = item.deliverables && item.deliverables.length > 0;
+                            <div className="min-w-[600px] text-sm text-foreground">
+                              {/* Header row — same grid template as body rows so columns align */}
+                              <div className="grid grid-cols-[24px_1fr_60px_50px_80px_55px_80px] gap-1 border-b px-1 py-2 text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                                <div></div>
+                                <div>Item</div>
+                                <div>Unit</div>
+                                <div>Qty</div>
+                                <div>Rate</div>
+                                <div>GST</div>
+                                <div className="text-right">Amount</div>
+                              </div>
 
-                                  return (
-                                    <tr key={item.id} className="border-b border-border last:border-b-0">
-                                      <td colSpan={7} className="p-0">
-                                        <div
-                                          role="button"
-                                          tabIndex={0}
-                                          className="grid grid-cols-[24px_1fr_60px_50px_80px_55px_80px] gap-1 px-1 py-2 cursor-pointer hover:bg-muted/50 transition-colors items-center"
-                                          onClick={() => setExpandedItemId(isItemExpanded ? null : item.id)}
-                                          onKeyDown={(e) => {
-                                            if (e.key === "Enter" || e.key === " ") {
-                                              e.preventDefault();
-                                              setExpandedItemId(isItemExpanded ? null : item.id);
-                                            }
-                                          }}
+                              {lineItems.map((item) => {
+                                const isItemExpanded = expandedItemId === item.id;
+                                const hasEnrichment = item.deliverables && item.deliverables.length > 0;
+
+                                return (
+                                  <div key={item.id} className="border-b border-border last:border-b-0">
+                                    <div
+                                      role="button"
+                                      tabIndex={0}
+                                      className="grid grid-cols-[24px_1fr_60px_50px_80px_55px_80px] gap-1 px-1 py-2 cursor-pointer hover:bg-muted/50 transition-colors items-center"
+                                      onClick={() => setExpandedItemId(isItemExpanded ? null : item.id)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter" || e.key === " ") {
+                                          e.preventDefault();
+                                          setExpandedItemId(isItemExpanded ? null : item.id);
+                                        }
+                                      }}
+                                    >
+                                      <div className="flex items-center justify-center">
+                                        <svg
+                                          className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${isItemExpanded ? "rotate-90" : ""}`}
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          strokeWidth="2"
                                         >
-                                          <div className="flex items-center justify-center">
-                                            <svg
-                                              className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${isItemExpanded ? "rotate-90" : ""}`}
-                                              viewBox="0 0 24 24"
-                                              fill="none"
-                                              stroke="currentColor"
-                                              strokeWidth="2"
-                                            >
-                                              <path d="M9 18l6-6-6-6" />
-                                            </svg>
-                                          </div>
-                                          <div className="flex items-center gap-1.5 font-medium text-primary truncate">
-                                            {item.name || item.description}
-                                            {hasEnrichment && (
-                                              <span className="w-1.5 h-1.5 rounded-full bg-teal-500 shrink-0" />
-                                            )}
-                                          </div>
-                                          <div className="text-muted-foreground">{item.unit}</div>
-                                          <div>{item.quantity}</div>
-                                          <div>{formatRupees(Number(item.unitPrice))}</div>
-                                          <div className="text-muted-foreground">{item.gstPercent}%</div>
-                                          <div className="text-right font-medium text-primary">{formatRupees(Number(item.amount))}</div>
-                                        </div>
-                                        {isItemExpanded && (
-                                          <InvoiceItemEnrichment
-                                            item={item}
-                                            invoiceId={invoice.id}
-                                            invoiceStatus={invoice.status}
-                                            onItemUpdated={(updated: InvoiceItem) => {
-                                              setItemsByInvoice((prev) => ({
-                                                ...prev,
-                                                [invoice.id]: (prev[invoice.id] ?? []).map((it) =>
-                                                  it.id === updated.id ? updated : it
-                                                ),
-                                              }));
-                                            }}
-                                          />
+                                          <path d="M9 18l6-6-6-6" />
+                                        </svg>
+                                      </div>
+                                      <div className="flex items-center gap-1.5 font-medium text-primary truncate">
+                                        {item.name || item.description}
+                                        {hasEnrichment && (
+                                          <span className="w-1.5 h-1.5 rounded-full bg-teal-500 shrink-0" />
                                         )}
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                              <tfoot>
-                                <tr>
-                                  <td colSpan={6} className="pt-3 text-right text-sm font-medium text-muted-foreground">Subtotal</td>
-                                  <td className="pt-3 text-right text-sm font-semibold text-foreground">{formatRupees(Number(invoice.subtotal ?? 0))}</td>
-                                </tr>
-                                <tr>
-                                  <td colSpan={6} className="pt-1 text-right text-sm font-medium text-muted-foreground">Tax</td>
-                                  <td className="pt-1 text-right text-sm font-semibold text-foreground">{formatRupees(Number(invoice.taxTotal ?? 0))}</td>
-                                </tr>
-                                <tr>
-                                  <td colSpan={6} className="pt-1 text-right text-sm font-medium text-muted-foreground">Total</td>
-                                  <td className="pt-1 text-right text-base font-semibold text-primary">{formatRupees(Number(invoice.totalAmount))}</td>
-                                </tr>
-                              </tfoot>
-                            </table>
+                                      </div>
+                                      <div className="text-muted-foreground">{item.unit}</div>
+                                      <div>{item.quantity}</div>
+                                      <div>{formatRupees(Number(item.unitPrice))}</div>
+                                      <div className="text-muted-foreground">{item.gstPercent}%</div>
+                                      <div className="text-right font-medium text-primary">{formatRupees(Number(item.amount))}</div>
+                                    </div>
+                                    {isItemExpanded && (
+                                      <InvoiceItemEnrichment
+                                        item={item}
+                                        invoiceId={invoice.id}
+                                        invoiceStatus={invoice.status}
+                                        onItemUpdated={(updated: InvoiceItem) => {
+                                          setItemsByInvoice((prev) => ({
+                                            ...prev,
+                                            [invoice.id]: (prev[invoice.id] ?? []).map((it) =>
+                                              it.id === updated.id ? updated : it
+                                            ),
+                                          }));
+                                        }}
+                                      />
+                                    )}
+                                  </div>
+                                );
+                              })}
+
+                              {/* Totals footer — right-aligned against the grid's amount column */}
+                              <div className="space-y-1 pt-3">
+                                <div className="flex justify-end gap-4 pr-1 text-sm">
+                                  <span className="text-muted-foreground">Subtotal</span>
+                                  <span className="w-20 text-right font-semibold text-foreground">{formatRupees(Number(invoice.subtotal ?? 0))}</span>
+                                </div>
+                                <div className="flex justify-end gap-4 pr-1 text-sm">
+                                  <span className="text-muted-foreground">Tax</span>
+                                  <span className="w-20 text-right font-semibold text-foreground">{formatRupees(Number(invoice.taxTotal ?? 0))}</span>
+                                </div>
+                                <div className="flex justify-end gap-4 pr-1 text-sm">
+                                  <span className="text-muted-foreground">Total</span>
+                                  <span className="w-20 text-right text-base font-semibold text-primary">{formatRupees(Number(invoice.totalAmount))}</span>
+                                </div>
+                              </div>
+                            </div>
                           </div>
 
                           {invoice.status === "draft" && lineItems.some((it) => it.deliverables && it.deliverables.length > 0) && (
@@ -954,12 +790,24 @@ export function InvoiceListView({
                             <h4 className="text-sm font-semibold text-primary">Payments</h4>
                             <div className="space-y-2">
                               {payments.map((payment) => (
-                                <div key={payment.id} className="rounded-lg border bg-card p-2">
-                                  <div className="flex flex-wrap items-center gap-3 text-sm">
-                                    <span className="font-semibold text-primary">{formatRupees(Number(payment.amount))}</span>
-                                    <span className="text-muted-foreground">{paymentMethodLabel(payment.paymentMethod)}</span>
-                                    <span className="text-muted-foreground">{formatDate(payment.paymentDate)}</span>
-                                    {payment.reference ? <span className="text-muted-foreground">Ref: {payment.reference}</span> : null}
+                                <div key={payment.id} className="rounded-xl border border-border bg-card px-3 py-3">
+                                  <div className="flex flex-wrap items-center justify-between gap-3">
+                                    <div className="min-w-0 space-y-1">
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <span className="text-sm font-medium text-foreground">
+                                          {formatDate(payment.paymentDate)}
+                                        </span>
+                                        <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${paymentMethodClass(payment.paymentMethod)}`}>
+                                          {paymentMethodLabel(payment.paymentMethod)}
+                                        </span>
+                                      </div>
+                                      {payment.reference ? (
+                                        <p className="text-xs text-muted-foreground">{payment.reference}</p>
+                                      ) : null}
+                                    </div>
+                                    <div className="text-right text-sm font-semibold text-green-600">
+                                      {formatRupees(Number(payment.amount))}
+                                    </div>
                                   </div>
                                   <div className="mt-2">
                                     <PaymentAttachmentPreview paymentId={payment.id} />
@@ -970,45 +818,30 @@ export function InvoiceListView({
                           </section>
                         ) : null}
 
-                        {canRecordPayment ? (
-                          <div className="space-y-2">
-                            {showPaymentFormByInvoice[invoice.id] ? (
-                              <>
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm font-medium text-foreground">Record Payment</span>
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() =>
-                                      setShowPaymentFormByInvoice((prev) => ({ ...prev, [invoice.id]: false }))
-                                    }
-                                  >
-                                    Cancel
-                                  </Button>
-                                </div>
-                                <InlinePaymentForm
-                                  invoice={invoice}
-                                  remainingBalance={remaining}
-                                  onSuccess={async () => {
-                                    setShowPaymentFormByInvoice((prev) => ({ ...prev, [invoice.id]: false }));
-                                    await onPaymentRecorded(invoice.id);
-                                  }}
-                                />
-                              </>
-                            ) : (
-                              <Button
-                                type="button"
-                                size="sm"
-                                onClick={() =>
-                                  setShowPaymentFormByInvoice((prev) => ({ ...prev, [invoice.id]: true }))
-                                }
-                              >
-                                Add Payment
-                              </Button>
-                            )}
-                          </div>
-                        ) : null}
+                        <div className="flex flex-wrap gap-2">
+                          {canRecordPayment ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => setPaymentModalInvoice(invoice)}
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                              Record Payment
+                            </Button>
+                          ) : null}
+
+                          {invoice.status === "draft" && invoice.leadId ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => handleEditItems(invoice)}
+                              disabled={redirectingTo !== null}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              Edit items
+                            </Button>
+                          ) : null}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1038,6 +871,29 @@ export function InvoiceListView({
           ) : null}
         </div>
       )}
+
+      {redirectingTo ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="flex items-center gap-2 rounded-full border bg-card px-5 py-3 shadow-xl text-sm text-foreground">
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+            Opening <span className="font-medium text-primary">{redirectingTo}</span>…
+          </div>
+        </div>
+      ) : null}
+
+      {paymentModalInvoice ? (
+        <RecordPaymentModal
+          invoice={paymentModalInvoice}
+          remainingAmount={Math.max(
+            Number(paymentModalInvoice.totalAmount) -
+              (paymentsByInvoice[paymentModalInvoice.id]?.reduce((s, p) => s + Number(p.amount), 0) ??
+                Number(paymentModalInvoice.amountPaid ?? 0)),
+            0
+          )}
+          onClose={() => setPaymentModalInvoice(null)}
+          onSuccess={() => void onPaymentRecorded(paymentModalInvoice.id)}
+        />
+      ) : null}
     </section>
   );
 }

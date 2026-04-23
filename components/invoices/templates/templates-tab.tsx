@@ -331,140 +331,126 @@ export function TemplatesTab() {
                       </p>
                     ) : (
                       <div className="overflow-x-auto">
-                        <table className="min-w-full text-left text-sm text-foreground">
-                          <thead>
-                            <tr className="border-b text-xs uppercase tracking-[0.12em] text-muted-foreground">
-                              <th className="w-6 py-2"></th>
-                              <th className="py-2 pr-3">Item</th>
-                              <th className="py-2 pr-3">Unit</th>
-                              <th className="py-2 pr-3">Qty</th>
-                              <th className="py-2 pr-3">Rate</th>
-                              <th className="py-2 pr-3">GST</th>
-                              <th className="py-2 text-right">Amount</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {lineItems.map((item) => {
-                              const isItemExpanded = expandedItemId === item.id;
-                              const hasDeliverables =
-                                item.deliverables && item.deliverables.length > 0;
+                        <div className="min-w-[600px] text-sm text-foreground">
+                          {/* Header row — same grid template as body rows so columns align */}
+                          <div className="grid grid-cols-[24px_1fr_60px_50px_80px_55px_80px] gap-1 border-b px-1 py-2 text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                            <div></div>
+                            <div>Item</div>
+                            <div>Unit</div>
+                            <div>Qty</div>
+                            <div>Rate</div>
+                            <div>GST</div>
+                            <div className="text-right">Amount</div>
+                          </div>
 
-                              return (
-                                <tr
-                                  key={item.id}
-                                  className="border-b border-border last:border-b-0"
+                          {lineItems.map((item) => {
+                            const isItemExpanded = expandedItemId === item.id;
+                            const hasDeliverables =
+                              item.deliverables && item.deliverables.length > 0;
+
+                            return (
+                              <div
+                                key={item.id}
+                                className="border-b border-border last:border-b-0"
+                              >
+                                <div
+                                  role="button"
+                                  tabIndex={0}
+                                  className="grid cursor-pointer grid-cols-[24px_1fr_60px_50px_80px_55px_80px] items-center gap-1 px-1 py-2 transition-colors hover:bg-muted/50"
+                                  onClick={() =>
+                                    setExpandedItemId(isItemExpanded ? null : item.id)
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                      e.preventDefault();
+                                      setExpandedItemId(
+                                        isItemExpanded ? null : item.id
+                                      );
+                                    }
+                                  }}
                                 >
-                                  <td colSpan={7} className="p-0">
-                                    <div
-                                      role="button"
-                                      tabIndex={0}
-                                      className="grid cursor-pointer grid-cols-[24px_1fr_60px_50px_80px_55px_80px] items-center gap-1 px-1 py-2 transition-colors hover:bg-muted/50"
-                                      onClick={() =>
-                                        setExpandedItemId(isItemExpanded ? null : item.id)
-                                      }
-                                      onKeyDown={(e) => {
-                                        if (e.key === "Enter" || e.key === " ") {
-                                          e.preventDefault();
-                                          setExpandedItemId(
-                                            isItemExpanded ? null : item.id
-                                          );
-                                        }
-                                      }}
+                                  <div className="flex items-center justify-center">
+                                    <svg
+                                      className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${isItemExpanded ? "rotate-90" : ""}`}
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
                                     >
-                                      <div className="flex items-center justify-center">
-                                        <svg
-                                          className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${isItemExpanded ? "rotate-90" : ""}`}
-                                          viewBox="0 0 24 24"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          strokeWidth="2"
-                                        >
-                                          <path d="M9 18l6-6-6-6" />
-                                        </svg>
-                                      </div>
-                                      <div className="flex items-center gap-1.5 truncate font-medium text-primary">
-                                        {item.name || item.description}
-                                        {hasDeliverables ? (
-                                          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-teal-500" />
-                                        ) : null}
-                                      </div>
-                                      <div className="text-muted-foreground">{item.unit}</div>
-                                      <div>{item.quantity}</div>
-                                      <div>{formatRupees(Number(item.unitPrice))}</div>
-                                      <div className="text-muted-foreground">
-                                        {item.gstPercent}%
-                                      </div>
-                                      <div className="text-right font-medium text-primary">
-                                        {formatRupees(Number(item.amount))}
-                                      </div>
-                                    </div>
-                                    {isItemExpanded ? (
-                                      <div className="space-y-2 border-t border-border/50 bg-muted/30 px-4 py-3">
-                                        {item.description ? (
-                                          <p className="text-sm text-muted-foreground">
-                                            {item.description}
-                                          </p>
-                                        ) : null}
-                                        {hasDeliverables ? (
-                                          <div>
-                                            <p className="mb-1 text-xs font-medium text-muted-foreground">
-                                              Deliverables
-                                            </p>
-                                            <ul className="space-y-0.5 text-sm">
-                                              {(item.deliverables ?? []).map((d, i) => (
-                                                <li
-                                                  key={i}
-                                                  className="flex items-start gap-1.5"
-                                                >
-                                                  <span className="mt-0.5 text-muted-foreground">
-                                                    •
-                                                  </span>
-                                                  <span className="min-w-0 flex-1 break-words">
-                                                    {renderDeliverable(d)}
-                                                  </span>
-                                                </li>
-                                              ))}
-                                            </ul>
-                                          </div>
-                                        ) : (
-                                          <p className="text-xs text-muted-foreground">
-                                            No deliverables for this item.
-                                          </p>
-                                        )}
-                                      </div>
+                                      <path d="M9 18l6-6-6-6" />
+                                    </svg>
+                                  </div>
+                                  <div className="flex items-center gap-1.5 truncate font-medium text-primary">
+                                    {item.name || item.description}
+                                    {hasDeliverables ? (
+                                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-teal-500" />
                                     ) : null}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                          <tfoot>
-                            <tr className="text-sm text-muted-foreground">
-                              <td colSpan={5} className="pt-3 pr-3 text-right font-medium">
-                                Subtotal
-                              </td>
-                              <td colSpan={2} className="pt-3 text-right font-medium">
-                                {formatRupees(template.subtotal)}
-                              </td>
-                            </tr>
-                            <tr className="text-sm text-muted-foreground">
-                              <td colSpan={5} className="pt-1 pr-3 text-right font-medium">
-                                GST
-                              </td>
-                              <td colSpan={2} className="pt-1 text-right font-medium">
-                                {formatRupees(template.taxTotal)}
-                              </td>
-                            </tr>
-                            <tr className="text-sm font-semibold text-foreground">
-                              <td colSpan={5} className="pt-1 pr-3 text-right">
-                                Total
-                              </td>
-                              <td colSpan={2} className="pt-1 text-right">
-                                {formatRupees(template.totalAmount)}
-                              </td>
-                            </tr>
-                          </tfoot>
-                        </table>
+                                  </div>
+                                  <div className="text-muted-foreground">{item.unit}</div>
+                                  <div>{item.quantity}</div>
+                                  <div>{formatRupees(Number(item.unitPrice))}</div>
+                                  <div className="text-muted-foreground">
+                                    {item.gstPercent}%
+                                  </div>
+                                  <div className="text-right font-medium text-primary">
+                                    {formatRupees(Number(item.amount))}
+                                  </div>
+                                </div>
+                                {isItemExpanded ? (
+                                  <div className="space-y-2 border-t border-border/50 bg-muted/30 px-4 py-3">
+                                    {item.description ? (
+                                      <p className="text-sm text-muted-foreground">
+                                        {item.description}
+                                      </p>
+                                    ) : null}
+                                    {hasDeliverables ? (
+                                      <div>
+                                        <p className="mb-1 text-xs font-medium text-muted-foreground">
+                                          Deliverables
+                                        </p>
+                                        <ul className="space-y-0.5 text-sm">
+                                          {(item.deliverables ?? []).map((d, i) => (
+                                            <li
+                                              key={i}
+                                              className="flex items-start gap-1.5"
+                                            >
+                                              <span className="mt-0.5 text-muted-foreground">
+                                                •
+                                              </span>
+                                              <span className="min-w-0 flex-1 break-words">
+                                                {renderDeliverable(d)}
+                                              </span>
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    ) : (
+                                      <p className="text-xs text-muted-foreground">
+                                        No deliverables for this item.
+                                      </p>
+                                    )}
+                                  </div>
+                                ) : null}
+                              </div>
+                            );
+                          })}
+
+                          {/* Totals footer */}
+                          <div className="space-y-1 pt-3">
+                            <div className="flex justify-end gap-4 pr-1 text-sm text-muted-foreground">
+                              <span className="font-medium">Subtotal</span>
+                              <span className="w-20 text-right font-medium">{formatRupees(template.subtotal)}</span>
+                            </div>
+                            <div className="flex justify-end gap-4 pr-1 text-sm text-muted-foreground">
+                              <span className="font-medium">GST</span>
+                              <span className="w-20 text-right font-medium">{formatRupees(template.taxTotal)}</span>
+                            </div>
+                            <div className="flex justify-end gap-4 pr-1 text-sm font-semibold text-foreground">
+                              <span>Total</span>
+                              <span className="w-20 text-right">{formatRupees(template.totalAmount)}</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>

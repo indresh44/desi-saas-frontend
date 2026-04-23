@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -121,6 +122,8 @@ const inputCls =
 // ─── Main component ──────────────────────────────────────────────────────────
 
 export default function LeadDetailClient({ leadId }: { leadId: string }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { stageMap, isLoading: isLoadingStages } = useLookupMaps();
   const [lead, setLead] = useState<Lead | null>(null);
   const [activities, setActivities] = useState<LeadActivity[]>([]);
@@ -211,6 +214,24 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
       setSelectedStageId(lead.stageId);
     }
   }, [lead]);
+
+  useEffect(() => {
+    const invoiceId = searchParams.get("invoice");
+    const isEdit = searchParams.get("edit") === "1";
+    if (!invoiceId || !isEdit || invoices.length === 0) return;
+
+    const target = invoices.find((inv) => inv.id === invoiceId);
+    if (!target) return;
+
+    setEditingInvoice(target);
+    setIsInvoiceModalOpen(true);
+
+    // Remove params so a refresh doesn't re-open the modal
+    const url = new URL(window.location.href);
+    url.searchParams.delete("invoice");
+    url.searchParams.delete("edit");
+    router.replace(url.pathname + url.search, { scroll: false });
+  }, [searchParams, invoices, router]);
 
   const refreshActivities = useCallback(async () => {
     const data = await fetchLeadActivities(leadId);
