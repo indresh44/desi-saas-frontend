@@ -25,7 +25,12 @@ export function InvoiceItemEnrichment({
   invoiceStatus,
   onItemUpdated,
 }: InvoiceItemEnrichmentProps) {
+  // Photos are still draft-only (they change the PDF substantially, so editing
+  // them post-share would be confusing). Deliverables don't affect the PDF
+  // totals — only the package view link, which is expected to reflect the
+  // latest intent — so we allow editing them on anything except paid.
   const isDraft = invoiceStatus === "draft";
+  const canEditDeliverables = invoiceStatus !== "paid";
 
   // ── Photos state ──
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -240,7 +245,7 @@ export function InvoiceItemEnrichment({
                     {renderDeliverable(d)}
                   </span>
                 )}
-                {isDraft && editingIndex !== i && (
+                {canEditDeliverables && editingIndex !== i && (
                   <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       type="button"
@@ -266,7 +271,7 @@ export function InvoiceItemEnrichment({
           </div>
         )}
 
-        {isDraft && (
+        {canEditDeliverables && (
           <div className="flex gap-1.5">
             <input
               className="flex-1 text-sm border rounded px-2 py-1 bg-background"
@@ -291,11 +296,11 @@ export function InvoiceItemEnrichment({
           </div>
         )}
 
-        {deliverables.length === 0 && !isDraft && (
+        {deliverables.length === 0 && !canEditDeliverables && (
           <p className="text-xs text-muted-foreground">No deliverables specified</p>
         )}
 
-        {isDraft && (
+        {canEditDeliverables && (
           <p className="text-[11px] text-muted-foreground mt-1.5">
             Use **text** for bold. These appear in the package view when you share the invoice link.
           </p>

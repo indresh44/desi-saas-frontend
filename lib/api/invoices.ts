@@ -6,10 +6,13 @@ import {
 import { API_ENDPOINTS } from "@/lib/constants/api";
 import type { AttachmentEntityType } from "@/lib/types/attachment";
 import {
+  CreateInvoiceAdjustmentInput,
   CreateInvoiceInput,
   CreatePaymentInput,
   CustomerOutstanding,
   Invoice,
+  InvoiceAdjustment,
+  InvoiceAdjustmentApiResponse,
   InvoiceApiResponse,
   InvoiceItem,
   InvoiceListApiResponse,
@@ -313,6 +316,49 @@ export async function updateInvoiceItem(
     { method: "PATCH", body: payload }
   );
   return toInvoiceItemModel(data);
+}
+
+function toInvoiceAdjustmentModel(raw: InvoiceAdjustmentApiResponse): InvoiceAdjustment {
+  return {
+    id: raw.id,
+    invoiceId: raw.invoice_id,
+    amount: Number(raw.amount ?? 0),
+    adjustmentType: raw.adjustment_type,
+    reason: raw.reason,
+    createdBy: raw.created_by,
+    createdAt: raw.created_at,
+  };
+}
+
+export async function fetchInvoiceAdjustments(
+  invoiceId: string,
+): Promise<InvoiceAdjustment[]> {
+  const { data } = await apiClient<InvoiceAdjustmentApiResponse[]>(
+    `/api/v1/invoices/${invoiceId}/adjustments`,
+    { method: "GET", cache: "no-store" },
+  );
+  return Array.isArray(data) ? data.map(toInvoiceAdjustmentModel) : [];
+}
+
+export async function addInvoiceAdjustment(
+  invoiceId: string,
+  input: CreateInvoiceAdjustmentInput,
+): Promise<InvoiceAdjustment> {
+  const { data } = await apiClient<InvoiceAdjustmentApiResponse>(
+    `/api/v1/invoices/${invoiceId}/adjustments`,
+    { method: "POST", body: input },
+  );
+  return toInvoiceAdjustmentModel(data);
+}
+
+export async function deleteInvoiceAdjustment(
+  invoiceId: string,
+  adjustmentId: string,
+): Promise<void> {
+  await apiClient<null>(
+    `/api/v1/invoices/${invoiceId}/adjustments/${adjustmentId}`,
+    { method: "DELETE" },
+  );
 }
 
 export async function getInvoicePdf(

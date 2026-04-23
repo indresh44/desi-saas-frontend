@@ -1,5 +1,32 @@
 export type InvoiceStatus = "draft" | "sent" | "approved" | "partial" | "paid";
 export type PaymentMethod = "upi" | "cash" | "bank_transfer" | "card";
+export type InvoiceAdjustmentType = "discount" | "write_off";
+
+export interface InvoiceAdjustment {
+  id: string;
+  invoiceId: string;
+  amount: number;
+  adjustmentType: InvoiceAdjustmentType;
+  reason: string | null;
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface InvoiceAdjustmentApiResponse {
+  id: string;
+  invoice_id: string;
+  amount: number;
+  adjustment_type: InvoiceAdjustmentType;
+  reason: string | null;
+  created_by: string;
+  created_at: string;
+}
+
+export interface CreateInvoiceAdjustmentInput {
+  amount: number;
+  adjustment_type: InvoiceAdjustmentType;
+  reason?: string;
+}
 
 export interface InvoiceItem {
   id: string;

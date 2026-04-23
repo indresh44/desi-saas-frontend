@@ -15,12 +15,22 @@ import {
   RefreshCw,
   Share2,
 } from "lucide-react";
+import { AddAdjustmentDialog } from "@/components/invoices/add-adjustment-dialog";
+import { ApproveInvoiceDialog } from "@/components/invoices/approve-invoice-dialog";
 import { InvoiceItemEnrichment } from "@/components/invoices/invoice-item-enrichment";
 import { PaymentAttachmentPreview } from "@/components/leads/payment-attachment-preview";
 import { RecordPaymentModal } from "@/components/leads/record-payment-modal";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { fetchCustomers } from "@/lib/api/customers";
 import {
+  deleteInvoiceAdjustment,
+  fetchInvoiceAdjustments,
   fetchInvoiceItems,
   fetchInvoicePayments,
   fetchInvoices,
@@ -29,7 +39,14 @@ import {
 import { shareInvoicePdf, buildBrandedInvoiceUrl } from "@/lib/utils/share";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { Customer } from "@/lib/types/customer";
-import type { Invoice, InvoiceItem, InvoiceStatus, Payment, PaymentMethod } from "@/lib/types/invoice";
+import type {
+  Invoice,
+  InvoiceAdjustment,
+  InvoiceItem,
+  InvoiceStatus,
+  Payment,
+  PaymentMethod,
+} from "@/lib/types/invoice";
 
 export interface InvoiceListViewProps {
   customerId?: string;
@@ -188,6 +205,11 @@ export function InvoiceListView({
   const [isRowLoading, setIsRowLoading] = useState<Record<string, boolean>>({});
   const [itemsByInvoice, setItemsByInvoice] = useState<Record<string, Invoice["items"]>>({});
   const [paymentsByInvoice, setPaymentsByInvoice] = useState<Record<string, Payment[]>>({});
+  const [adjustmentsByInvoice, setAdjustmentsByInvoice] = useState<
+    Record<string, InvoiceAdjustment[]>
+  >({});
+  const [approveDialogInvoice, setApproveDialogInvoice] = useState<Invoice | null>(null);
+  const [adjustmentDialogInvoice, setAdjustmentDialogInvoice] = useState<Invoice | null>(null);
 
   const [shareLoadingByInvoice, setShareLoadingByInvoice] = useState<Record<string, boolean>>({});
   const [statusChangingByInvoice, setStatusChangingByInvoice] = useState<Record<string, boolean>>({});
@@ -312,15 +334,20 @@ export function InvoiceListView({
 
   const loadExpandedDetails = useCallback(
     async (invoiceId: string) => {
-      if (itemsByInvoice[invoiceId] && paymentsByInvoice[invoiceId]) {
+      if (
+        itemsByInvoice[invoiceId] &&
+        paymentsByInvoice[invoiceId] &&
+        adjustmentsByInvoice[invoiceId]
+      ) {
         return;
       }
 
       setIsRowLoading((prev) => ({ ...prev, [invoiceId]: true }));
       try {
-        const [items, payments] = await Promise.all([
+        const [items, payments, adjustments] = await Promise.all([
           fetchInvoiceItems(invoiceId),
           fetchInvoicePayments(invoiceId),
+          fetchInvoiceAdjustments(invoiceId),
         ]);
 
         setItemsByInvoice((prev) => ({
@@ -334,11 +361,16 @@ export function InvoiceListView({
             (a, b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime()
           ),
         }));
+
+        setAdjustmentsByInvoice((prev) => ({
+          ...prev,
+          [invoiceId]: adjustments,
+        }));
       } finally {
         setIsRowLoading((prev) => ({ ...prev, [invoiceId]: false }));
       }
     },
-    [itemsByInvoice, paymentsByInvoice]
+    [itemsByInvoice, paymentsByInvoice, adjustmentsByInvoice]
   );
 
   const toggleExpanded = async (invoiceId: string) => {
@@ -401,6 +433,43 @@ export function InvoiceListView({
     } finally {
       setStatusChangingByInvoice((prev) => ({ ...prev, [invoice.id]: false }));
     }
+  };
+
+  const handleAddMoreToDeal = (invoice: Invoice) => {
+    if (!invoice.leadId) return;
+    setRedirectingTo(invoice.leadTitle ?? "lead");
+    setTimeout(() => {
+      router.push(`/leads/${invoice.leadId}?newInvoice=1`);
+    }, 700);
+  };
+
+  const handleAdjustmentSaved = async (invoiceId: string) => {
+    // Refetch the list + the expanded invoice's adjustments so totals & status refresh.
+    const [adjustments] = await Promise.all([
+      fetchInvoiceAdjustments(invoiceId),
+      loadInvoices("reset"),
+    ]);
+    setAdjustmentsByInvoice((prev) => ({ ...prev, [invoiceId]: adjustments }));
+  };
+
+  const handleDeleteAdjustment = async (invoiceId: string, adjustmentId: string) => {
+    await deleteInvoiceAdjustment(invoiceId, adjustmentId);
+    const [adjustments] = await Promise.all([
+      fetchInvoiceAdjustments(invoiceId),
+      loadInvoices("reset"),
+    ]);
+    setAdjustmentsByInvoice((prev) => ({ ...prev, [invoiceId]: adjustments }));
+  };
+
+  const computeRemainingBalance = (invoice: Invoice): number => {
+    const adjustments = adjustmentsByInvoice[invoice.id] ?? [];
+    const adjTotal = adjustments.reduce((sum, a) => sum + Number(a.amount), 0);
+    const total = Number(invoice.totalAmount ?? 0);
+    const payments = paymentsByInvoice[invoice.id] ?? [];
+    const paid = payments.length
+      ? payments.reduce((sum, p) => sum + Number(p.amount), 0)
+      : Number(invoice.amountPaid ?? 0);
+    return Math.max(total - adjTotal - paid, 0);
   };
 
   const canLoadMore = invoices.length < total;
@@ -617,8 +686,8 @@ export function InvoiceListView({
                         type="button"
                         size="sm"
                         variant="outline"
-                        className="border-teal-200 text-teal-700 hover:bg-teal-50"
-                        onClick={() => void handleApprove(invoice)}
+                        className="border-teal-200 text-teal-700 hover:bg-teal-50 dark:border-teal-900/60 dark:text-teal-300 dark:hover:bg-teal-900/40"
+                        onClick={() => setApproveDialogInvoice(invoice)}
                         disabled={statusChangingByInvoice[invoice.id]}
                       >
                         {statusChangingByInvoice[invoice.id]
@@ -656,6 +725,30 @@ export function InvoiceListView({
                           WhatsApp
                         </Button>
                       </a>
+                    ) : null}
+
+                    {invoice.status !== "paid" ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button type="button" size="sm" variant="outline" aria-label="More actions">
+                            ⋯
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {(invoice.status === "sent" ||
+                            invoice.status === "approved" ||
+                            invoice.status === "partial") ? (
+                            <DropdownMenuItem onSelect={() => setAdjustmentDialogInvoice(invoice)}>
+                              Add adjustment…
+                            </DropdownMenuItem>
+                          ) : null}
+                          {invoice.leadId ? (
+                            <DropdownMenuItem onSelect={() => handleAddMoreToDeal(invoice)}>
+                              Add more to this deal
+                            </DropdownMenuItem>
+                          ) : null}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     ) : null}
 
                   </div>
@@ -754,9 +847,37 @@ export function InvoiceListView({
                                   <span className="text-muted-foreground">Tax</span>
                                   <span className="w-20 text-right font-semibold text-foreground">{formatRupees(Number(invoice.taxTotal ?? 0))}</span>
                                 </div>
+                                {(adjustmentsByInvoice[invoice.id] ?? []).map((adj) => (
+                                  <div key={adj.id} className="flex justify-end gap-4 pr-1 text-sm group">
+                                    <span className="text-muted-foreground flex items-center gap-1.5">
+                                      {adj.adjustmentType === "discount" ? "Discount" : "Write-off"}
+                                      {adj.reason ? <span className="text-xs opacity-70">({adj.reason})</span> : null}
+                                      <button
+                                        type="button"
+                                        onClick={() => void handleDeleteAdjustment(invoice.id, adj.id)}
+                                        className="ml-1 text-muted-foreground/60 hover:text-destructive opacity-0 transition-opacity group-hover:opacity-100"
+                                        aria-label="Remove adjustment"
+                                        title="Remove"
+                                      >
+                                        ×
+                                      </button>
+                                    </span>
+                                    <span className="w-20 text-right font-medium text-muted-foreground">
+                                      − {formatRupees(Number(adj.amount))}
+                                    </span>
+                                  </div>
+                                ))}
                                 <div className="flex justify-end gap-4 pr-1 text-sm">
                                   <span className="text-muted-foreground">Total</span>
-                                  <span className="w-20 text-right text-base font-semibold text-primary">{formatRupees(Number(invoice.totalAmount))}</span>
+                                  <span className="w-20 text-right text-base font-semibold text-primary">
+                                    {formatRupees(
+                                      Number(invoice.totalAmount) -
+                                      (adjustmentsByInvoice[invoice.id] ?? []).reduce(
+                                        (sum, a) => sum + Number(a.amount),
+                                        0
+                                      )
+                                    )}
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -886,12 +1007,35 @@ export function InvoiceListView({
           invoice={paymentModalInvoice}
           remainingAmount={Math.max(
             Number(paymentModalInvoice.totalAmount) -
+              (adjustmentsByInvoice[paymentModalInvoice.id]?.reduce((s, a) => s + Number(a.amount), 0) ?? 0) -
               (paymentsByInvoice[paymentModalInvoice.id]?.reduce((s, p) => s + Number(p.amount), 0) ??
                 Number(paymentModalInvoice.amountPaid ?? 0)),
             0
           )}
           onClose={() => setPaymentModalInvoice(null)}
           onSuccess={() => void onPaymentRecorded(paymentModalInvoice.id)}
+        />
+      ) : null}
+
+      <ApproveInvoiceDialog
+        open={approveDialogInvoice !== null}
+        invoiceNumber={approveDialogInvoice?.invoiceNumber}
+        onClose={() => setApproveDialogInvoice(null)}
+        onConfirm={async () => {
+          if (approveDialogInvoice) {
+            await handleApprove(approveDialogInvoice);
+          }
+        }}
+      />
+
+      {adjustmentDialogInvoice ? (
+        <AddAdjustmentDialog
+          open={adjustmentDialogInvoice !== null}
+          invoiceId={adjustmentDialogInvoice.id}
+          invoiceNumber={adjustmentDialogInvoice.invoiceNumber}
+          remainingBalance={computeRemainingBalance(adjustmentDialogInvoice)}
+          onClose={() => setAdjustmentDialogInvoice(null)}
+          onSaved={() => void handleAdjustmentSaved(adjustmentDialogInvoice.id)}
         />
       ) : null}
     </section>

@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BookmarkPlus, CheckCircle, ChevronDown, ChevronUp, Download, Loader2, MoreVertical, Pencil, Plus, RefreshCw, Share2 } from "lucide-react";
+import { AddAdjustmentDialog } from "@/components/invoices/add-adjustment-dialog";
+import { ApproveInvoiceDialog } from "@/components/invoices/approve-invoice-dialog";
 import { InvoiceItemEnrichment } from "@/components/invoices/invoice-item-enrichment";
 import { PaymentAttachmentPreview } from "@/components/leads/payment-attachment-preview";
 import { Button } from "@/components/ui/button";
@@ -12,10 +14,22 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { RecordPaymentModal } from "@/components/leads/record-payment-modal";
-import { fetchInvoicePayments, updateInvoiceStatus } from "@/lib/api/invoices";
+import {
+  deleteInvoiceAdjustment,
+  fetchInvoiceAdjustments,
+  fetchInvoicePayments,
+  updateInvoiceStatus,
+} from "@/lib/api/invoices";
 import { shareInvoicePdf, buildBrandedInvoiceUrl } from "@/lib/utils/share";
 import { useAuth } from "@/lib/auth/auth-context";
-import type { Invoice, InvoiceItem, InvoiceStatus, Payment, PaymentMethod } from "@/lib/types/invoice";
+import type {
+  Invoice,
+  InvoiceAdjustment,
+  InvoiceItem,
+  InvoiceStatus,
+  Payment,
+  PaymentMethod,
+} from "@/lib/types/invoice";
 
 type Props = {
   invoice: Invoice;
@@ -98,6 +112,9 @@ export function InvoiceCard({
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [shareMessage, setShareMessage] = useState<string | null>(null);
   const [statusChanging, setStatusChanging] = useState<InvoiceStatus | null>(null);
+  const [adjustments, setAdjustments] = useState<InvoiceAdjustment[]>([]);
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  const [adjustmentDialogOpen, setAdjustmentDialogOpen] = useState(false);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const [localItems, setLocalItems] = useState(invoice.items ?? []);
 
@@ -129,9 +146,20 @@ export function InvoiceCard({
     }
   }, [invoice.id]);
 
+  const loadAdjustments = useCallback(async () => {
+    try {
+      const data = await fetchInvoiceAdjustments(invoice.id);
+      setAdjustments(data);
+    } catch {
+      // adjustments are non-critical; silently fall back to []
+      setAdjustments([]);
+    }
+  }, [invoice.id]);
+
   useEffect(() => {
     void loadPayments();
-  }, [loadPayments]);
+    void loadAdjustments();
+  }, [loadPayments, loadAdjustments]);
 
   useEffect(() => {
     setLocalItems(invoice.items ?? []);
@@ -156,10 +184,16 @@ export function InvoiceCard({
     [payments]
   );
 
-  const remainingAmount = Math.max(totalAmount - totalPaid, 0);
+  const totalAdjustments = useMemo(
+    () => adjustments.reduce((sum, a) => sum + toSafeNumber(a.amount), 0),
+    [adjustments]
+  );
+
+  const effectiveTotal = Math.max(totalAmount - totalAdjustments, 0);
+  const remainingAmount = Math.max(effectiveTotal - totalPaid, 0);
   const progressPercent =
-    totalAmount > 0
-      ? Math.min((totalPaid / totalAmount) * 100, 100)
+    effectiveTotal > 0
+      ? Math.min((totalPaid / effectiveTotal) * 100, 100)
       : 0;
 
   const subtotal = useMemo(
@@ -298,7 +332,11 @@ export function InvoiceCard({
 
         <p className="text-xs text-muted-foreground">
           Status: <span className="font-medium capitalize text-foreground">{invoice.status}</span>
-          {canEditInvoice ? " • Editable" : " • Editable only in draft"}
+          {canEditInvoice
+            ? " • Editable"
+            : invoice.status === "paid"
+              ? " • Locked (paid)"
+              : " • Money fields locked; descriptions/deliverables editable"}
         </p>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -307,10 +345,10 @@ export function InvoiceCard({
               type="button"
               size="sm"
               variant="outline"
-              onClick={() => void handleStatusChange("approved")}
+              onClick={() => setApproveDialogOpen(true)}
               disabled={statusChanging !== null}
               title="Approve invoice"
-              className="border-teal-200 text-teal-700 hover:bg-teal-50"
+              className="border-teal-200 text-teal-700 hover:bg-teal-50 dark:border-teal-900/60 dark:text-teal-300 dark:hover:bg-teal-900/40"
             >
               {statusChanging === "approved" ? (
                 <RefreshCw className="h-3.5 w-3.5 animate-spin" />
@@ -367,7 +405,10 @@ export function InvoiceCard({
             ) : null}
           </div>
 
-          {onSaveAsTemplate ? (
+          {(onSaveAsTemplate ||
+            (invoice.status === "sent" ||
+              invoice.status === "approved" ||
+              invoice.status === "partial")) ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button type="button" size="sm" variant="outline" aria-label="More actions">
@@ -375,10 +416,19 @@ export function InvoiceCard({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => onSaveAsTemplate(invoice)}>
-                  <BookmarkPlus className="h-3.5 w-3.5" />
-                  Save as template
-                </DropdownMenuItem>
+                {(invoice.status === "sent" ||
+                  invoice.status === "approved" ||
+                  invoice.status === "partial") ? (
+                  <DropdownMenuItem onSelect={() => setAdjustmentDialogOpen(true)}>
+                    Add adjustment…
+                  </DropdownMenuItem>
+                ) : null}
+                {onSaveAsTemplate ? (
+                  <DropdownMenuItem onSelect={() => onSaveAsTemplate(invoice)}>
+                    <BookmarkPlus className="h-3.5 w-3.5" />
+                    Save as template
+                  </DropdownMenuItem>
+                ) : null}
               </DropdownMenuContent>
             </DropdownMenu>
           ) : null}
@@ -505,6 +555,35 @@ export function InvoiceCard({
                           <span className="font-medium">GST</span>
                           <span className="w-20 text-right font-medium">{formatRupees(totalGst)}</span>
                         </div>
+                        {adjustments.map((adj) => (
+                          <div key={adj.id} className="flex justify-end gap-4 pr-1 text-sm text-muted-foreground group">
+                            <span className="font-medium flex items-center gap-1.5">
+                              {adj.adjustmentType === "discount" ? "Discount" : "Write-off"}
+                              {adj.reason ? <span className="text-xs opacity-70">({adj.reason})</span> : null}
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  await deleteInvoiceAdjustment(invoice.id, adj.id);
+                                  await loadAdjustments();
+                                  onStatusChanged?.({ ...invoice });
+                                  onPaymentRecorded();
+                                }}
+                                className="ml-1 text-muted-foreground/60 hover:text-destructive opacity-0 transition-opacity group-hover:opacity-100"
+                                aria-label="Remove adjustment"
+                                title="Remove"
+                              >
+                                ×
+                              </button>
+                            </span>
+                            <span className="w-20 text-right font-medium">− {formatRupees(adj.amount)}</span>
+                          </div>
+                        ))}
+                        {adjustments.length > 0 ? (
+                          <div className="flex justify-end gap-4 pr-1 pt-1 border-t border-border/50 text-sm text-foreground">
+                            <span className="font-semibold">Net total</span>
+                            <span className="w-20 text-right font-semibold">{formatRupees(effectiveTotal)}</span>
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   </div>
@@ -613,6 +692,28 @@ export function InvoiceCard({
           onSuccess={handlePaymentSuccess}
         />
       ) : null}
+
+      <ApproveInvoiceDialog
+        open={approveDialogOpen}
+        invoiceNumber={invoice.invoiceNumber}
+        onClose={() => setApproveDialogOpen(false)}
+        onConfirm={async () => {
+          await handleStatusChange("approved");
+        }}
+      />
+
+      <AddAdjustmentDialog
+        open={adjustmentDialogOpen}
+        invoiceId={invoice.id}
+        invoiceNumber={invoice.invoiceNumber}
+        remainingBalance={remainingAmount}
+        onClose={() => setAdjustmentDialogOpen(false)}
+        onSaved={async () => {
+          await loadAdjustments();
+          await loadPayments();
+          onPaymentRecorded();
+        }}
+      />
     </>
   );
 }

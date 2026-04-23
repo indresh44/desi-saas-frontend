@@ -78,7 +78,13 @@ function getStatusClass(status: string): string {
 }
 
 function getDocLabel(status: string): string {
-  return status === "sent" ? "Estimate" : "Invoice";
+  // Draft + Sent = estimate (pre-approval, scope still fluid).
+  // Approved / Partial / Paid = tax invoice (approved, money may have moved).
+  return status === "draft" || status === "sent" ? "Estimate" : "Invoice";
+}
+
+function getFormalTabLabel(status: string): string {
+  return status === "draft" || status === "sent" ? "Formal estimate" : "Formal invoice";
 }
 
 export function PublicInvoiceView({
@@ -236,7 +242,7 @@ export function PublicInvoiceView({
                     : "text-zinc-500 hover:text-zinc-700"
                 }`}
               >
-                Formal estimate
+                {getFormalTabLabel(meta.status)}
               </button>
             </div>
           </div>
@@ -261,7 +267,7 @@ export function PublicInvoiceView({
             />
           </div>
         ) : (
-          /* ── Formal Estimate View (existing) ── */
+          /* ── Formal Estimate / Invoice View (existing) ── */
           <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
             {/* Top row */}
             <div className="flex flex-wrap items-start justify-between gap-4">
