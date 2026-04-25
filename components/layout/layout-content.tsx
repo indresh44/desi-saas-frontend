@@ -35,6 +35,15 @@ export function LayoutContent({ children }: { children: ReactNode }) {
     );
   }
 
+  // Full-screen routes (e.g., onboarding) render without AppShell, for both
+  // authenticated and unauthenticated visitors. The page itself handles auth
+  // requirements (onboarding layout redirects completed users; preview mode
+  // lets anyone view the screens). Placed BEFORE the auth gate so logged-out
+  // testers visiting /onboarding/role?preview=1 get the page, not a blank.
+  if (FULL_SCREEN_ROUTES.some((r) => pathname.startsWith(r))) {
+    return <>{children}</>;
+  }
+
   // Home page: show landing for unauthenticated, otherwise let page handle it
   if (pathname === "/" && !isAuthenticated) {
     return <>{children}</>;
@@ -42,11 +51,6 @@ export function LayoutContent({ children }: { children: ReactNode }) {
 
   // Other public routes (login, register)
   if (isPublicRoute(pathname) && pathname !== "/") {
-    return <>{children}</>;
-  }
-
-  // Full-screen routes: authenticated but no AppShell (e.g., onboarding)
-  if (isAuthenticated && FULL_SCREEN_ROUTES.some((r) => pathname.startsWith(r))) {
     return <>{children}</>;
   }
 

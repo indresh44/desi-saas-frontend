@@ -1510,3 +1510,469 @@
   margin-left: auto;
   margin-right: auto;
 }
+
+/* ── Onboarding theme ───────────────────────────────────────────
+   Scoped to `.onboarding-theme` on the onboarding layout root so the
+   rest of the app keeps using the Ocean Blue theme tokens above.
+   ────────────────────────────────────────────────────────────── */
+.onboarding-theme {
+  --brand-blue: #1677ff;
+  --brand-blue-dark: #0958d9;
+  --brand-blue-deep: #003eb3;
+  --brand-blue-soft: #e6f0ff;
+  --brand-blue-tint: #f0f7ff;
+  --brand-blue-glow: rgba(22, 119, 255, 0.15);
+  --brand-orange: #ea8a1b;
+  --brand-orange-soft: #ffd4a8;
+}
+
+/* Force light mode inside onboarding regardless of parent .dark class. The
+   prototype is a light-mode design (white right panel, blue-gradient left).
+   `color-scheme: light` also keeps native form controls and scrollbars light. */
+.onboarding-theme {
+  color-scheme: light;
+  font-family: var(--font-plus-jakarta), var(--font-inter), "Inter", sans-serif;
+  color: #1f2937;
+  background: #ffffff;
+}
+
+.onboarding-theme,
+.onboarding-theme main {
+  background: #ffffff;
+}
+
+.onboarding-theme h1,
+.onboarding-theme h2,
+.onboarding-theme h3 {
+  color: #1f2937;
+}
+
+/* Ensure the body background doesn't bleed through around the shell on any
+   viewport / zoom combination. The shell is min-h-dvh already; this covers
+   the edge case where dark-mode body paints before hydration. */
+html:has(.onboarding-theme),
+body:has(.onboarding-theme) {
+  background: #ffffff !important;
+}
+
+/* ── Keyframes (onboarding only) ─────────────────────────────── */
+@keyframes role-pop-in {
+  0% { opacity: 0; transform: translateY(8px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes orb-float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(12px, -16px) scale(1.05); }
+}
+
+@keyframes plant-sway {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+
+@keyframes screen-blink {
+  0%, 95%, 100% { opacity: 1; }
+  97% { opacity: 0.4; }
+}
+
+@keyframes fill-bar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+@keyframes smoke-puff {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.8); }
+  50% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-2px, -6px) scale(1.4); }
+}
+
+@keyframes door-swing {
+  0%, 100% { transform: rotateY(0deg); }
+  50% { transform: rotateY(-40deg); }
+}
+
+@keyframes lens-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+
+@keyframes flash-blink {
+  0%, 40%, 100% { opacity: 0; }
+  20% { opacity: 1; }
+}
+
+@keyframes cap-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.5px); }
+}
+
+@keyframes tassel-sway {
+  0%, 100% { transform: rotate(-8deg); }
+  50% { transform: rotate(8deg); }
+}
+
+@keyframes spark-spin {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.15); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+@keyframes dot-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.25); opacity: 1; }
+}
+
+/* Orbs and floating bits on the left panel */
+.onboarding-theme .orb {
+  animation: orb-float 12s ease-in-out infinite;
+}
+
+/* Entrance stagger for role cards — set --i to 0..n on the card */
+.onboarding-theme .role-card-enter {
+  opacity: 0;
+  animation: role-pop-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: calc(80ms * var(--i, 0));
+}
+
+/* Icon-specific animations driven by the parent card's hover state.
+   The icon SVG wrapper has `group` so inner named groups animate on hover. */
+.onboarding-theme .icon-anim .smoke {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+}
+.onboarding-theme .group:hover .icon-anim .smoke,
+.onboarding-theme .group:focus-visible .icon-anim .smoke {
+  animation: smoke-puff 1.6s ease-in-out infinite;
+}
+
+.onboarding-theme .icon-anim .door {
+  transform-box: fill-box;
+  transform-origin: left center;
+}
+.onboarding-theme .group:hover .icon-anim .door,
+.onboarding-theme .group:focus-visible .icon-anim .door {
+  animation: door-swing 1.8s ease-in-out infinite;
+}
+
+.onboarding-theme .icon-anim .lens {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.onboarding-theme .group:hover .icon-anim .lens,
+.onboarding-theme .group:focus-visible .icon-anim .lens {
+  animation: lens-pulse 1.3s ease-in-out infinite;
+}
+
+.onboarding-theme .icon-anim .flash {
+  opacity: 0;
+}
+.onboarding-theme .group:hover .icon-anim .flash,
+.onboarding-theme .group:focus-visible .icon-anim .flash {
+  animation: flash-blink 1.3s ease-in-out infinite;
+}
+
+.onboarding-theme .icon-anim .cap {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.onboarding-theme .group:hover .icon-anim .cap,
+.onboarding-theme .group:focus-visible .icon-anim .cap {
+  animation: cap-bounce 1.4s ease-in-out infinite;
+}
+
+.onboarding-theme .icon-anim .tassel {
+  transform-box: fill-box;
+  transform-origin: top center;
+}
+.onboarding-theme .group:hover .icon-anim .tassel,
+.onboarding-theme .group:focus-visible .icon-anim .tassel {
+  animation: tassel-sway 1.2s ease-in-out infinite;
+}
+
+.onboarding-theme .icon-anim .spark {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.onboarding-theme .group:hover .icon-anim .spark,
+.onboarding-theme .group:focus-visible .icon-anim .spark {
+  animation: spark-spin 2.2s ease-in-out infinite;
+}
+
+.onboarding-theme .icon-anim .dot-a,
+.onboarding-theme .icon-anim .dot-b,
+.onboarding-theme .icon-anim .dot-c,
+.onboarding-theme .icon-anim .dot-d {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.onboarding-theme .group:hover .icon-anim .dot-a,
+.onboarding-theme .group:focus-visible .icon-anim .dot-a { animation: dot-pulse 1s ease-in-out infinite; }
+.onboarding-theme .group:hover .icon-anim .dot-b,
+.onboarding-theme .group:focus-visible .icon-anim .dot-b { animation: dot-pulse 1s ease-in-out 0.12s infinite; }
+.onboarding-theme .group:hover .icon-anim .dot-c,
+.onboarding-theme .group:focus-visible .icon-anim .dot-c { animation: dot-pulse 1s ease-in-out 0.24s infinite; }
+.onboarding-theme .group:hover .icon-anim .dot-d,
+.onboarding-theme .group:focus-visible .icon-anim .dot-d { animation: dot-pulse 1s ease-in-out 0.36s infinite; }
+
+/* Illustration bits */
+.onboarding-theme .illus-plant {
+  transform-box: fill-box;
+  transform-origin: bottom center;
+  animation: plant-sway 5s ease-in-out infinite;
+}
+.onboarding-theme .illus-screen {
+  animation: screen-blink 6s ease-in-out infinite;
+}
+
+/* Progress bar shimmer */
+.onboarding-theme .progress-fill {
+  background: linear-gradient(
+    90deg,
+    var(--brand-blue) 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    var(--brand-blue) 100%
+  );
+  background-size: 200% 100%;
+  animation: fill-bar 2.4s linear infinite;
+}
+
+/* Reduced motion kill switch */
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-theme *,
+  .onboarding-theme *::before,
+  .onboarding-theme *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ── Finish Setup Overlay ─────────────────────────────────────
+   Premium transition between pipeline confirmation and dashboard.
+   Single self-contained scope so this doesn't leak elsewhere.
+   ────────────────────────────────────────────────────────────── */
+.finish-overlay-backdrop {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255, 212, 168, 0.25) 0%, transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(22, 119, 255, 0.6) 0%, transparent 50%),
+    linear-gradient(135deg, #003eb3 0%, #0958d9 50%, #1677ff 100%);
+  background-size: 140% 140%, 160% 160%, 100% 100%;
+  animation: finish-backdrop-fade 350ms ease forwards,
+    finish-backdrop-drift 14s ease-in-out infinite;
+  opacity: 0;
+}
+
+@keyframes finish-backdrop-fade {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes finish-backdrop-drift {
+  0%,
+  100% {
+    background-position: 0% 0%, 100% 100%, 0% 0%;
+  }
+  50% {
+    background-position: 8% 12%, 92% 88%, 0% 0%;
+  }
+}
+
+.finish-overlay-logo {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: finish-logo-bloom 600ms cubic-bezier(0.22, 1, 0.36, 1) 200ms backwards;
+}
+
+.finish-overlay-logo-halo {
+  position: absolute;
+  inset: -16px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 212, 168, 0.35) 0%,
+    rgba(255, 212, 168, 0) 65%
+  );
+  animation: finish-halo-pulse 2.4s ease-in-out 600ms infinite;
+}
+
+@keyframes finish-logo-bloom {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes finish-halo-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+.finish-overlay-heading {
+  animation: finish-fade-up 500ms cubic-bezier(0.22, 1, 0.36, 1) 500ms backwards;
+}
+
+.finish-overlay-card {
+  background: rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 20px;
+  padding: 24px 26px;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  animation: finish-fade-up 600ms cubic-bezier(0.22, 1, 0.36, 1) 700ms backwards;
+}
+
+@keyframes finish-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.finish-overlay-badge {
+  background: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  color: transparent;
+  transition: background-color 350ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 350ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 200ms ease 200ms,
+    transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.finish-overlay-badge.is-ticked {
+  background: #ea8a1b;
+  border-color: #ea8a1b;
+  color: #ffffff;
+  transform: scale(1);
+  animation: finish-badge-pop 600ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes finish-badge-pop {
+  0% {
+    transform: scale(0.7);
+  }
+  60% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.finish-overlay-badge-halo {
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: rgba(255, 212, 168, 0.5);
+  opacity: 0;
+  transform: scale(1);
+  pointer-events: none;
+}
+
+.finish-overlay-badge.is-ticked .finish-overlay-badge-halo {
+  animation: finish-badge-halo 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes finish-badge-halo {
+  0% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.9);
+  }
+}
+
+.finish-overlay-badge-check {
+  stroke-dasharray: 30;
+  stroke-dashoffset: 30;
+  transition: stroke-dashoffset 380ms cubic-bezier(0.22, 1, 0.36, 1) 180ms;
+}
+
+.finish-overlay-badge.is-ticked .finish-overlay-badge-check {
+  stroke-dashoffset: 0;
+}
+
+.finish-overlay-progress {
+  background: linear-gradient(
+    90deg,
+    #ea8a1b 0%,
+    #ffd4a8 50%,
+    #ea8a1b 100%
+  );
+  background-size: 200% 100%;
+  transition: width 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: fill-bar 1.6s linear infinite;
+}
+
+/* Once every step is ticked, freeze the shimmer to a solid orange fill —
+   the bar stops looking like it's still loading. */
+.finish-overlay-progress[data-complete="true"] {
+  animation: none;
+  background: #ea8a1b;
+}
+
+.finish-overlay-welcome {
+  animation: finish-fade-up 400ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.finish-overlay-cta {
+  animation: finish-cta-rise 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes finish-cta-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Reduced-motion: collapse the choreography but keep the structure visible. */
+@media (prefers-reduced-motion: reduce) {
+  .finish-overlay-backdrop,
+  .finish-overlay-logo,
+  .finish-overlay-logo-halo,
+  .finish-overlay-heading,
+  .finish-overlay-card,
+  .finish-overlay-welcome,
+  .finish-overlay-cta {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .finish-overlay-badge,
+  .finish-overlay-badge-check,
+  .finish-overlay-badge-halo,
+  .finish-overlay-progress {
+    transition: none !important;
+    animation: none !important;
+  }
+}

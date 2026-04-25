@@ -11,6 +11,7 @@ export interface AuthBusiness {
   id: string;
   name: string;
   onboarding_status?: string;
+  business_type?: string | null;
 }
 
 export interface AuthResponse {
@@ -29,6 +30,7 @@ export interface AuthResponse {
     id: string;
     name: string;
     onboarding_status?: string;
+    business_type?: string | null;
   };
 }
 

@@ -93,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       id: response.business.id,
       name: response.business.name,
       onboarding_status: response.business.onboarding_status,
+      business_type: response.business.business_type ?? null,
     };
 
     setUser(authUser);

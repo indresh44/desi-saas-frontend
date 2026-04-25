@@ -1,11 +1,5 @@
-import type { Metadata } from "next";
-import OnboardingClient from "./onboarding-client";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Setup | SellnSettle",
-  description: "Set up your SellnSettle workspace",
-};
-
-export default function OnboardingPage() {
-  return <OnboardingClient />;
+export default function OnboardingIndex() {
+  redirect("/onboarding/role");
 }
