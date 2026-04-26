@@ -65,7 +65,6 @@ type StatusFilter = "all" | InvoiceStatus;
 const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "All" },
   { value: "draft", label: "Draft" },
-  { value: "sent", label: "Sent" },
   { value: "approved", label: "Approved" },
   { value: "partial", label: "Partial" },
   { value: "paid", label: "Paid" },
