@@ -49,10 +49,10 @@ function LeadCard({
   const callHref = lead.customerPhone ? `tel:${lead.customerPhone}` : null;
 
   return (
-    <div className="flex flex-col rounded-xl border bg-card p-4 shadow-lg transition-shadow hover:shadow-xl">
+    <div className="flex min-w-0 flex-col rounded-xl border bg-card p-4 shadow-lg transition-shadow hover:shadow-xl">
       {/* Top row: title + stage badge */}
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="truncate text-base font-semibold leading-snug text-primary">{lead.title}</p>
           <p className="mt-1 truncate text-xs text-primary">{customerName}</p>
         </div>
