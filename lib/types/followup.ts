@@ -1,4 +1,4 @@
-export type FollowUpStatus = "pending" | "done" | "skipped";
+export type FollowUpStatus = "pending" | "done" | "cancelled";
 
 export interface LeadFollowUp {
   id: string;
@@ -22,5 +22,14 @@ export interface CreateFollowUpInput {
 }
 
 export interface MarkFollowUpDoneInput {
+  note?: string;
+}
+
+export interface RescheduleFollowUpInput {
+  scheduled_at: string;
+  note?: string;
+}
+
+export interface CancelFollowUpInput {
   note?: string;
 }

@@ -188,6 +188,10 @@ export interface Payment {
   paymentDate: string;
   reference: string | null;
   createdAt: string;
+  voidedAt: string | null;
+  voidedReason: string | null;
+  replacesPaymentId: string | null;
+  editedAt: string | null;
 }
 
 export interface CreatePaymentInput {
@@ -196,6 +200,22 @@ export interface CreatePaymentInput {
   payment_method: PaymentMethod;
   payment_date: string;
   reference?: string;
+}
+
+export interface UpdatePaymentMetadataInput {
+  payment_date?: string;
+  payment_method?: PaymentMethod;
+  reference?: string;
+}
+
+export interface UpdatePaymentAmountInput {
+  amount: number;
+  reason?: string;
+}
+
+export interface MovePaymentInput {
+  invoice_id: string;
+  reason?: string;
 }
 
 export interface PaymentAttachment {

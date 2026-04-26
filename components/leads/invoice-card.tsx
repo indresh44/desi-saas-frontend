@@ -6,6 +6,9 @@ import { AddAdjustmentDialog } from "@/components/invoices/add-adjustment-dialog
 import { ApproveInvoiceDialog } from "@/components/invoices/approve-invoice-dialog";
 import { CancelInvoiceDialog } from "@/components/invoices/cancel-invoice-dialog";
 import { InvoiceItemEnrichment } from "@/components/invoices/invoice-item-enrichment";
+import { DeletePaymentDialog } from "@/components/payments/delete-payment-dialog";
+import { EditPaymentDialog } from "@/components/payments/edit-payment-dialog";
+import { MovePaymentDialog } from "@/components/payments/move-payment-dialog";
 import { PaymentAttachmentPreview } from "@/components/leads/payment-attachment-preview";
 import { Button } from "@/components/ui/button";
 import {
@@ -120,13 +123,17 @@ export function InvoiceCard({
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const [localItems, setLocalItems] = useState(invoice.items ?? []);
+  const [showVoidedPayments, setShowVoidedPayments] = useState(false);
+  const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
+  const [deletingPayment, setDeletingPayment] = useState<Payment | null>(null);
+  const [movingPayment, setMovingPayment] = useState<Payment | null>(null);
 
   const loadPayments = useCallback(async () => {
     setIsLoadingPayments(true);
     setPaymentsError(null);
 
     try {
-      const data = await fetchInvoicePayments(invoice.id);
+      const data = await fetchInvoicePayments(invoice.id, { includeVoided: true });
       setPayments(
         [...data].sort(
           (a, b) =>
@@ -182,9 +189,18 @@ export function InvoiceCard({
 
   const totalAmount = toSafeNumber(invoice.totalAmount);
 
-  const totalPaid = useMemo(
-    () => payments.reduce((sum, payment) => sum + toSafeNumber(payment.amount), 0),
+  const activePayments = useMemo(
+    () => payments.filter((payment) => !payment.voidedAt),
     [payments]
+  );
+  const voidedPayments = useMemo(
+    () => payments.filter((payment) => payment.voidedAt),
+    [payments]
+  );
+
+  const totalPaid = useMemo(
+    () => activePayments.reduce((sum, payment) => sum + toSafeNumber(payment.amount), 0),
+    [activePayments]
   );
 
   const totalAdjustments = useMemo(
@@ -664,44 +680,140 @@ export function InvoiceCard({
             <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
               {paymentsError}
             </div>
-          ) : payments.length === 0 ? (
+          ) : activePayments.length === 0 && voidedPayments.length === 0 ? (
             <div className="rounded-xl border border-dashed border bg-muted px-3 py-4 text-sm text-muted-foreground">
               No payments recorded yet.
             </div>
           ) : (
             <div className="space-y-2">
-              {payments.map((payment) => (
-                <div
-                  key={payment.id}
-                  className="rounded-xl border-border border bg-muted px-3 py-3"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="min-w-0 space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-medium text-foreground">
-                          {formatDate(payment.paymentDate)}
-                        </span>
-                        <span
-                          className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${getPaymentMethodClass(payment.paymentMethod)}`}
-                        >
-                          {getPaymentMethodLabel(payment.paymentMethod)}
-                        </span>
+              {activePayments.map((payment) => {
+                const wasEdited = !!payment.editedAt || !!payment.replacesPaymentId;
+                return (
+                  <div
+                    key={payment.id}
+                    className="rounded-xl border-border border bg-muted px-3 py-3"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-medium text-foreground">
+                            {formatDate(payment.paymentDate)}
+                          </span>
+                          <span
+                            className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${getPaymentMethodClass(payment.paymentMethod)}`}
+                          >
+                            {getPaymentMethodLabel(payment.paymentMethod)}
+                          </span>
+                          {wasEdited ? (
+                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-700">
+                              edited
+                            </span>
+                          ) : null}
+                        </div>
+                        {payment.reference ? (
+                          <p className="text-xs text-muted-foreground">{payment.reference}</p>
+                        ) : null}
                       </div>
-                      {payment.reference ? (
-                        <p className="text-xs text-muted-foreground">{payment.reference}</p>
-                      ) : null}
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-right text-sm font-semibold text-green-600">
+                          {formatRupees(payment.amount)}
+                        </span>
+                        {invoice.status !== "cancelled" ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                aria-label="Payment actions"
+                                className="h-7 w-7 p-0"
+                              >
+                                <MoreVertical className="h-3.5 w-3.5" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onSelect={() => setEditingPayment(payment)}>
+                                Edit…
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => setMovingPayment(payment)}>
+                                Move to different invoice…
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onSelect={() => setDeletingPayment(payment)}
+                                destructive
+                              >
+                                Delete payment…
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ) : null}
+                      </div>
                     </div>
 
-                    <div className="text-right text-sm font-semibold text-green-600">
-                      {formatRupees(payment.amount)}
+                    <div className="mt-2">
+                      <PaymentAttachmentPreview paymentId={payment.id} />
                     </div>
                   </div>
+                );
+              })}
 
-                  <div className="mt-2">
-                    <PaymentAttachmentPreview paymentId={payment.id} />
-                  </div>
+              {activePayments.length === 0 && voidedPayments.length > 0 ? (
+                <div className="rounded-xl border border-dashed border bg-muted px-3 py-4 text-sm text-muted-foreground">
+                  No active payments. {voidedPayments.length} edited / deleted entry
+                  {voidedPayments.length === 1 ? "" : "s"} below.
                 </div>
-              ))}
+              ) : null}
+
+              {voidedPayments.length > 0 ? (
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowVoidedPayments((prev) => !prev)}
+                    className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+                  >
+                    {showVoidedPayments ? (
+                      <ChevronUp className="h-3 w-3" />
+                    ) : (
+                      <ChevronDown className="h-3 w-3" />
+                    )}
+                    {showVoidedPayments ? "Hide" : "Show"} {voidedPayments.length} edited
+                    / deleted entr{voidedPayments.length === 1 ? "y" : "ies"}
+                  </button>
+
+                  {showVoidedPayments ? (
+                    <div className="mt-2 space-y-2">
+                      {voidedPayments.map((payment) => (
+                        <div
+                          key={payment.id}
+                          className="rounded-xl border border-dashed border-border bg-muted/40 px-3 py-2 opacity-70"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="min-w-0 space-y-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-sm text-muted-foreground line-through">
+                                  {formatDate(payment.paymentDate)}
+                                </span>
+                                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                                  voided
+                                </span>
+                              </div>
+                              {payment.voidedReason ? (
+                                <p className="text-xs text-muted-foreground">
+                                  {payment.voidedReason}
+                                </p>
+                              ) : null}
+                            </div>
+                            <div className="text-right text-sm text-muted-foreground line-through">
+                              {formatRupees(payment.amount)}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           )}
         </div>
@@ -744,6 +856,46 @@ export function InvoiceCard({
         onClose={() => setCancelDialogOpen(false)}
         onConfirm={(reason) => handleCancelInvoice(reason)}
       />
+
+      {editingPayment ? (
+        <EditPaymentDialog
+          open
+          payment={editingPayment}
+          invoiceNumber={invoice.invoiceNumber}
+          maxAllowedAmount={remainingAmount + toSafeNumber(editingPayment.amount)}
+          onClose={() => setEditingPayment(null)}
+          onSaved={() => {
+            void loadPayments();
+            onPaymentRecorded();
+          }}
+        />
+      ) : null}
+
+      {deletingPayment ? (
+        <DeletePaymentDialog
+          open
+          payment={deletingPayment}
+          invoiceNumber={invoice.invoiceNumber}
+          onClose={() => setDeletingPayment(null)}
+          onDeleted={() => {
+            void loadPayments();
+            onPaymentRecorded();
+          }}
+        />
+      ) : null}
+
+      {movingPayment ? (
+        <MovePaymentDialog
+          open
+          payment={movingPayment}
+          sourceInvoice={invoice}
+          onClose={() => setMovingPayment(null)}
+          onMoved={() => {
+            void loadPayments();
+            onPaymentRecorded();
+          }}
+        />
+      ) : null}
     </>
   );
 }

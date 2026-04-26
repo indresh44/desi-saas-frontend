@@ -5,15 +5,21 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
+  ArrowRightLeft,
+  Ban,
   CheckCircle2,
   ChevronDown,
   Circle,
   FileText,
   Loader2,
   MessageCircle,
+  MoreVertical,
+  Pencil,
   Phone,
   Plus,
+  Receipt,
   Users,
+  XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,10 +38,14 @@ import { useLookupMaps } from "@/hooks/use-lookup-maps";
 import { fetchLeads, moveLeadStage, updateLeadNotes } from "@/lib/api/leads";
 import { createActivity, fetchLeadActivities } from "@/lib/api/activities";
 import {
+  cancelFollowUp,
   createFollowUp,
   fetchLeadFollowUps,
   markFollowUpDone,
+  rescheduleFollowUp,
 } from "@/lib/api/followups";
+import { CancelFollowupDialog } from "@/components/leads/cancel-followup-dialog";
+import { RescheduleFollowupDialog } from "@/components/leads/reschedule-followup-dialog";
 import { fetchLeadInvoices } from "@/lib/api/invoices";
 import type { Lead } from "@/lib/types/lead";
 import type { ActivityType, LeadActivity } from "@/lib/types/activity";
@@ -101,6 +111,10 @@ function ActivityIcon({ type }: { type: ActivityType }) {
   if (type === "call") return <Phone className={`${cls} text-blue-500`} />;
   if (type === "whatsapp") return <MessageCircle className={`${cls} text-green-500`} />;
   if (type === "meeting") return <Users className={`${cls} text-purple-500`} />;
+  if (type === "payment_recorded") return <Receipt className={`${cls} text-green-600`} />;
+  if (type === "payment_edited") return <Pencil className={`${cls} text-amber-600`} />;
+  if (type === "payment_voided") return <Ban className={`${cls} text-red-500`} />;
+  if (type === "payment_moved") return <ArrowRightLeft className={`${cls} text-blue-500`} />;
   return <FileText className={`${cls} text-muted-foreground`} />;
 }
 
@@ -128,6 +142,8 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
   const [lead, setLead] = useState<Lead | null>(null);
   const [activities, setActivities] = useState<LeadActivity[]>([]);
   const [followUps, setFollowUps] = useState<LeadFollowUp[]>([]);
+  const [reschedulingFollowUp, setReschedulingFollowUp] = useState<LeadFollowUp | null>(null);
+  const [cancellingFollowUp, setCancellingFollowUp] = useState<LeadFollowUp | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -353,6 +369,26 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
     } catch {
       // silently ignore — list will reflect server state on next refresh
     }
+  };
+
+  const handleRescheduleConfirm = async (
+    followupId: string,
+    input: { scheduledAt: string; note: string | null },
+  ) => {
+    await rescheduleFollowUp(followupId, {
+      scheduled_at: input.scheduledAt,
+      note: input.note ?? undefined,
+    });
+    await refreshFollowUps();
+    await refreshActivities();
+  };
+
+  const handleCancelConfirm = async (followupId: string, reason: string | null) => {
+    await cancelFollowUp(followupId, {
+      note: reason ?? undefined,
+    });
+    await refreshFollowUps();
+    await refreshActivities();
   };
 
   const handleStageChange = async (newStageId: string) => {
@@ -776,26 +812,35 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
             <div className="space-y-2">
               {followUps.map((fu) => {
                 const isDone = fu.status === "done";
+                const isCancelled = fu.status === "cancelled";
+                const isTerminal = isDone || isCancelled;
                 return (
                   <div
                     key={fu.id}
                     className={`rounded-lg border p-2.5 ${
-                      isDone
+                      isTerminal
                         ? "border-border bg-muted opacity-60"
                         : "border bg-card"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p
-                          className={`text-xs font-medium ${
-                            isDone
-                              ? "text-muted-foreground line-through"
-                              : "text-foreground"
-                          }`}
-                        >
-                          {formatDate(fu.scheduledAt)}
-                        </p>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <p
+                            className={`text-xs font-medium ${
+                              isTerminal
+                                ? "text-muted-foreground line-through"
+                                : "text-foreground"
+                            }`}
+                          >
+                            {formatDate(fu.scheduledAt)}
+                          </p>
+                          {isCancelled ? (
+                            <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-red-700">
+                              Cancelled
+                            </span>
+                          ) : null}
+                        </div>
                         {fu.note ? (
                           <p className="mt-0.5 truncate text-xs text-muted-foreground">
                             {fu.note}
@@ -804,16 +849,46 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
                       </div>
                       {isDone ? (
                         <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
+                      ) : isCancelled ? (
+                        <XCircle className="h-4 w-4 shrink-0 text-red-500" />
                       ) : (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="h-6 shrink-0 px-2 text-xs"
-                          onClick={() => void handleMarkDone(fu.id)}
-                        >
-                          Mark Done
-                        </Button>
+                        <div className="flex shrink-0 items-center gap-1">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-6 px-2 text-xs"
+                            onClick={() => void handleMarkDone(fu.id)}
+                          >
+                            Mark Done
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="h-6 w-6 p-0"
+                                aria-label="More actions"
+                              >
+                                <MoreVertical className="h-3.5 w-3.5" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onSelect={() => setReschedulingFollowUp(fu)}
+                              >
+                                Reschedule…
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onSelect={() => setCancellingFollowUp(fu)}
+                                destructive
+                              >
+                                Cancel follow-up…
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -993,6 +1068,27 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
           defaultName={`${lead.title ?? "Template"}`}
           onClose={() => setSaveAsTemplateInvoice(null)}
           onSaved={() => setSaveAsTemplateInvoice(null)}
+        />
+      ) : null}
+
+      {reschedulingFollowUp ? (
+        <RescheduleFollowupDialog
+          open={reschedulingFollowUp !== null}
+          currentScheduledAt={reschedulingFollowUp.scheduledAt}
+          onClose={() => setReschedulingFollowUp(null)}
+          onConfirm={(input) =>
+            handleRescheduleConfirm(reschedulingFollowUp.id, input)
+          }
+        />
+      ) : null}
+
+      {cancellingFollowUp ? (
+        <CancelFollowupDialog
+          open={cancellingFollowUp !== null}
+          onClose={() => setCancellingFollowUp(null)}
+          onConfirm={(reason) =>
+            handleCancelConfirm(cancellingFollowUp.id, reason)
+          }
         />
       ) : null}
     </div>

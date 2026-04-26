@@ -1,9 +1,11 @@
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/constants/api";
 import {
+  CancelFollowUpInput,
   CreateFollowUpInput,
   LeadFollowUp,
   MarkFollowUpDoneInput,
+  RescheduleFollowUpInput,
 } from "@/lib/types/followup";
 
 type LeadFollowUpApiResponse = {
@@ -11,7 +13,7 @@ type LeadFollowUpApiResponse = {
   lead_id: string;
   scheduled_at: string;
   note: string | null;
-  status: "pending" | "done" | "skipped";
+  status: "pending" | "done" | "cancelled";
   created_by: string;
   created_at: string;
   completed_at: string | null;
@@ -92,6 +94,36 @@ export async function markFollowUpDone(
 ): Promise<LeadFollowUp> {
   const result = await apiClient<LeadFollowUpApiResponse>(
     `${API_ENDPOINTS.leadFollowUps}/${id}/done`,
+    {
+      method: "PATCH",
+      body: input,
+    }
+  );
+
+  return toFollowUpModel(result.data);
+}
+
+export async function rescheduleFollowUp(
+  id: string,
+  input: RescheduleFollowUpInput
+): Promise<LeadFollowUp> {
+  const result = await apiClient<LeadFollowUpApiResponse>(
+    `${API_ENDPOINTS.leadFollowUps}/${id}/reschedule`,
+    {
+      method: "PATCH",
+      body: input,
+    }
+  );
+
+  return toFollowUpModel(result.data);
+}
+
+export async function cancelFollowUp(
+  id: string,
+  input: CancelFollowUpInput
+): Promise<LeadFollowUp> {
+  const result = await apiClient<LeadFollowUpApiResponse>(
+    `${API_ENDPOINTS.leadFollowUps}/${id}/cancel`,
     {
       method: "PATCH",
       body: input,

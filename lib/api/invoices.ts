@@ -18,9 +18,12 @@ import {
   InvoiceListApiResponse,
   InvoiceListResult,
   InvoiceListSummary,
+  MovePaymentInput,
   Payment,
   PaymentAttachment,
   UpdateInvoiceInput,
+  UpdatePaymentAmountInput,
+  UpdatePaymentMetadataInput,
 } from "@/lib/types/invoice";
 
 type InvoiceItemApiResponse = {
@@ -48,6 +51,10 @@ type PaymentApiResponse = {
   payment_date: string;
   reference: string | null;
   created_at: string;
+  voided_at?: string | null;
+  voided_reason?: string | null;
+  replaces_payment_id?: string | null;
+  edited_at?: string | null;
 };
 
 function withQuery(path: string, params: Record<string, string | undefined>) {
@@ -125,6 +132,10 @@ function toPaymentModel(raw: PaymentApiResponse): Payment {
     paymentDate: raw.payment_date,
     reference: raw.reference,
     createdAt: raw.created_at,
+    voidedAt: raw.voided_at ?? null,
+    voidedReason: raw.voided_reason ?? null,
+    replacesPaymentId: raw.replaces_payment_id ?? null,
+    editedAt: raw.edited_at ?? null,
   };
 }
 
@@ -298,9 +309,13 @@ export async function createPayment(
 }
 
 export async function fetchInvoicePayments(
-  invoiceId: string
+  invoiceId: string,
+  options?: { includeVoided?: boolean }
 ): Promise<Payment[]> {
-  const path = withQuery(API_ENDPOINTS.payments, { invoice_id: invoiceId });
+  const path = withQuery(API_ENDPOINTS.payments, {
+    invoice_id: invoiceId,
+    include_voided: options?.includeVoided ? "true" : undefined,
+  });
 
   const result = await apiClient<PaymentApiResponse[]>(path, {
     method: "GET",
@@ -308,6 +323,50 @@ export async function fetchInvoicePayments(
   });
 
   return Array.isArray(result.data) ? result.data.map(toPaymentModel) : [];
+}
+
+export async function updatePaymentMetadata(
+  paymentId: string,
+  input: UpdatePaymentMetadataInput
+): Promise<Payment> {
+  const result = await apiClient<PaymentApiResponse>(
+    `${API_ENDPOINTS.payments}/${paymentId}`,
+    { method: "PATCH", body: input }
+  );
+  return toPaymentModel(result.data);
+}
+
+export async function updatePaymentAmount(
+  paymentId: string,
+  input: UpdatePaymentAmountInput
+): Promise<Payment> {
+  const result = await apiClient<PaymentApiResponse>(
+    `${API_ENDPOINTS.payments}/${paymentId}/amount`,
+    { method: "PATCH", body: input }
+  );
+  return toPaymentModel(result.data);
+}
+
+export async function movePayment(
+  paymentId: string,
+  input: MovePaymentInput
+): Promise<Payment> {
+  const result = await apiClient<PaymentApiResponse>(
+    `${API_ENDPOINTS.payments}/${paymentId}/invoice`,
+    { method: "PATCH", body: input }
+  );
+  return toPaymentModel(result.data);
+}
+
+export async function voidPayment(
+  paymentId: string,
+  reason?: string
+): Promise<Payment> {
+  const result = await apiClient<PaymentApiResponse>(
+    `${API_ENDPOINTS.payments}/${paymentId}/void`,
+    { method: "POST", body: { reason: reason ?? null } }
+  );
+  return toPaymentModel(result.data);
 }
 
 export async function fetchPaymentAttachments(

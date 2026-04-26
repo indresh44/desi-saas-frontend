@@ -655,8 +655,11 @@ export function InvoiceListView({
             const remaining = Math.max(Number(invoice.totalAmount) - amountPaid, 0);
             const canRecordPayment = invoice.status !== "paid" && invoice.status !== "draft";
 
+            const isEstimate = invoice.status === "draft" || invoice.status === "sent";
+            const docLabel = isEstimate ? "estimate" : "invoice";
+            const brandedInvoiceUrl = buildBrandedInvoiceUrl(invoice.id, invoice.invoiceNumber);
             const whatsappMessage = encodeURIComponent(
-              `Hi ${invoice.customerName?.split(" ")[0] ?? ""}, a reminder for invoice ${invoice.invoiceNumber}. Total: ${formatRupees(Number(invoice.totalAmount))}, Pending: ${formatRupees(remaining)}.`
+              `Hi ${invoice.customerName?.split(" ")[0] ?? ""}, a reminder for ${docLabel} ${invoice.invoiceNumber}. Total: ${formatRupees(Number(invoice.totalAmount))}, Pending: ${formatRupees(remaining)}.\nView & download: ${brandedInvoiceUrl}`
             );
             const whatsappHref = invoice.customerPhone
               ? `https://wa.me/91${normalizePhone(invoice.customerPhone)}?text=${whatsappMessage}`
