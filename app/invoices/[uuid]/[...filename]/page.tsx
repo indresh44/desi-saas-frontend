@@ -79,7 +79,7 @@ export async function generateMetadata({
     };
   }
 
-  const isEstimate = meta.status === "sent";
+  const isEstimate = meta.status === "draft" || meta.status === "sent";
   const docLabel = isEstimate ? "Estimate" : "Invoice";
   const title = `${docLabel} ${meta.invoice_number} — ${formatRupees(meta.total_amount)}`;
   const description = `From ${meta.business_name}${meta.customer_name ? ` for ${meta.customer_name}` : ""} | Due ${formatDate(meta.due_date)} | ${meta.items_count} item${meta.items_count !== 1 ? "s" : ""}`;

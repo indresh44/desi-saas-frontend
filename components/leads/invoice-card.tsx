@@ -280,9 +280,7 @@ export function InvoiceCard({
       );
 
       if (result === "shared") {
-        setShareMessage("Shared! Caption copied to clipboard");
-      } else if (result === "downloaded") {
-        setShareMessage("PDF downloaded");
+        setShareMessage("Shared!");
       } else if (result === "cancelled") {
         // User cancelled — no message needed
       } else if (result === "error") {

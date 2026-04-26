@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/lib/auth/auth-context";
 import { SIDEBAR_NAV_GROUPS, type SidebarNavItem } from "@/lib/constants/navigation";
 import { cn } from "@/lib/utils";
 
@@ -50,45 +48,28 @@ function SidebarNavLink({
 
 function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
 
   return (
-    <>
-      <nav className="flex-1 space-y-1 p-3">
-        {SIDEBAR_NAV_GROUPS.map((group, index) => (
-          <div
-            key={group.key}
-            className={cn(index > 0 && "mt-2 border-t border-shell-border pt-2")}
-          >
-            <div className="space-y-1">
-              {group.items.map((item) => (
-                <SidebarNavLink
-                  key={item.href}
-                  item={item}
-                  pathname={pathname}
-                  isMuted={group.key === "secondary"}
-                  onLinkClick={onLinkClick}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
-      </nav>
-
-      <div className="border-t border-shell-border p-3">
-        <p className="truncate text-sm font-medium text-foreground">{user?.name ?? "User"}</p>
-        <p className="truncate text-xs text-muted-foreground">{user?.email ?? ""}</p>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="mt-2 w-full"
-          onClick={() => void logout()}
+    <nav className="flex-1 space-y-1 p-3">
+      {SIDEBAR_NAV_GROUPS.map((group, index) => (
+        <div
+          key={group.key}
+          className={cn(index > 0 && "mt-2 border-t border-shell-border pt-2")}
         >
-          Logout
-        </Button>
-      </div>
-    </>
+          <div className="space-y-1">
+            {group.items.map((item) => (
+              <SidebarNavLink
+                key={item.href}
+                item={item}
+                pathname={pathname}
+                isMuted={group.key === "secondary"}
+                onLinkClick={onLinkClick}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </nav>
   );
 }
 
