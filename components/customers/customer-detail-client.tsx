@@ -12,6 +12,7 @@ import { fetchLeads } from "@/lib/api/leads";
 import type { CustomerSummary } from "@/lib/types/customer";
 import type { Invoice, InvoiceStatus } from "@/lib/types/invoice";
 import type { Lead } from "@/lib/types/lead";
+import { validateIndianMobile } from "@/lib/validation/phone";
 
 type TabKey = "overview" | "leads" | "invoices";
 
@@ -80,6 +81,11 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
   const [editPhone, setEditPhone] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editNotes, setEditNotes] = useState("");
+  const [editAddress, setEditAddress] = useState("");
+  const [editCity, setEditCity] = useState("");
+  const [editState, setEditState] = useState("");
+  const [editGstNumber, setEditGstNumber] = useState("");
+  const [editError, setEditError] = useState<string | null>(null);
 
 
   useEffect(() => {
@@ -141,6 +147,11 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
     setEditPhone(summary.customer.phone);
     setEditEmail(summary.customer.email ?? "");
     setEditNotes(summary.customer.notes ?? "");
+    setEditAddress(summary.customer.address ?? "");
+    setEditCity(summary.customer.city ?? "");
+    setEditState(summary.customer.state ?? "");
+    setEditGstNumber(summary.customer.gstNumber ?? "");
+    setEditError(null);
     setIsEditOpen(true);
   };
 
@@ -149,8 +160,19 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
       return;
     }
 
+    if (!editName.trim()) {
+      setEditError("Name is required.");
+      return;
+    }
+
+    const phoneCheck = validateIndianMobile(editPhone.trim());
+    if (!phoneCheck.ok) {
+      setEditError(phoneCheck.reason);
+      return;
+    }
+
     setIsSavingCustomer(true);
-    setErrorMessage(null);
+    setEditError(null);
 
     try {
       await updateCustomer(summary.customer.id, {
@@ -158,6 +180,10 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
         phone: editPhone.trim(),
         email: editEmail.trim() || null,
         notes: editNotes.trim() || null,
+        address: editAddress.trim() || null,
+        city: editCity.trim() || null,
+        state: editState.trim() || null,
+        gst_number: editGstNumber.trim().toUpperCase() || null,
       });
 
       setIsEditOpen(false);
@@ -169,9 +195,9 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
         "message" in error &&
         typeof (error as { message: unknown }).message === "string"
       ) {
-        setErrorMessage((error as { message: string }).message);
+        setEditError((error as { message: string }).message);
       } else {
-        setErrorMessage("Unable to update customer.");
+        setEditError("Unable to update customer.");
       }
     } finally {
       setIsSavingCustomer(false);
@@ -433,40 +459,106 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
           />
 
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="w-full max-w-lg rounded-xl border bg-card p-4 shadow-xl">
+            <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border bg-card p-4 shadow-xl">
               <h3 className="text-base font-semibold text-foreground">Edit Customer</h3>
+
+              {editError ? (
+                <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {editError}
+                </div>
+              ) : null}
+
               <div className="mt-3 grid gap-3">
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(event) => setEditName(event.target.value)}
-                  className="w-full rounded-lg border px-3 py-2 text-sm"
-                  placeholder="Name"
-                  disabled={isSavingCustomer}
-                />
-                <input
-                  type="text"
-                  value={editPhone}
-                  onChange={(event) => setEditPhone(event.target.value)}
-                  className="w-full rounded-lg border px-3 py-2 text-sm"
-                  placeholder="Phone"
-                  disabled={isSavingCustomer}
-                />
-                <input
-                  type="email"
-                  value={editEmail}
-                  onChange={(event) => setEditEmail(event.target.value)}
-                  className="w-full rounded-lg border px-3 py-2 text-sm"
-                  placeholder="Email"
-                  disabled={isSavingCustomer}
-                />
-                <textarea
-                  value={editNotes}
-                  onChange={(event) => setEditNotes(event.target.value)}
-                  className="min-h-24 w-full rounded-lg border px-3 py-2 text-sm"
-                  placeholder="Notes"
-                  disabled={isSavingCustomer}
-                />
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Name</label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(event) => setEditName(event.target.value)}
+                    className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+                    placeholder="Name"
+                    disabled={isSavingCustomer}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Phone</label>
+                  <input
+                    type="text"
+                    value={editPhone}
+                    onChange={(event) => setEditPhone(event.target.value)}
+                    className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+                    placeholder="Phone"
+                    disabled={isSavingCustomer}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Email</label>
+                  <input
+                    type="email"
+                    value={editEmail}
+                    onChange={(event) => setEditEmail(event.target.value)}
+                    className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+                    placeholder="Email"
+                    disabled={isSavingCustomer}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Address</label>
+                  <input
+                    type="text"
+                    value={editAddress}
+                    onChange={(event) => setEditAddress(event.target.value)}
+                    className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+                    placeholder="Street / building"
+                    disabled={isSavingCustomer}
+                  />
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground">City</label>
+                    <input
+                      type="text"
+                      value={editCity}
+                      onChange={(event) => setEditCity(event.target.value)}
+                      className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+                      placeholder="City"
+                      disabled={isSavingCustomer}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground">State</label>
+                    <input
+                      type="text"
+                      value={editState}
+                      onChange={(event) => setEditState(event.target.value)}
+                      className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+                      placeholder="State"
+                      disabled={isSavingCustomer}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">GSTIN</label>
+                  <input
+                    type="text"
+                    value={editGstNumber}
+                    onChange={(event) => setEditGstNumber(event.target.value.toUpperCase())}
+                    className="mt-1 w-full rounded-lg border px-3 py-2 text-sm uppercase tracking-wider"
+                    placeholder="22AAAAA0000A1Z5"
+                    disabled={isSavingCustomer}
+                    maxLength={15}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Notes</label>
+                  <textarea
+                    value={editNotes}
+                    onChange={(event) => setEditNotes(event.target.value)}
+                    className="mt-1 min-h-24 w-full rounded-lg border px-3 py-2 text-sm"
+                    placeholder="Internal notes (not shown to customer)"
+                    disabled={isSavingCustomer}
+                  />
+                </div>
               </div>
 
               <div className="mt-4 flex items-center justify-end gap-2">

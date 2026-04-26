@@ -14,6 +14,7 @@ import {
   getCustomerByPhone,
 } from "@/lib/api/customers";
 import { Customer } from "@/lib/types/customer";
+import { isValidIndianMobile } from "@/lib/validation/phone";
 
 const leadSourceOptions: { value: string; label: string }[] = [
   { value: "referral", label: "Referral" },
@@ -28,7 +29,11 @@ const leadSourceOptions: { value: string; label: string }[] = [
 const createLeadSchema = z
   .object({
     customerName: z.string().trim().min(1, "Customer name is required"),
-    phone: z.string().trim().min(1, "Phone is required"),
+    phone: z
+      .string()
+      .trim()
+      .min(1, "Phone is required")
+      .refine(isValidIndianMobile, "Enter a valid 10-digit Indian mobile number"),
     customerEmail: z.union([z.literal(""), z.string().email("Invalid email")]),
     title: z.string().trim().min(1, "Please describe what they need"),
     source: z.string().trim().optional(),

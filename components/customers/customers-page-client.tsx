@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { createCustomer, fetchCustomers, updateCustomer } from "@/lib/api/customers";
 import { fetchCustomerOutstanding } from "@/lib/api/invoices";
 import { Customer, UpdateCustomerInput } from "@/lib/types/customer";
+import { validateIndianMobile } from "@/lib/validation/phone";
 
 type OutstandingState = {
   isLoading: boolean;
@@ -141,6 +142,12 @@ export default function CustomersPageClient() {
         return;
       }
 
+      const phoneCheck = validateIndianMobile(trimmedPhone);
+      if (!phoneCheck.ok) {
+        setErrorMessage(phoneCheck.reason);
+        return;
+      }
+
       setIsCreating(true);
       setErrorMessage(null);
 
@@ -211,6 +218,12 @@ export default function CustomersPageClient() {
 
       if (!trimmedName || !trimmedPhone) {
         setErrorMessage("Name and phone are required.");
+        return;
+      }
+
+      const phoneCheck = validateIndianMobile(trimmedPhone);
+      if (!phoneCheck.ok) {
+        setErrorMessage(phoneCheck.reason);
         return;
       }
 
@@ -600,7 +613,7 @@ export default function CustomersPageClient() {
                     <th className="px-4 py-3 font-medium">Phone</th>
                     <th className="px-4 py-3 font-medium">Email</th>
                     <th className="px-4 py-3 font-medium">Outstanding</th>
-                    <th className="px-4 py-3 font-medium">Actions</th>
+                    <th className="whitespace-nowrap px-4 py-3 text-right font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -667,8 +680,8 @@ export default function CustomersPageClient() {
                             <span className="font-medium text-green-600">✓ Clear</span>
                           )}
                         </td>
-                        <td className="px-4 py-3">
-                          <div className="flex flex-wrap items-center gap-3">
+                        <td className="whitespace-nowrap px-4 py-3">
+                          <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1.5">
                             {isEditing ? (
                               <>
                                 <Button
