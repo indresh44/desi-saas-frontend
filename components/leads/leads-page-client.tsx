@@ -96,7 +96,7 @@ function LeadCard({
       ) : null}
 
       {/* Actions row */}
-      <div className="mt-auto flex items-center gap-2 border-t border-border pt-3 mt-3">
+      <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-border pt-3 mt-3">
         {callHref ? (
           <a href={callHref}>
             <Button type="button" variant="outline" size="sm" className="gap-1.5">
