@@ -430,7 +430,25 @@ function DemoSection() {
    MAIN PAGE
    ═══════════════════════════════════════ */
 
+const DEMO_VIDEO_ID = "AgvNQAbc4ss";
+
 export default function LandingPageClient() {
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isVideoOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsVideoOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [isVideoOpen]);
+
   return (
     <div style={{ background: "#fff", color: C.navy, overflowX: "hidden", minHeight: "100vh" }}>
       {/* eslint-disable-next-line @next/next/no-page-custom-font */}
@@ -977,12 +995,18 @@ export default function LandingPageClient() {
                     border: `3px solid ${C.navy}`, boxShadow: shadow(6, 6, C.navy),
                     fontFamily: FH, textDecoration: "none", display: "inline-block",
                   }}>Start free — no card needed</Link>
-                  <button style={{
-                    background: "#fff", color: C.navy, padding: "18px 32px", borderRadius: 14,
-                    fontWeight: 900, fontSize: "clamp(16px, 2.5vw, 20px)",
-                    border: `3px solid ${C.navy}`, boxShadow: shadow(6, 6, C.navy),
-                    fontFamily: FH, cursor: "pointer",
-                  }}>Watch Video Demo</button>
+                  <button
+                    type="button"
+                    onClick={() => setIsVideoOpen(true)}
+                    style={{
+                      background: "#fff", color: C.navy, padding: "18px 32px", borderRadius: 14,
+                      fontWeight: 900, fontSize: "clamp(16px, 2.5vw, 20px)",
+                      border: `3px solid ${C.navy}`, boxShadow: shadow(6, 6, C.navy),
+                      fontFamily: FH, cursor: "pointer",
+                    }}
+                  >
+                    Watch Video Demo
+                  </button>
                 </div>
               </div>
             </div>
@@ -1022,6 +1046,60 @@ export default function LandingPageClient() {
           </div>
         </div>
       </footer>
+
+      {/* ═══ DEMO VIDEO MODAL ═══ */}
+      {isVideoOpen ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Product demo video"
+          onClick={() => setIsVideoOpen(false)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 100,
+            background: "rgba(10, 25, 47, 0.85)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "24px",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: "relative", width: "100%", maxWidth: 960,
+              background: "#000", border: `4px solid ${C.navy}`,
+              borderRadius: 16, boxShadow: shadow(10, 10, C.gold),
+              overflow: "hidden",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setIsVideoOpen(false)}
+              aria-label="Close video"
+              style={{
+                position: "absolute", top: 12, right: 12, zIndex: 2,
+                width: 40, height: 40, borderRadius: 999,
+                background: "#fff", color: C.navy,
+                border: `3px solid ${C.navy}`, boxShadow: shadow(3, 3, C.navy),
+                fontSize: 20, fontWeight: 900, cursor: "pointer", lineHeight: 1,
+                fontFamily: FH,
+              }}
+            >
+              ×
+            </button>
+            <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
+              <iframe
+                src={`https://www.youtube.com/embed/${DEMO_VIDEO_ID}?autoplay=1&rel=0`}
+                title="SellNSettle product demo"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                style={{
+                  position: "absolute", top: 0, left: 0,
+                  width: "100%", height: "100%", border: 0,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
