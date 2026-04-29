@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   CheckCircle,
   ChevronDown,
@@ -13,7 +13,9 @@ import {
   Pencil,
   Plus,
   RefreshCw,
+  Search,
   Share2,
+  X,
 } from "lucide-react";
 import { AddAdjustmentDialog } from "@/components/invoices/add-adjustment-dialog";
 import { ApproveInvoiceDialog } from "@/components/invoices/approve-invoice-dialog";
@@ -184,6 +186,8 @@ export function InvoiceListView({
   initialStatusFilter = "all",
 }: InvoiceListViewProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { business } = useAuth();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [total, setTotal] = useState(0);
@@ -192,6 +196,16 @@ export function InvoiceListView({
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Invoice number search. The input drives `invoiceNumberSearch` for
+  // immediate UI feedback; a debounced copy (`debouncedInvoiceNumber`)
+  // is what the API call actually uses, plus what gets synced to the
+  // `?q=` URL param via router.replace. Reading from
+  // `searchParams.get("q")` on init means a deep link from the dashboard
+  // ("View Invoice") lands with the search pre-populated.
+  const initialQ = searchParams.get("q") ?? "";
+  const [invoiceNumberSearch, setInvoiceNumberSearch] = useState<string>(initialQ);
+  const [debouncedInvoiceNumber, setDebouncedInvoiceNumber] = useState<string>(initialQ);
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(initialStatusFilter);
   const [datePreset, setDatePreset] = useState<DatePreset>("all");
@@ -229,6 +243,46 @@ export function InvoiceListView({
   useEffect(() => {
     setStatusFilter(initialStatusFilter);
   }, [initialStatusFilter]);
+
+  // Debounce the invoice number search input. After 250ms of no typing,
+  // commit the value to `debouncedInvoiceNumber` (which the API call
+  // depends on) and update the URL ?q= param via router.replace so the
+  // search state survives back-button + is shareable.
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      setDebouncedInvoiceNumber(invoiceNumberSearch);
+
+      const params = new URLSearchParams(searchParams.toString());
+      const trimmed = invoiceNumberSearch.trim();
+      if (trimmed) {
+        params.set("q", trimmed);
+      } else {
+        params.delete("q");
+      }
+      const queryString = params.toString();
+      const nextUrl = `${pathname}${queryString ? `?${queryString}` : ""}`;
+      router.replace(nextUrl, { scroll: false });
+    }, 250);
+    return () => window.clearTimeout(handle);
+  }, [invoiceNumberSearch, pathname, router, searchParams]);
+
+  // One-time reset on mount: if we landed with `?q=` in the URL (e.g. via
+  // the dashboard's "View Invoice" link), clear other filters that could
+  // hide the searched invoice. Without this, a user landing here with
+  // status=paid stuck from a previous session sees an empty search result.
+  // Only resets when this is the global /invoices page (no customerId
+  // prop) to avoid disturbing scoped views.
+  const didInitialFilterResetRef = useRef(false);
+  useEffect(() => {
+    if (didInitialFilterResetRef.current) return;
+    didInitialFilterResetRef.current = true;
+    if (customerId) return;
+    if (!searchParams.get("q")) return;
+
+    setStatusFilter("all");
+    setDatePreset("all");
+    setShowCancelled(false);
+  }, [customerId, searchParams]);
 
   useEffect(() => {
     if (customerId || !showFilters) {
@@ -292,12 +346,14 @@ export function InvoiceListView({
       try {
         const dateRange = getDateRangeForPreset(datePreset, customFromDate, customToDate);
         const nextOffset = isReset ? 0 : invoices.length;
+        const trimmedSearch = debouncedInvoiceNumber.trim();
         const response = await fetchInvoices({
           customer_id: selectedCustomerId,
           lead_id: leadId,
           status: statusFilter === "all" ? undefined : statusFilter,
           from_date: dateRange.from,
           to_date: dateRange.to,
+          invoice_number: trimmedSearch || undefined,
           include_cancelled: showCancelled || statusFilter === "cancelled",
           limit: 20,
           offset: nextOffset,
@@ -331,7 +387,7 @@ export function InvoiceListView({
         }
       }
     },
-    [customFromDate, customToDate, datePreset, invoices.length, leadId, selectedCustomerId, showCancelled, statusFilter]
+    [customFromDate, customToDate, datePreset, debouncedInvoiceNumber, invoices.length, leadId, selectedCustomerId, showCancelled, statusFilter]
   );
 
   useEffect(() => {
@@ -502,6 +558,33 @@ export function InvoiceListView({
 
       {showFilters ? (
         <div className="space-y-3 rounded-xl border bg-card p-4">
+          {/* Invoice number search. Synced with `?q=` URL param so that
+              dashboard "View Invoice" deep links land here pre-filtered.
+              Substring match, case-insensitive on the backend. */}
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="search"
+              value={invoiceNumberSearch}
+              onChange={(event) => setInvoiceNumberSearch(event.target.value)}
+              placeholder="Search by invoice number…"
+              aria-label="Search by invoice number"
+              autoComplete="off"
+              enterKeyHint="search"
+              className="w-full rounded-lg border bg-background py-2 pl-9 pr-9 text-base text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 md:text-sm"
+            />
+            {invoiceNumberSearch ? (
+              <button
+                type="button"
+                onClick={() => setInvoiceNumberSearch("")}
+                aria-label="Clear search"
+                className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            ) : null}
+          </div>
+
           <div className="flex flex-wrap items-center gap-2">
             {STATUS_OPTIONS.filter((opt) => opt.value !== "cancelled").map((option) => (
               <button

@@ -167,6 +167,7 @@ export async function fetchInvoices(filters?: {
   status?: string;
   from_date?: string;
   to_date?: string;
+  invoice_number?: string;
   include_cancelled?: boolean;
   limit?: number;
   offset?: number;
@@ -177,6 +178,7 @@ export async function fetchInvoices(filters?: {
     status: filters?.status,
     from_date: filters?.from_date,
     to_date: filters?.to_date,
+    invoice_number: filters?.invoice_number,
     include_cancelled: filters?.include_cancelled ? "true" : undefined,
     limit: filters?.limit?.toString(),
     offset: filters?.offset?.toString(),

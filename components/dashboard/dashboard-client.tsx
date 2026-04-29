@@ -389,14 +389,18 @@ export default function DashboardClient() {
                           </div>
 
                           <div className="mt-3 flex flex-wrap gap-2">
-                            {invoice.lead_id ? (
-                              <Link
-                                href={`/leads/${invoice.lead_id}`}
-                                className="inline-flex items-center rounded-lg border border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-accent"
-                              >
-                                View Invoice
-                              </Link>
-                            ) : null}
+                            {/* Deep-link to /invoices with the invoice number
+                                as a search query — the invoice list page reads
+                                ?q= and pre-filters to this invoice. Replaces
+                                the previous /leads/{id} link which dropped the
+                                user on the lead page and made them hunt for
+                                the invoice. */}
+                            <Link
+                              href={`/invoices?q=${encodeURIComponent(invoice.invoice_number)}`}
+                              className="inline-flex items-center rounded-lg border border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-accent"
+                            >
+                              View Invoice
+                            </Link>
 
                             <a
                               href={whatsappHref}
