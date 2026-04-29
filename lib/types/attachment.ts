@@ -1,5 +1,6 @@
 export type AttachmentEntityType =
   | "lead"
+  | "lead_activity"
   | "payment"
   | "catalog"
   | "quote"

@@ -25,7 +25,42 @@ export interface LeadActivity {
 }
 
 export interface CreateActivityInput {
-  lead_id: string;
   type: ActivityType;
   description: string;
+}
+
+export type EditableActivityType =
+  | "call"
+  | "whatsapp"
+  | "meeting"
+  | "note";
+
+export const EDITABLE_ACTIVITY_TYPES: ReadonlySet<ActivityType> = new Set<ActivityType>([
+  "call",
+  "whatsapp",
+  "meeting",
+  "note",
+]);
+
+export const ACTIVITY_TYPE_LABELS: Record<ActivityType, string> = {
+  call: "Call",
+  whatsapp: "WhatsApp",
+  meeting: "Meeting",
+  note: "Note",
+  status_change: "Stage moved",
+  followup_scheduled: "Follow-up scheduled",
+  followup_rescheduled: "Follow-up rescheduled",
+  followup_completed: "Follow-up done",
+  followup_cancelled: "Follow-up cancelled",
+  invoice_created: "Invoice created",
+  invoice_approved: "Invoice approved",
+  payment_recorded: "Payment",
+  payment_edited: "Payment edited",
+  payment_voided: "Payment voided",
+  payment_moved: "Payment moved",
+};
+
+export interface UpdateActivityInput {
+  type?: ActivityType;
+  description?: string;
 }

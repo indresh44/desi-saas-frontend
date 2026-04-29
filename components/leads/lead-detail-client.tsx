@@ -1,16 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRightLeft,
   Ban,
+  Camera,
   CheckCircle2,
   ChevronDown,
   Circle,
   FileText,
+  ImagePlus,
   Loader2,
   MessageCircle,
   MoreVertical,
@@ -19,6 +21,7 @@ import {
   Plus,
   Receipt,
   Users,
+  X,
   XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,7 +39,11 @@ import { TemplatePickerDialog } from "@/components/invoices/templates/template-p
 import { LeadNotes } from "@/components/leads/lead-notes";
 import { useLookupMaps } from "@/hooks/use-lookup-maps";
 import { fetchLeads, moveLeadStage, updateLeadNotes } from "@/lib/api/leads";
-import { createActivity, fetchLeadActivities } from "@/lib/api/activities";
+import {
+  createActivity,
+  fetchLeadActivities,
+  updateActivity,
+} from "@/lib/api/activities";
 import {
   cancelFollowUp,
   createFollowUp,
@@ -47,8 +54,24 @@ import {
 import { CancelFollowupDialog } from "@/components/leads/cancel-followup-dialog";
 import { RescheduleFollowupDialog } from "@/components/leads/reschedule-followup-dialog";
 import { fetchLeadInvoices } from "@/lib/api/invoices";
+import {
+  ACCEPTED_ATTACHMENT_FILE_TYPES,
+  MAX_ATTACHMENT_FILE_SIZE_BYTES,
+  deleteAttachment,
+  fetchAttachmentsBatch,
+  uploadAttachment,
+} from "@/lib/api/attachments";
+import {
+  ActivityAttachmentStrip,
+  ActivityAttachmentViewer,
+} from "@/components/leads/activity-attachments";
+import type { Attachment } from "@/lib/types/attachment";
 import type { Lead } from "@/lib/types/lead";
 import type { ActivityType, LeadActivity } from "@/lib/types/activity";
+import {
+  ACTIVITY_TYPE_LABELS,
+  EDITABLE_ACTIVITY_TYPES,
+} from "@/lib/types/activity";
 import type { LeadFollowUp } from "@/lib/types/followup";
 import type { Invoice } from "@/lib/types/invoice";
 
@@ -162,6 +185,29 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
   const [activityDesc, setActivityDesc] = useState("");
   const [activitySubmitting, setActivitySubmitting] = useState(false);
   const [activityError, setActivityError] = useState<string | null>(null);
+  const [activityFiles, setActivityFiles] = useState<File[]>([]);
+  const [activityFilesError, setActivityFilesError] = useState<string | null>(null);
+  const activityCameraInputRef = useRef<HTMLInputElement | null>(null);
+  const activityFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Attachments per activity (from batch fetch) + viewer state
+  const [attachmentsByActivity, setAttachmentsByActivity] = useState<
+    Record<string, Attachment[]>
+  >({});
+  const [viewer, setViewer] = useState<{ activityId: string; index: number } | null>(
+    null
+  );
+
+  // Inline edit state — only set for user-created (editable) activities
+  const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
+  const [editType, setEditType] = useState<ActivityType>("note");
+  const [editDesc, setEditDesc] = useState("");
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editFiles, setEditFiles] = useState<File[]>([]);
+  const [editFilesError, setEditFilesError] = useState<string | null>(null);
+  const editCameraInputRef = useRef<HTMLInputElement | null>(null);
+  const editFileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Follow-up form
   const [showFollowUpForm, setShowFollowUpForm] = useState(false);
@@ -214,6 +260,19 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
         )
       );
       setInvoices(invoicesData);
+
+      const activityIds = activitiesData.map((a) => a.id);
+      if (activityIds.length > 0) {
+        try {
+          const grouped = await fetchAttachmentsBatch("lead_activity", activityIds);
+          setAttachmentsByActivity(grouped);
+        } catch {
+          // Attachment fetch failure is non-fatal — timeline still renders
+          setAttachmentsByActivity({});
+        }
+      } else {
+        setAttachmentsByActivity({});
+      }
     } catch (err) {
       setLoadError(extractErrorMessage(err, "Unable to load lead details."));
     } finally {
@@ -257,6 +316,17 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       )
     );
+    const activityIds = data.map((a) => a.id);
+    if (activityIds.length > 0) {
+      try {
+        const grouped = await fetchAttachmentsBatch("lead_activity", activityIds);
+        setAttachmentsByActivity(grouped);
+      } catch {
+        // non-fatal
+      }
+    } else {
+      setAttachmentsByActivity({});
+    }
   }, [leadId]);
 
   const refreshFollowUps = useCallback(async () => {
@@ -322,22 +392,185 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
 
   // ─── Submit handlers ───────────────────────────────────────────────────────
 
+  const handleActivityFilesAdded = (incoming: FileList | File[] | null) => {
+    if (!incoming) return;
+    const list = Array.from(incoming);
+    if (list.length === 0) return;
+
+    const accepted: File[] = [];
+    let rejection: string | null = null;
+    for (const file of list) {
+      if (!ACCEPTED_ATTACHMENT_FILE_TYPES.includes(file.type)) {
+        rejection = "Only JPG, PNG, or PDF files are allowed.";
+        continue;
+      }
+      if (file.size > MAX_ATTACHMENT_FILE_SIZE_BYTES) {
+        rejection = "Each file must be 10MB or less.";
+        continue;
+      }
+      accepted.push(file);
+    }
+
+    setActivityFiles((prev) => {
+      const combined = [...prev, ...accepted];
+      if (combined.length > 10) {
+        rejection = "Maximum 10 files per activity.";
+        return combined.slice(0, 10);
+      }
+      return combined;
+    });
+    setActivityFilesError(rejection);
+  };
+
+  const removeActivityFileAt = (index: number) => {
+    setActivityFiles((prev) => prev.filter((_, i) => i !== index));
+    setActivityFilesError(null);
+  };
+
+  const resetActivityForm = () => {
+    setShowActivityForm(false);
+    setActivityDesc("");
+    setActivityType("note");
+    setActivityError(null);
+    setActivityFiles([]);
+    setActivityFilesError(null);
+  };
+
   const handleActivitySubmit = async () => {
     if (!activityDesc.trim()) return;
     setActivitySubmitting(true);
     setActivityError(null);
     try {
-      await createActivity(
-        { lead_id: leadId, type: activityType, description: activityDesc.trim() }
-      );
-      setActivityDesc("");
-      setActivityType("note");
-      setShowActivityForm(false);
+      const created = await createActivity(leadId, {
+        type: activityType,
+        description: activityDesc.trim(),
+      });
+
+      if (activityFiles.length > 0) {
+        for (const file of activityFiles) {
+          try {
+            await uploadAttachment("lead_activity", created.id, file);
+          } catch (uploadErr) {
+            // Surface partial-failure but don't roll back the activity
+            setActivityError(
+              extractErrorMessage(uploadErr, "Some attachments failed to upload.")
+            );
+          }
+        }
+      }
+
+      resetActivityForm();
       await refreshActivities();
     } catch (err) {
       setActivityError(extractErrorMessage(err, "Unable to log activity."));
     } finally {
       setActivitySubmitting(false);
+    }
+  };
+
+  const handleAttachmentDelete = useCallback(
+    async (attachmentId: string) => {
+      await deleteAttachment(attachmentId);
+      setAttachmentsByActivity((prev) => {
+        const next: Record<string, Attachment[]> = {};
+        for (const [id, list] of Object.entries(prev)) {
+          next[id] = list.filter((a) => a.id !== attachmentId);
+        }
+        return next;
+      });
+    },
+    []
+  );
+
+  const startEditActivity = (a: LeadActivity) => {
+    if (!EDITABLE_ACTIVITY_TYPES.has(a.type)) return;
+    setEditingActivityId(a.id);
+    setEditType(a.type);
+    setEditDesc(a.description);
+    setEditError(null);
+    setEditFiles([]);
+    setEditFilesError(null);
+  };
+
+  const cancelEditActivity = () => {
+    setEditingActivityId(null);
+    setEditError(null);
+    setEditFiles([]);
+    setEditFilesError(null);
+  };
+
+  const handleEditFilesAdded = (incoming: FileList | File[] | null) => {
+    if (!incoming) return;
+    const list = Array.from(incoming);
+    if (list.length === 0) return;
+
+    const existingCount =
+      (editingActivityId
+        ? attachmentsByActivity[editingActivityId]?.length ?? 0
+        : 0) + editFiles.length;
+
+    const accepted: File[] = [];
+    let rejection: string | null = null;
+    for (const file of list) {
+      if (!ACCEPTED_ATTACHMENT_FILE_TYPES.includes(file.type)) {
+        rejection = "Only JPG, PNG, or PDF files are allowed.";
+        continue;
+      }
+      if (file.size > MAX_ATTACHMENT_FILE_SIZE_BYTES) {
+        rejection = "Each file must be 10MB or less.";
+        continue;
+      }
+      accepted.push(file);
+    }
+
+    setEditFiles((prev) => {
+      const combined = [...prev, ...accepted];
+      const total = existingCount - prev.length + combined.length;
+      if (total > 10) {
+        rejection = "Maximum 10 files per activity.";
+        const allowed = Math.max(0, 10 - (existingCount - prev.length));
+        return combined.slice(0, allowed);
+      }
+      return combined;
+    });
+    setEditFilesError(rejection);
+  };
+
+  const removeEditFileAt = (index: number) => {
+    setEditFiles((prev) => prev.filter((_, i) => i !== index));
+    setEditFilesError(null);
+  };
+
+  const handleEditActivitySubmit = async () => {
+    if (!editingActivityId || !editDesc.trim()) return;
+    setEditSubmitting(true);
+    setEditError(null);
+    try {
+      await updateActivity(leadId, editingActivityId, {
+        type: editType,
+        description: editDesc.trim(),
+      });
+
+      if (editFiles.length > 0) {
+        for (const file of editFiles) {
+          try {
+            await uploadAttachment("lead_activity", editingActivityId, file);
+          } catch (uploadErr) {
+            setEditError(
+              extractErrorMessage(uploadErr, "Some attachments failed to upload.")
+            );
+          }
+        }
+      }
+
+      setEditingActivityId(null);
+      setEditFiles([]);
+      setEditFilesError(null);
+      await refreshActivities();
+    } catch (err) {
+      setEditError(extractErrorMessage(err, "Unable to update activity."));
+    } finally {
+      setEditSubmitting(false);
     }
   };
 
@@ -582,27 +815,117 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
                 value={activityDesc}
                 onChange={(e) => setActivityDesc(e.target.value)}
               />
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setShowActivityForm(false);
-                    setActivityDesc("");
-                    setActivityError(null);
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={activitySubmitting || !activityDesc.trim()}
-                  onClick={handleActivitySubmit}
-                >
-                  {activitySubmitting ? "Saving..." : "Save"}
-                </Button>
+
+              <input
+                ref={activityCameraInputRef}
+                type="file"
+                accept="image/jpeg,image/png"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => {
+                  handleActivityFilesAdded(e.target.files);
+                  e.target.value = "";
+                }}
+                disabled={activitySubmitting}
+              />
+              <input
+                ref={activityFileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,application/pdf"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  handleActivityFilesAdded(e.target.files);
+                  e.target.value = "";
+                }}
+                disabled={activitySubmitting}
+              />
+
+              {activityFiles.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {activityFiles.map((file, idx) => {
+                    const isImg = file.type.startsWith("image/");
+                    const previewUrl = isImg ? URL.createObjectURL(file) : null;
+                    return (
+                      <div
+                        key={`${file.name}-${idx}`}
+                        className="relative h-16 w-16 overflow-hidden rounded-md border border-border bg-muted"
+                      >
+                        {isImg && previewUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={previewUrl}
+                            alt={file.name}
+                            className="h-full w-full object-cover"
+                            onLoad={() => URL.revokeObjectURL(previewUrl)}
+                          />
+                        ) : (
+                          <span className="flex h-full w-full flex-col items-center justify-center gap-0.5 text-[10px] text-muted-foreground">
+                            <FileText className="h-5 w-5" />
+                            PDF
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeActivityFileAt(idx)}
+                          disabled={activitySubmitting}
+                          className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white hover:bg-black/80 disabled:opacity-50"
+                          aria-label={`Remove ${file.name}`}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
+
+              {activityFilesError ? (
+                <p className="text-xs text-red-600">{activityFilesError}</p>
+              ) : null}
+
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => activityCameraInputRef.current?.click()}
+                    disabled={activitySubmitting || activityFiles.length >= 10}
+                  >
+                    <Camera className="h-3.5 w-3.5" />
+                    Photo
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => activityFileInputRef.current?.click()}
+                    disabled={activitySubmitting || activityFiles.length >= 10}
+                  >
+                    <ImagePlus className="h-3.5 w-3.5" />
+                    Attach
+                  </Button>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={resetActivityForm}
+                    disabled={activitySubmitting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={activitySubmitting || !activityDesc.trim()}
+                    onClick={handleActivitySubmit}
+                  >
+                    {activitySubmitting ? "Saving..." : "Save"}
+                  </Button>
+                </div>
               </div>
             </div>
           ) : null}
@@ -611,24 +934,224 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
             <p className="text-sm text-muted-foreground">No activity yet.</p>
           ) : (
             <div className="space-y-2">
-              {activities.map((a) => (
-                <div
-                  key={a.id}
-                  className="flex items-start gap-3 rounded-xl border border-border bg-card px-3 py-2.5"
-                >
-                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted">
-                    <ActivityIcon type={a.type} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm leading-snug text-foreground">
-                      {a.description}
-                    </p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {timeAgo(a.createdAt)}
-                    </p>
+              {activities.map((a) => {
+                const atts = attachmentsByActivity[a.id] ?? [];
+                const editable = EDITABLE_ACTIVITY_TYPES.has(a.type);
+                const isEditing = editingActivityId === a.id;
+                const typeLabel = ACTIVITY_TYPE_LABELS[a.type] ?? a.type;
+
+                return (
+                  <div
+                    key={a.id}
+                    className="flex items-start gap-3 rounded-xl border border-border bg-card px-3 py-2.5"
+                  >
+                    <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted">
+                      <ActivityIcon type={a.type} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      {isEditing ? (
+                        <div className="space-y-2">
+                          {editError ? (
+                            <p className="text-xs text-red-600">{editError}</p>
+                          ) : null}
+                          <select
+                            className={inputCls}
+                            value={editType}
+                            onChange={(e) =>
+                              setEditType(e.target.value as ActivityType)
+                            }
+                            disabled={editSubmitting}
+                          >
+                            {ACTIVITY_OPTIONS.map((o) => (
+                              <option key={o.value} value={o.value}>
+                                {o.label}
+                              </option>
+                            ))}
+                          </select>
+                          <textarea
+                            className={inputCls}
+                            rows={2}
+                            value={editDesc}
+                            onChange={(e) => setEditDesc(e.target.value)}
+                            disabled={editSubmitting}
+                          />
+
+                          {atts.length > 0 ? (
+                            <div>
+                              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                Current attachments
+                              </p>
+                              <ActivityAttachmentStrip
+                                attachments={atts}
+                                onOpen={(idx) =>
+                                  setViewer({ activityId: a.id, index: idx })
+                                }
+                              />
+                            </div>
+                          ) : null}
+
+                          <input
+                            ref={editCameraInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png"
+                            capture="environment"
+                            className="hidden"
+                            onChange={(e) => {
+                              handleEditFilesAdded(e.target.files);
+                              e.target.value = "";
+                            }}
+                            disabled={editSubmitting}
+                          />
+                          <input
+                            ref={editFileInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,application/pdf"
+                            multiple
+                            className="hidden"
+                            onChange={(e) => {
+                              handleEditFilesAdded(e.target.files);
+                              e.target.value = "";
+                            }}
+                            disabled={editSubmitting}
+                          />
+
+                          {editFiles.length > 0 ? (
+                            <div>
+                              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                New uploads
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {editFiles.map((file, idx) => {
+                                  const isImg = file.type.startsWith("image/");
+                                  const previewUrl = isImg
+                                    ? URL.createObjectURL(file)
+                                    : null;
+                                  return (
+                                    <div
+                                      key={`${file.name}-${idx}`}
+                                      className="relative h-16 w-16 overflow-hidden rounded-md border border-border bg-muted"
+                                    >
+                                      {isImg && previewUrl ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img
+                                          src={previewUrl}
+                                          alt={file.name}
+                                          className="h-full w-full object-cover"
+                                          onLoad={() =>
+                                            URL.revokeObjectURL(previewUrl)
+                                          }
+                                        />
+                                      ) : (
+                                        <span className="flex h-full w-full flex-col items-center justify-center gap-0.5 text-[10px] text-muted-foreground">
+                                          <FileText className="h-5 w-5" />
+                                          PDF
+                                        </span>
+                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={() => removeEditFileAt(idx)}
+                                        disabled={editSubmitting}
+                                        className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white hover:bg-black/80 disabled:opacity-50"
+                                        aria-label={`Remove ${file.name}`}
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ) : null}
+
+                          {editFilesError ? (
+                            <p className="text-xs text-red-600">{editFilesError}</p>
+                          ) : null}
+
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => editCameraInputRef.current?.click()}
+                                disabled={
+                                  editSubmitting ||
+                                  atts.length + editFiles.length >= 10
+                                }
+                              >
+                                <Camera className="h-3.5 w-3.5" />
+                                Photo
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => editFileInputRef.current?.click()}
+                                disabled={
+                                  editSubmitting ||
+                                  atts.length + editFiles.length >= 10
+                                }
+                              >
+                                <ImagePlus className="h-3.5 w-3.5" />
+                                Attach
+                              </Button>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={cancelEditActivity}
+                                disabled={editSubmitting}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                disabled={editSubmitting || !editDesc.trim()}
+                                onClick={handleEditActivitySubmit}
+                              >
+                                {editSubmitting ? "Saving..." : "Save"}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                              {typeLabel}
+                            </p>
+                            {editable ? (
+                              <button
+                                type="button"
+                                onClick={() => startEditActivity(a)}
+                                className="-mt-0.5 -mr-1 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                aria-label="Edit activity"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                            ) : null}
+                          </div>
+                          <p className="text-sm leading-snug text-foreground">
+                            {a.description}
+                          </p>
+                          <ActivityAttachmentStrip
+                            attachments={atts}
+                            onOpen={(idx) =>
+                              setViewer({ activityId: a.id, index: idx })
+                            }
+                          />
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {timeAgo(a.createdAt)}
+                          </p>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>
@@ -1089,6 +1612,15 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
           onConfirm={(reason) =>
             handleCancelConfirm(cancellingFollowUp.id, reason)
           }
+        />
+      ) : null}
+
+      {viewer && attachmentsByActivity[viewer.activityId] ? (
+        <ActivityAttachmentViewer
+          attachments={attachmentsByActivity[viewer.activityId]}
+          initialIndex={viewer.index}
+          onClose={() => setViewer(null)}
+          onDelete={handleAttachmentDelete}
         />
       ) : null}
     </div>

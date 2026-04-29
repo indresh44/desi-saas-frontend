@@ -1,5 +1,9 @@
 import { apiClient } from "@/lib/api/client";
-import { CreateActivityInput, LeadActivity } from "@/lib/types/activity";
+import {
+  CreateActivityInput,
+  LeadActivity,
+  UpdateActivityInput,
+} from "@/lib/types/activity";
 
 type LeadActivityApiResponse = {
   id: string;
@@ -35,12 +39,28 @@ export async function fetchLeadActivities(
 }
 
 export async function createActivity(
+  leadId: string,
   input: CreateActivityInput
 ): Promise<LeadActivity> {
-  const path = `/api/v1/leads/${input.lead_id}/activities`;
+  const path = `/api/v1/leads/${leadId}/activities`;
 
   const result = await apiClient<LeadActivityApiResponse>(path, {
     method: "POST",
+    body: input,
+  });
+
+  return toActivityModel(result.data);
+}
+
+export async function updateActivity(
+  leadId: string,
+  activityId: string,
+  input: UpdateActivityInput
+): Promise<LeadActivity> {
+  const path = `/api/v1/leads/${leadId}/activities/${activityId}`;
+
+  const result = await apiClient<LeadActivityApiResponse>(path, {
+    method: "PATCH",
     body: input,
   });
 
