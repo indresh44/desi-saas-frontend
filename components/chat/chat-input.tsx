@@ -213,8 +213,20 @@ export function ChatInput() {
     return html.replace(/\n/g, "<br>");
   }, [mentions, text]);
 
+  function handleFocus() {
+    // When the soft keyboard opens on mobile, the composer + last message
+    // can get pushed offscreen by the address bar resize. Wait one frame so
+    // the keyboard has started its slide-in, then scroll the textarea into
+    // view. Harmless on desktop.
+    requestAnimationFrame(() => {
+      textareaRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
+    });
+  }
+
   return (
-    <div className="border-t border-border bg-card px-3 py-3">
+    // `pb-[env(safe-area-inset-bottom)]` clears the iPhone home indicator
+    // when the chat sheet is in standalone PWA / portrait modes.
+    <div className="border-t border-border bg-card px-3 pt-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
       <div className="flex items-end gap-2">
         <div className="relative flex-1">
           {showMentionDropdown ? (
@@ -231,21 +243,25 @@ export function ChatInput() {
 
           {mentions.length > 0 ? (
             <div
-              className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-words rounded-xl border border-transparent bg-muted px-3.5 py-2.5 text-sm leading-normal text-foreground"
+              className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-words rounded-xl border border-transparent bg-muted px-3.5 py-2.5 text-base leading-normal text-foreground md:text-sm"
               dangerouslySetInnerHTML={{ __html: `${highlightedHtml}<br />` }}
               aria-hidden="true"
             />
           ) : null}
 
+          {/* `text-base md:text-sm` keeps the input at 16px on mobile so iOS
+              doesn't auto-zoom on focus; desktop stays at the existing 14px. */}
           <textarea
             ref={textareaRef}
             value={text}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
+            onFocus={handleFocus}
+            enterKeyHint="send"
             placeholder="Ask anything... Type @ to mention"
             disabled={isLoading}
             rows={1}
-            className={`max-h-[120px] min-h-[40px] w-full resize-none rounded-xl border border-border px-3.5 py-2.5 text-sm leading-normal placeholder:text-muted-foreground/60 focus:border-ring focus:outline-none disabled:opacity-50 ${
+            className={`max-h-[120px] min-h-[44px] w-full resize-none rounded-xl border border-border px-3.5 py-2.5 text-base leading-normal placeholder:text-muted-foreground/60 focus:border-ring focus:outline-none disabled:opacity-50 md:min-h-[40px] md:text-sm ${
               mentions.length > 0 ? "bg-transparent" : "bg-muted focus:bg-background"
             }`}
             style={mentions.length > 0 ? { color: "transparent", caretColor: "#18181b" } : undefined}
@@ -255,7 +271,7 @@ export function ChatInput() {
           type="button"
           onClick={() => void handleSend()}
           disabled={!text.trim() || isLoading}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-30 disabled:hover:bg-primary"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-30 disabled:hover:bg-primary md:h-10 md:w-10"
           aria-label="Send message"
         >
           <SendHorizontal className="h-4 w-4" />

@@ -5,21 +5,12 @@ import { usePathname } from "next/navigation";
 import { SIDEBAR_NAV_GROUPS, type SidebarNavItem } from "@/lib/constants/navigation";
 import { cn } from "@/lib/utils";
 
-type AppSidebarProps = {
-  isOpen?: boolean;
-  onClose?: () => void;
-};
-
 function SidebarNavLink({
   item,
   pathname,
-  isMuted = false,
-  onLinkClick,
 }: {
   item: SidebarNavItem;
   pathname: string;
-  isMuted?: boolean;
-  onLinkClick?: () => void;
 }) {
   const Icon = item.icon;
   const isActive =
@@ -30,14 +21,11 @@ function SidebarNavLink({
     <Link
       key={item.href}
       href={item.href}
-      onClick={onLinkClick}
       className={cn(
         "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm transition-colors",
         isActive
           ? "bg-shell-sidebar-active text-shell-sidebar-active-text font-medium"
-          : isMuted
-            ? "text-primary hover:bg-shell-sidebar-hover hover:text-foreground"
-            : "text-primary hover:bg-shell-sidebar-hover hover:text-foreground"
+          : "text-primary hover:bg-shell-sidebar-hover hover:text-foreground"
       )}
     >
       <Icon className="h-4 w-4" />
@@ -46,7 +34,7 @@ function SidebarNavLink({
   );
 }
 
-function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
+function SidebarNav() {
   const pathname = usePathname();
 
   return (
@@ -62,8 +50,6 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
                 key={item.href}
                 item={item}
                 pathname={pathname}
-                isMuted={group.key === "secondary"}
-                onLinkClick={onLinkClick}
               />
             ))}
           </div>
@@ -73,34 +59,14 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
   );
 }
 
-export function AppSidebar({ isOpen = false, onClose }: AppSidebarProps) {
+/**
+ * Desktop-only sidebar (`>=md`). Mobile uses the bottom nav in
+ * `app-bottom-nav.tsx` instead of a drawer — see the mobile UX plan.
+ */
+export function AppSidebar() {
   return (
-    <>
-      {/* ── Desktop sidebar (always visible ≥768px) ── */}
-      <aside className="hidden w-60 shrink-0 border-r border-shell-border bg-shell-sidebar-bg md:flex md:flex-col">
-        <SidebarNav />
-      </aside>
-
-      {/* ── Mobile overlay sidebar (<768px) ── */}
-      {/* Backdrop */}
-      {isOpen ? (
-        <button
-          type="button"
-          aria-label="Close navigation"
-          className="fixed inset-0 z-40 bg-foreground/50 md:hidden"
-          onClick={onClose}
-        />
-      ) : null}
-
-      {/* Drawer panel */}
-      <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-shell-border bg-shell-sidebar-bg transition-transform duration-300 ease-in-out md:hidden",
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        <SidebarNav onLinkClick={onClose} />
-      </aside>
-    </>
+    <aside className="hidden w-60 shrink-0 border-r border-shell-border bg-shell-sidebar-bg md:flex md:flex-col">
+      <SidebarNav />
+    </aside>
   );
 }

@@ -13,8 +13,10 @@ type Props = {
   onSuccess: () => void;
 };
 
+// `text-base md:text-sm` keeps inputs at 16px on mobile so iOS doesn't
+// auto-zoom on focus; desktop stays at 14px.
 const inputCls =
-  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground";
+  "w-full rounded-lg border border-border bg-background px-3 py-2 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground md:text-sm";
 
 const ACCEPTED_FILE_TYPES = ["image/jpeg", "image/png", "application/pdf"];
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -168,8 +170,11 @@ export function RecordPaymentModal({
         onClick={isSubmitting ? undefined : onClose}
       />
 
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-lg rounded-2xl border border-border bg-card shadow-2xl">
+      {/* Mobile: bottom sheet (slides up, rounded top corners). Desktop:
+          centered modal. Matches the pattern used by create-lead-dialog
+          and create-invoice-modal. */}
+      <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center md:p-4">
+        <div className="w-full max-h-[90vh] overflow-y-auto rounded-t-2xl border border-border bg-card pb-[env(safe-area-inset-bottom)] shadow-2xl md:max-w-lg md:rounded-2xl md:pb-0">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <div>
               <h2 className="text-base font-semibold text-foreground">Record Payment</h2>
@@ -197,6 +202,8 @@ export function RecordPaymentModal({
               <label className="block text-sm font-medium text-foreground">Amount</label>
               <input
                 type="number"
+                inputMode="decimal"
+                enterKeyHint="next"
                 min="0"
                 max={remainingAmount}
                 step="0.01"

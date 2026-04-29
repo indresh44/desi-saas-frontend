@@ -16,8 +16,10 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 
+// `text-base md:text-sm` keeps inputs at 16px on mobile so iOS doesn't
+// auto-zoom on focus; desktop stays at 14px. See mobile UX plan bucket 5.
 const inputClassName =
-  "mt-1 w-full rounded-md border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
+  "mt-1 w-full rounded-md border bg-card px-3 py-2 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 md:text-sm";
 
 export default function LoginPageClient() {
   const { login } = useAuth();
@@ -71,6 +73,8 @@ export default function LoginPageClient() {
               <label className="text-sm font-medium text-primary">Email</label>
               <input
                 type="email"
+                inputMode="email"
+                enterKeyHint="next"
                 {...register("email")}
                 className={inputClassName}
                 placeholder="you@example.com"
@@ -93,6 +97,7 @@ export default function LoginPageClient() {
               </div>
               <input
                 type="password"
+                enterKeyHint="go"
                 {...register("password")}
                 className={inputClassName}
                 placeholder="Your password"

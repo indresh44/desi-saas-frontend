@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import { LayoutContent } from "@/components/layout/layout-content";
 import { AuthProvider } from "@/lib/auth/auth-context";
@@ -49,9 +49,35 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://sellnsettle.com",
   },
+  // PWA manifest + icons. iOS Safari reads `apple-touch-icon` from the
+  // root and the `apple` set in `appleWebApp`; Android Chrome uses the
+  // manifest. See public/manifest.json + public/icons/README.md.
+  manifest: "/manifest.json",
+  applicationName: "SellNSettle",
+  appleWebApp: {
+    capable: true,
+    title: "SellNSettle",
+    statusBarStyle: "default",
+  },
   icons: {
     icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
   },
+};
+
+// Viewport must include `viewport-fit=cover` so iPhone notch / Android display
+// cutout regions are usable. Combined with `env(safe-area-inset-*)` paddings
+// on bottom-pinned elements (bottom nav, chat composer), this lets sticky
+// chrome sit flush with the screen edge without being clipped by the home
+// indicator.
+//
+// `themeColor` tints the iOS / Android status bar when the PWA is installed
+// in standalone mode — must match `theme_color` in public/manifest.json.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#0a192f",
 };
 
 export default function RootLayout({

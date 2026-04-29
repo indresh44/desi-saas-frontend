@@ -18,7 +18,7 @@ type Props = {
 };
 
 const inputCls =
-  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground";
+  "w-full rounded-lg border border-border bg-background px-3 py-2 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground md:text-sm";
 
 function extractErrorMessage(err: unknown, fallback: string): string {
   if (
@@ -148,6 +148,8 @@ export function EditPaymentDialog({
           <label className="block text-sm font-medium text-foreground">Amount (₹)</label>
           <input
             type="number"
+            inputMode="decimal"
+            enterKeyHint="next"
             min="0"
             step="0.01"
             className={inputCls}

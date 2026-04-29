@@ -34,8 +34,10 @@ const registerSchema = z
 
 type RegisterForm = z.infer<typeof registerSchema>;
 
+// `text-base md:text-sm` keeps inputs at 16px on mobile so iOS doesn't
+// auto-zoom on focus; desktop stays at 14px. See mobile UX plan bucket 5.
 const inputClassName =
-  "mt-1 w-full rounded-md border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
+  "mt-1 w-full rounded-md border bg-card px-3 py-2 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 md:text-sm";
 
 export default function RegisterPageClient() {
   const { register: authRegister } = useAuth();
@@ -105,6 +107,8 @@ export default function RegisterPageClient() {
               <label className="text-sm font-medium text-primary">Your name</label>
               <input
                 type="text"
+                enterKeyHint="next"
+                autoCapitalize="words"
                 {...register("name")}
                 className={inputClassName}
                 placeholder="Ramesh Tiwari"
@@ -117,6 +121,8 @@ export default function RegisterPageClient() {
               <label className="text-sm font-medium text-primary">Email</label>
               <input
                 type="email"
+                inputMode="email"
+                enterKeyHint="next"
                 {...register("email")}
                 className={inputClassName}
                 placeholder="you@example.com"
@@ -133,8 +139,10 @@ export default function RegisterPageClient() {
                 </span>
                 <input
                   type="tel"
+                  inputMode="tel"
+                  enterKeyHint="next"
                   {...register("phone")}
-                  className="w-full rounded-r-md border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="w-full rounded-r-md border bg-card px-3 py-2 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 md:text-sm"
                   placeholder="9876543210"
                   autoComplete="tel-national"
                   maxLength={10}
@@ -156,6 +164,7 @@ export default function RegisterPageClient() {
               <label className="text-sm font-medium text-primary">Password</label>
               <input
                 type="password"
+                enterKeyHint="next"
                 {...register("password")}
                 className={inputClassName}
                 placeholder="Min 8 characters, letter + number"
@@ -168,6 +177,7 @@ export default function RegisterPageClient() {
               <label className="text-sm font-medium text-primary">Confirm password</label>
               <input
                 type="password"
+                enterKeyHint="next"
                 {...register("confirmPassword")}
                 className={inputClassName}
                 placeholder="Re-enter your password"

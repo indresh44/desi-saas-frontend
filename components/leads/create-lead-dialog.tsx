@@ -286,6 +286,8 @@ export function CreateLeadDialog({
                   input={
                     <input
                       type="tel"
+                      inputMode="tel"
+                      enterKeyHint="next"
                       value={form.watch("phone")}
                       onChange={(event) => handlePhoneChange(event.target.value)}
                       className={inputClassName}
@@ -313,7 +315,7 @@ export function CreateLeadDialog({
                   input={
                     <input
                       type="number"
-                      inputMode="numeric"
+                      inputMode="decimal"
                       step="0.01"
                       {...form.register("estimatedValue")}
                       className={inputClassName}
@@ -365,6 +367,7 @@ export function CreateLeadDialog({
                         input={
                           <input
                             type="email"
+                            inputMode="email"
                             value={form.watch("customerEmail")}
                             onChange={(event) => handleCustomerEmailChange(event.target.value)}
                             className={inputClassName}
@@ -427,8 +430,10 @@ export function CreateLeadDialog({
   );
 }
 
+// `text-base md:text-sm` keeps inputs at 16px on mobile so iOS doesn't
+// auto-zoom on focus; desktop stays at 14px.
 const inputClassName =
-  "mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none ring-0 transition focus:border-primary disabled:cursor-not-allowed disabled:bg-muted";
+  "mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-base text-foreground outline-none ring-0 transition focus:border-primary disabled:cursor-not-allowed disabled:bg-muted md:text-sm";
 
 type FieldProps = {
   label: string;

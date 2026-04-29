@@ -27,7 +27,7 @@ const schema = z
 type FormValues = z.infer<typeof schema>;
 
 const inputClassName =
-  "mt-1 w-full rounded-md border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
+  "mt-1 w-full rounded-md border bg-card px-3 py-2 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 md:text-sm";
 
 export default function ResetPasswordClient() {
   const router = useRouter();
@@ -93,6 +93,7 @@ export default function ResetPasswordClient() {
                 <label className="text-sm font-medium text-primary">New password</label>
                 <input
                   type="password"
+                  enterKeyHint="next"
                   {...register("newPassword")}
                   className={inputClassName}
                   placeholder="At least 8 characters"
@@ -113,6 +114,7 @@ export default function ResetPasswordClient() {
                 <label className="text-sm font-medium text-primary">Confirm password</label>
                 <input
                   type="password"
+                  enterKeyHint="go"
                   {...register("confirmPassword")}
                   className={inputClassName}
                   placeholder="Re-enter new password"

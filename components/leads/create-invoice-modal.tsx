@@ -542,9 +542,10 @@ export function CreateInvoiceModal({
                       <label className="text-xs font-medium text-muted-foreground">Qty</label>
                       <input
                         type="number"
+                        inputMode="decimal"
                         min="1"
                         step="1"
-                        className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-2 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 md:text-sm"
                         value={item.qty || ""}
                         onFocus={(event) => event.currentTarget.select()}
                         onChange={(event) => updateItem(item.id, { qty: Number(event.target.value) || 0 })}
@@ -554,9 +555,10 @@ export function CreateInvoiceModal({
                       <label className="text-xs font-medium text-muted-foreground">Rate ₹</label>
                       <input
                         type="number"
+                        inputMode="decimal"
                         min="0"
                         step="1"
-                        className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-2 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 md:text-sm"
                         value={item.unit_price || ""}
                         onFocus={(event) => event.currentTarget.select()}
                         onChange={(event) => updateItem(item.id, { unit_price: Number(event.target.value) || 0 })}
@@ -566,10 +568,11 @@ export function CreateInvoiceModal({
                       <label className="text-xs font-medium text-muted-foreground">GST %</label>
                       <input
                         type="number"
+                        inputMode="numeric"
                         min="0"
                         max="28"
                         step="1"
-                        className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-2 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 md:text-sm"
                         value={item.gstPercent || ""}
                         onFocus={(event) => event.currentTarget.select()}
                         onChange={(event) => updateItem(item.id, { gstPercent: Number(event.target.value) || 0 })}

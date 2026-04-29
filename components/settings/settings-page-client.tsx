@@ -516,6 +516,8 @@ export default function SettingsPageClient() {
               input={
                 <input
                   type="email"
+                  inputMode="email"
+                  autoComplete="email"
                   value={profileForm.email}
                   onChange={(event) => handleProfileChange("email", event.target.value)}
                   className={inputClassName}
@@ -667,6 +669,7 @@ export default function SettingsPageClient() {
             input={
               <input
                 type="number"
+                inputMode="numeric"
                 min={0}
                 max={365}
                 value={invoiceForm.defaultDueDays}
@@ -776,7 +779,7 @@ export default function SettingsPageClient() {
 }
 
 const inputClassName =
-  "mt-1 w-full rounded-lg border bg-card px-3 py-2 text-sm text-foreground outline-none ring-0 transition focus:border-primary disabled:cursor-not-allowed disabled:bg-muted";
+  "mt-1 w-full rounded-lg border bg-card px-3 py-2 text-base text-foreground outline-none ring-0 transition focus:border-primary disabled:cursor-not-allowed disabled:bg-muted md:text-sm";
 
 type FieldProps = {
   label: string;
