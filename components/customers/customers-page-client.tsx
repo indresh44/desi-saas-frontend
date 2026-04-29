@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { MessageCircle, Pencil, Phone, Plus, Search } from "lucide-react";
+import { ArrowRight, MessageCircle, Pencil, Phone, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createCustomer, fetchCustomers, updateCustomer } from "@/lib/api/customers";
 import { fetchCustomerOutstanding } from "@/lib/api/invoices";
@@ -571,38 +571,52 @@ export default function CustomersPageClient() {
                             )}
                           </div>
                         </div>
-                        <div className="mt-3 flex flex-wrap gap-2">
+                        {/* Compact size="sm" buttons (matches leads card)
+                            with per-action color tints: blue Call, green
+                            WhatsApp, slate Edit. `fill-current` fills the
+                            stroked Phone / MessageCircle glyphs with the
+                            text color so the icon reads as a solid badge.
+                            Dark variants keep contrast in dark mode. */}
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
                           {customer.phone ? (
-                            <a
-                              href={`tel:${customer.phone}`}
-                              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-100 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/50"
-                            >
-                              <Phone className="h-4 w-4 fill-current" />
-                              Call
+                            <a href={`tel:${customer.phone}`}>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="gap-1.5 border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/50 dark:hover:text-blue-300"
+                              >
+                                <Phone className="h-3.5 w-3.5 fill-current" />
+                                Call
+                              </Button>
                             </a>
                           ) : null}
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1.5 border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 dark:hover:text-emerald-300"
                             onClick={() => handleWhatsApp(customer.phone)}
-                            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50"
                           >
-                            <MessageCircle className="h-4 w-4 fill-current" />
+                            <MessageCircle className="h-3.5 w-3.5 fill-current" />
                             WhatsApp
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1.5 border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-700 dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-300 dark:hover:bg-slate-800/60 dark:hover:text-slate-300"
                             onClick={() => handleStartEdit(customer)}
-                            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium text-foreground transition hover:bg-accent disabled:cursor-not-allowed disabled:text-muted-foreground"
                             disabled={isAnotherRowEditing || isSavingEdit}
                           >
-                            <Pencil className="h-4 w-4" />
+                            <Pencil className="h-3.5 w-3.5 fill-current" />
                             Edit
-                          </button>
-                          <Link
-                            href={`/customers/${customer.id}`}
-                            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium text-foreground transition hover:bg-accent"
-                          >
-                            View Details →
+                          </Button>
+                          <Link href={`/customers/${customer.id}`} className="ml-auto">
+                            <Button type="button" variant="ghost" size="sm" className="gap-1">
+                              Details
+                              <ArrowRight className="h-3.5 w-3.5" />
+                            </Button>
                           </Link>
                         </div>
                       </>

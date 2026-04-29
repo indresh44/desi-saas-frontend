@@ -95,37 +95,44 @@ function LeadCard({
         </div>
       ) : null}
 
-      {/* Actions row */}
+      {/* Actions row — color-tinted buttons matching the customers card.
+          Blue Call, green WhatsApp, neutral ghost Details. `fill-current`
+          on Phone / MessageCircle makes the icons read as solid badges. */}
       <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-border pt-3 mt-3">
         {callHref ? (
           <a href={callHref}>
-            <Button type="button" variant="outline" size="sm" className="gap-1.5">
-              <Phone className="h-3.5 w-3.5" />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/50 dark:hover:text-blue-300"
+            >
+              <Phone className="h-3.5 w-3.5 fill-current" />
               Call
             </Button>
           </a>
         ) : (
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             size="sm"
             disabled
             title="Phone not available"
-            className="gap-1.5"
+            className="gap-1.5 border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/50 dark:hover:text-blue-300"
           >
-            <Phone className="h-3.5 w-3.5" />
+            <Phone className="h-3.5 w-3.5 fill-current" />
             Call
           </Button>
         )}
 
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="sm"
-          className="gap-1.5"
+          className="gap-1.5 border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 dark:hover:text-emerald-300"
           onClick={() => onOpenChat(lead)}
         >
-          <MessageCircle className="h-3.5 w-3.5" />
+          <MessageCircle className="h-3.5 w-3.5 fill-current" />
           WhatsApp
         </Button>
 
