@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { RefreshCw, X } from "lucide-react";
 
 /**
@@ -11,10 +11,20 @@ import { RefreshCw, X } from "lucide-react";
  * We do NOT auto-skip-waiting: forcing a reload mid-action could lose
  * a half-typed chat message or partial form. The user-driven refresh
  * is the safety boundary. See Docs/plans/pwa-installable-app.md.
+ *
+ * IMPORTANT: the `controllerchange` event fires on the FIRST EVER SW
+ * install (when the SW claims an uncontrolled tab via `clientsClaim`).
+ * If we naively reloaded on every controllerchange, that first-install
+ * activation would reload the user's tab mid-session — which can land
+ * during the register-to-onboarding flow and silently drop the
+ * in-memory access token, breaking auth. We gate the reload on a
+ * `userRequestedReload` ref that only flips true when the user
+ * explicitly clicks "Refresh" in this banner.
  */
 export function PwaUpdateBanner() {
   const [waitingSw, setWaitingSw] = useState<ServiceWorker | null>(null);
   const [dismissed, setDismissed] = useState(false);
+  const userRequestedReloadRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -49,10 +59,14 @@ export function PwaUpdateBanner() {
       if (reg && mounted) trackUpdate(reg);
     });
 
-    // When the new SW takes over (after SKIP_WAITING fires), reload so
-    // the page picks up the new version's assets.
+    // Only reload when the user explicitly clicked Refresh.
+    // First-install activations also fire controllerchange (because
+    // `clientsClaim: true` claims the uncontrolled tab) but that
+    // shouldn't cause a page reload — it would interrupt in-flight
+    // session work like registration.
     const onControllerChange = () => {
       if (!mounted) return;
+      if (!userRequestedReloadRef.current) return;
       window.location.reload();
     };
     navigator.serviceWorker.addEventListener(
@@ -72,6 +86,9 @@ export function PwaUpdateBanner() {
   if (!waitingSw || dismissed) return null;
 
   const handleRefresh = () => {
+    // Set the gate BEFORE posting the message so the controllerchange
+    // listener (set up in the effect above) accepts the reload.
+    userRequestedReloadRef.current = true;
     waitingSw.postMessage({ type: "SKIP_WAITING" });
     // The reload happens via the controllerchange handler above
     // once the new SW takes over.

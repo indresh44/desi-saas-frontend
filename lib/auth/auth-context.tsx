@@ -6,6 +6,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -102,7 +103,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStoredBusiness(authBusiness);
   }, []);
 
+  // initAuth must run EXACTLY ONCE per mount. Two reasons:
+  // (1) The backend rotates refresh tokens — each successful refresh
+  //     invalidates the previous refresh token. If `pathname` is a dep
+  //     and the user navigates between two protected routes in quick
+  //     succession (e.g. /register → /onboarding → /onboarding/role,
+  //     where /onboarding redirects to /onboarding/role), this effect
+  //     fires twice with the same stored refresh token. The first call
+  //     consumes it; the second gets 401 → tokens cleared → user looks
+  //     logged out. This was the "Authentication required" symptom
+  //     after register on slow connections.
+  // (2) React Strict Mode double-invokes effects in dev; the ref guard
+  //     also prevents that path from causing the same race.
+  // Redirect-on-no-auth has been moved to the dedicated effect below
+  // (which keys on `[isLoading, user, pathname]`), so removing
+  // `pathname` from this effect's deps doesn't drop any behavior.
+  const initAuthRanRef = useRef(false);
   useEffect(() => {
+    if (initAuthRanRef.current) return;
+    initAuthRanRef.current = true;
+
     const initAuth = async () => {
       const storedUser = getStoredUser();
       const storedBusiness = getStoredBusiness();
@@ -120,19 +140,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           clearAllTokens();
           setUser(null);
           setBusiness(null);
-          if (!isPublicRoute(pathname)) {
-            router.replace("/login");
-          }
         }
-      } else if (!isPublicRoute(pathname)) {
-        router.replace("/login");
       }
 
       setIsLoading(false);
     };
 
     void initAuth();
-  }, [pathname, router]);
+  }, []);
 
   useEffect(() => {
     const handleForcedLogout = () => {
