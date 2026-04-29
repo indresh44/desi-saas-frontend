@@ -11,6 +11,7 @@ interface InvoiceMeta {
   customer_name: string | null;
   business_name: string;
   items_count: number;
+  updated_at: string;
 }
 
 async function fetchMeta(uuid: string): Promise<InvoiceMeta | null> {
@@ -84,7 +85,17 @@ export async function generateMetadata({
   const title = `${docLabel} ${meta.invoice_number} — ${formatRupees(meta.total_amount)}`;
   const description = `From ${meta.business_name}${meta.customer_name ? ` for ${meta.customer_name}` : ""} | Due ${formatDate(meta.due_date)} | ${meta.items_count} item${meta.items_count !== 1 ? "s" : ""}`;
 
-  const ogImage = coverPhoto ?? `https://sellnsettle.com/_og/invoice/${uuid}`;
+  // While the invoice is editable (draft/sent), append `?v={updated_at_unix}`
+  // to the canonical URL AND the og:image URL. Both URLs are independently
+  // cached by WhatsApp / Telegram / Slack — versioning both layers ensures
+  // the preview refreshes after every edit. Once approved, content is
+  // locked; URLs go back to canonical.
+  const updatedAtUnix = Math.floor(new Date(meta.updated_at).getTime() / 1000);
+  const versionParam =
+    isEstimate && Number.isFinite(updatedAtUnix) ? `?v=${updatedAtUnix}` : "";
+  const ogImageBase = coverPhoto ?? `https://sellnsettle.com/_og/invoice/${uuid}`;
+  const ogImage = `${ogImageBase}${versionParam}`;
+  const canonicalUrl = `https://sellnsettle.com/invoices/${uuid}/${meta.invoice_number}.pdf${versionParam}`;
 
   return {
     title,
@@ -93,7 +104,7 @@ export async function generateMetadata({
       title,
       description,
       type: "article",
-      url: `https://sellnsettle.com/invoices/${uuid}/${meta.invoice_number}.pdf`,
+      url: canonicalUrl,
       siteName: "SellNSettle",
       images: [
         {

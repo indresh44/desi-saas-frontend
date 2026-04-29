@@ -277,7 +277,12 @@ export function InvoiceCard({
   };
 
   const handleDownloadPdf = () => {
-    const url = buildBrandedInvoiceUrl(invoice.id, invoice.invoiceNumber);
+    const url = buildBrandedInvoiceUrl(
+      invoice.id,
+      invoice.invoiceNumber,
+      invoice.status,
+      invoice.updatedAt,
+    );
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
@@ -293,6 +298,7 @@ export function InvoiceCard({
         invoice.status,
         business?.name,
         toSafeNumber(invoice.totalAmount),
+        invoice.updatedAt,
       );
 
       if (result === "shared") {

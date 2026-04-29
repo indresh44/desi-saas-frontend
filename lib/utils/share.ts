@@ -12,13 +12,54 @@ export function canNativeShare(): boolean {
 }
 
 /**
+ * Returns true while the invoice content can still change (draft / sent
+ * estimates). Once approved, content is locked, so the share URL can be
+ * canonical without a cache-busting query param.
+ */
+function isEditableStatus(status?: string): boolean {
+  return status === "draft" || status === "sent";
+}
+
+/**
+ * Convert any timestamp-ish value to a unix epoch (seconds). Used for
+ * the `?v=` query param that busts WhatsApp / social-media OG-preview
+ * caches when the invoice is edited.
+ */
+function toUnixSeconds(value?: string | number | Date | null): number | null {
+  if (value == null) return null;
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? Math.floor(value) : null;
+  }
+  const ts = new Date(value).getTime();
+  return Number.isFinite(ts) ? Math.floor(ts / 1000) : null;
+}
+
+/**
  * Build the branded public invoice URL.
+ *
+ * When the invoice is still editable (draft / sent), appends a
+ * `?v={updated_at_unix}` query param so WhatsApp / Telegram / Slack
+ * treat the URL as new on every edit — busting their OG-preview caches
+ * and fetching fresh metadata. Once approved, the URL goes back to
+ * canonical (no `?v=`) — the invoice is content-locked, the
+ * legally-binding tax document, and a clean URL is more shareable /
+ * bookmarkable.
+ *
+ * The public invoice page server-renders metadata from current data and
+ * ignores any extra query params for routing, so the `?v=` is purely a
+ * cache-bust hint.
  */
 export function buildBrandedInvoiceUrl(
   invoiceId: string,
   invoiceNumber: string,
+  status?: string,
+  updatedAt?: string | number | Date | null,
 ): string {
-  return `https://sellnsettle.com/invoices/${invoiceId}/${invoiceNumber}.pdf`;
+  const base = `https://sellnsettle.com/invoices/${invoiceId}/${invoiceNumber}.pdf`;
+  if (!isEditableStatus(status)) return base;
+
+  const v = toUnixSeconds(updatedAt);
+  return v != null ? `${base}?v=${v}` : base;
 }
 
 export async function shareInvoicePdf(
@@ -27,11 +68,17 @@ export async function shareInvoicePdf(
   status?: string,
   businessName?: string,
   totalAmount?: number,
+  updatedAt?: string | number | Date | null,
 ): Promise<"shared" | "cancelled" | "error"> {
   try {
-    const isEstimate = status === "draft" || status === "sent";
+    const isEstimate = isEditableStatus(status);
     const docLabel = isEstimate ? "Estimate" : "Invoice";
-    const brandedUrl = buildBrandedInvoiceUrl(invoiceId, invoiceNumber);
+    const brandedUrl = buildBrandedInvoiceUrl(
+      invoiceId,
+      invoiceNumber,
+      status,
+      updatedAt,
+    );
 
     const amountStr = totalAmount != null
       ? new Intl.NumberFormat("en-IN", {

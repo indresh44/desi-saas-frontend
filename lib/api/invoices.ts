@@ -107,6 +107,7 @@ function toInvoiceModel(raw: InvoiceApiResponse): Invoice {
     issuedDate: raw.issued_date,
     dueDate: raw.due_date,
     createdAt: raw.created_at,
+    updatedAt: raw.updated_at,
     cancelledAt: raw.cancelled_at ?? null,
     cancelledReason: raw.cancelled_reason ?? null,
     customerName: raw.customer_name ?? null,

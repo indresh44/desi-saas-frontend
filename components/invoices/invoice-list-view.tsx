@@ -459,8 +459,13 @@ export function InvoiceListView({
     }));
   };
 
-  const handleDownloadPdf = (invoiceId: string, invoiceNumber: string) => {
-    const url = buildBrandedInvoiceUrl(invoiceId, invoiceNumber);
+  const handleDownloadPdf = (invoice: Invoice) => {
+    const url = buildBrandedInvoiceUrl(
+      invoice.id,
+      invoice.invoiceNumber,
+      invoice.status,
+      invoice.updatedAt,
+    );
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
@@ -473,6 +478,7 @@ export function InvoiceListView({
         invoice.status,
         business?.name,
         Number(invoice.totalAmount ?? 0),
+        invoice.updatedAt,
       );
     } finally {
       setShareLoadingByInvoice((prev) => ({ ...prev, [invoice.id]: false }));
@@ -739,7 +745,12 @@ export function InvoiceListView({
 
             const isEstimate = invoice.status === "draft" || invoice.status === "sent";
             const docLabel = isEstimate ? "estimate" : "invoice";
-            const brandedInvoiceUrl = buildBrandedInvoiceUrl(invoice.id, invoice.invoiceNumber);
+            const brandedInvoiceUrl = buildBrandedInvoiceUrl(
+              invoice.id,
+              invoice.invoiceNumber,
+              invoice.status,
+              invoice.updatedAt,
+            );
             const whatsappMessage = encodeURIComponent(
               `Hi ${invoice.customerName?.split(" ")[0] ?? ""}, a reminder for ${docLabel} ${invoice.invoiceNumber}. Total: ${formatRupees(Number(invoice.totalAmount))}, Pending: ${formatRupees(remaining)}.\nView & download: ${brandedInvoiceUrl}`
             );
@@ -822,7 +833,7 @@ export function InvoiceListView({
                       type="button"
                       size="sm"
                       variant="outline"
-                      onClick={() => handleDownloadPdf(invoice.id, invoice.invoiceNumber)}
+                      onClick={() => handleDownloadPdf(invoice)}
                     >
                       <Download className="h-3.5 w-3.5" />
                       PDF

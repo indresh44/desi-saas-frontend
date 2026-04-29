@@ -61,6 +61,10 @@ export interface Invoice {
   issuedDate: string;
   dueDate: string;
   createdAt: string;
+  // ISO timestamp; bumps on every backend update. Used to version share
+  // URLs (`?v={updated_at_unix}`) so WhatsApp / social-media OG previews
+  // refresh after edits while the invoice is still editable.
+  updatedAt?: string;
   cancelledAt?: string | null;
   cancelledReason?: string | null;
   customerName?: string | null;
@@ -85,6 +89,7 @@ export interface InvoiceApiResponse {
   issued_date: string;
   due_date: string;
   created_at: string;
+  updated_at?: string;
   cancelled_at?: string | null;
   cancelled_reason?: string | null;
   customer_name?: string | null;
