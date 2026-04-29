@@ -1029,7 +1029,7 @@ export default function LandingPageClient() {
               SellNSettle
             </div>
             <p style={{ fontSize: 15, color: `${C.navy}aa`, fontWeight: 600, maxWidth: 320, marginBottom: 28, lineHeight: 1.5 }}>
-              Empowering India&apos;s small businesses with intelligent conversation-first technology.
+              Empowering India&apos;s growing businesses with intelligent conversation-led technology.
             </p>
             <p style={{ fontSize: 11, color: `${C.navy}55`, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase" }}>© 2026 SellNSettle. Made in India with ❤️</p>
           </div>
