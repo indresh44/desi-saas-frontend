@@ -118,7 +118,10 @@
   --accent: oklch(0.24 0.024 232);
   --accent-foreground: oklch(0.95 0.012 235);
   --destructive: oklch(0.68 0.2 24);
-  --border: oklch(0.28 0.014 238 / 85%);
+  /* Border bumped from 0.28 / 85% to 0.36 solid so divide-y between
+     adjacent cards is visibly distinct against bg-card (0.22). The
+     opacity was making list dividers nearly invisible. */
+  --border: oklch(0.36 0.014 238);
   --input: oklch(0.2 0.012 238 / 90%);
   --ring: oklch(0.62 0.13 240);
   --chart-1: oklch(0.72 0.14 240);

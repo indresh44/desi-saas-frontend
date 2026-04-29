@@ -58,8 +58,13 @@ export default function CustomersPageClient() {
     Record<string, OutstandingState>
   >({});
 
+  // `bg-background` (vs the wrapper's bg-card) makes the input field
+  // visibly recess into the card in dark mode — without it the input
+  // and the surrounding card render the same color and the boundary
+  // disappears. `text-base md:text-sm` keeps the input at 16px on mobile
+  // so iOS doesn't auto-zoom on focus.
   const inputClassName =
-    "w-full rounded-lg border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50";
+    "w-full rounded-lg border bg-background px-3 py-2 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50 md:text-sm";
 
   const loadCustomers = useCallback(async () => {
     setIsLoading(true);
@@ -518,10 +523,13 @@ export default function CustomersPageClient() {
                           maxLength={15}
                         />
                         <div className="flex gap-2 pt-1">
+                          {/* Compact font (size="sm" = 12.8px) but a 44px tap
+                              target on mobile via the min-h override. Desktop
+                              stays at the 28px sm height. */}
                           <Button
                             type="button"
                             size="sm"
-                            className="flex-1"
+                            className="min-h-7 flex-1 md:min-h-6"
                             onClick={() => void handleSaveEdit(customer)}
                             disabled={isSavingEdit}
                           >
@@ -531,7 +539,7 @@ export default function CustomersPageClient() {
                             type="button"
                             size="sm"
                             variant="outline"
-                            className="flex-1"
+                            className="min-h-7 flex-1 md:min-h-6"
                             onClick={handleCancelEdit}
                             disabled={isSavingEdit}
                           >

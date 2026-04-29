@@ -4,10 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
+  Contact,
   FileText,
   LayoutDashboard,
   Menu,
-  MessageSquare,
   Package,
   Settings,
   Shield,
@@ -20,10 +20,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { useChat } from "@/lib/chat/chat-context";
 import { cn } from "@/lib/utils";
 
-type TabKey = "dashboard" | "leads" | "chat" | "invoices" | "more";
+type TabKey = "dashboard" | "leads" | "customers" | "invoices" | "more";
 
 type BottomTab = {
   key: TabKey;
@@ -37,7 +36,7 @@ type BottomTab = {
 const TABS: BottomTab[] = [
   { key: "dashboard", kind: "link", href: "/", label: "Home", icon: LayoutDashboard },
   { key: "leads", kind: "link", href: "/leads", label: "Leads", icon: Users },
-  { key: "chat", kind: "action", label: "Chat", icon: MessageSquare },
+  { key: "customers", kind: "link", href: "/customers", label: "Customers", icon: Contact },
   { key: "invoices", kind: "link", href: "/invoices", label: "Invoices", icon: FileText },
   { key: "more", kind: "action", label: "More", icon: Menu },
 ];
@@ -49,8 +48,10 @@ type SecondaryItem = {
   adminOnly?: boolean;
 };
 
+// Customers was promoted to a top-level bottom-nav tab; the chat trigger
+// moved to the header (see app-header.tsx). The "More" sheet is now for
+// less-frequently-used routes only.
 const SECONDARY_ITEMS: SecondaryItem[] = [
-  { href: "/customers", label: "Customers", icon: Users },
   { href: "/catalog", label: "Catalog", icon: Package },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/admin", label: "Admin", icon: Shield, adminOnly: true },
@@ -67,15 +68,16 @@ function isActive(pathname: string, href: string): boolean {
  * Bottom navigation for mobile (`<md`). Renders nothing on `>=md` —
  * the desktop sidebar handles primary nav there.
  *
- * Tabs: Dashboard, Leads, Chat (toggles AI panel), Invoices, More
- * (opens a bottom sheet with Customers, Catalog, Settings, Admin).
+ * Tabs: Dashboard, Leads, Customers, Invoices, More (opens a bottom
+ * sheet with Catalog, Settings, Admin). The chat trigger lives in the
+ * header — see app-header.tsx — to avoid covering content with a
+ * floating button.
  *
  * Active state matches `app-sidebar.tsx` styling for visual consistency.
  * Safe-area inset is applied so the bar clears the iPhone home indicator.
  */
 export function AppBottomNav() {
   const pathname = usePathname();
-  const { isOpen: isChatOpen, toggleChat } = useChat();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
 
   const visibleSecondary = SECONDARY_ITEMS.filter(
@@ -94,11 +96,9 @@ export function AppBottomNav() {
           const active =
             tab.kind === "link"
               ? isActive(pathname, tab.href)
-              : tab.key === "chat"
-                ? isChatOpen
-                : tab.key === "more"
-                  ? isMoreOpen
-                  : false;
+              : tab.key === "more"
+                ? isMoreOpen
+                : false;
 
           const className = cn(
             "flex flex-1 flex-col items-center justify-center gap-0.5 px-1 py-1 text-[11px] font-medium transition-colors",
@@ -121,13 +121,7 @@ export function AppBottomNav() {
               key={tab.key}
               type="button"
               className={className}
-              onClick={() => {
-                if (tab.key === "chat") {
-                  toggleChat();
-                } else if (tab.key === "more") {
-                  setIsMoreOpen(true);
-                }
-              }}
+              onClick={() => setIsMoreOpen(true)}
               aria-label={tab.label}
               aria-pressed={active}
             >

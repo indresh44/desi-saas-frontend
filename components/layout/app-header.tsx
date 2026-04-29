@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Moon, SunMedium } from "lucide-react";
+import { Moon, Sparkles, SunMedium } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { APP_NAME } from "@/lib/constants/app";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useChat } from "@/lib/chat/chat-context";
 import { THEME_STORAGE_KEY, type Theme } from "@/lib/theme";
 
 export function AppHeader() {
   const { user, business, logout } = useAuth();
+  const { isOpen: isChatOpen, toggleChat } = useChat();
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof document === "undefined") {
       return "light";
@@ -41,7 +43,24 @@ export function AppHeader() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
+          {/* Chat / AI assistant trigger. Distinctive primary-tinted styling
+              + Sparkles glyph so it reads as "ask the AI", not "another menu".
+              Visible on every breakpoint; on desktop the floating button in
+              the bottom-right is the secondary entry point. The label is
+              hidden on small screens to save space — the icon carries the
+              meaning, with `aria-label` for accessibility. */}
+          <button
+            type="button"
+            onClick={toggleChat}
+            aria-label={isChatOpen ? "Close AI assistant" : "Open AI assistant"}
+            aria-pressed={isChatOpen}
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/10 px-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary/15 active:translate-y-px md:min-h-9 md:px-3"
+          >
+            <Sparkles className="h-4 w-4" aria-hidden="true" />
+            <span className="hidden sm:inline">Ask AI</span>
+          </button>
+
           <Button
             type="button"
             size="icon-sm"
