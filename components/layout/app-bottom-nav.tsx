@@ -8,6 +8,7 @@ import {
   FileText,
   LayoutDashboard,
   Menu,
+  MessageSquare,
   Package,
   Settings,
   Shield,
@@ -53,6 +54,7 @@ type SecondaryItem = {
 // less-frequently-used routes only.
 const SECONDARY_ITEMS: SecondaryItem[] = [
   { href: "/catalog", label: "Catalog", icon: Package },
+  { href: "/agent-chat", label: "Agent chat", icon: MessageSquare },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/admin", label: "Admin", icon: Shield, adminOnly: true },
 ];
