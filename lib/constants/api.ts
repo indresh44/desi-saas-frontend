@@ -26,6 +26,7 @@ export const API_ENDPOINTS = {
   catalogItems: "/api/v1/catalog-items",
   meetings: "/api/v1/meetings",
   dashboardPaymentSummary: "/api/v1/dashboard/payment-summary",
+  dashboardAssistantTasks: "/api/v1/dashboard/assistant-tasks",
   customerOutstanding: (id: string) => `/api/v1/customers/${id}/outstanding`,
   customerSummary: (id: string) => `/api/v1/customers/${id}/summary`,
   invoiceById: (id: string) => `/api/v1/invoices/${id}`,

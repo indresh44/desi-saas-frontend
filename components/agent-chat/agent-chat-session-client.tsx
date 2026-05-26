@@ -38,37 +38,77 @@ export function AgentChatSessionClient({ sessionId }: { sessionId: string }) {
   const router = useRouter();
   const [session, setSession] = useState<AgentChatSessionDetail | null>(null);
   const [messages, setMessages] = useState<AgentChatMessage[]>([]);
-  const [awaitingId, setAwaitingId] = useState<string | null>(null);
+  // Authoritative gate for the chat input: comes from the server's
+  // has_unresolved_action field on GET /sessions/{id}. The deprecated
+  // awaiting_action_id on the envelope is no longer trusted — it can't
+  // see resolutions happening through other surfaces (dashboard
+  // carousel, parallel chat tab, dismiss endpoint).
+  const [hasUnresolvedAction, setHasUnresolvedAction] = useState(false);
   const [inFlight, setInFlight] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
-  // --- initial load -------------------------------------------------------
-  useEffect(() => {
-    let alive = true;
-    getAgentChatSession(sessionId)
-      .then((s) => {
-        if (!alive) return;
-        setSession(s);
-        setMessages(s.messages);
-        setAwaitingId(s.awaiting_action_id);
-      })
-      .catch((e) => alive && setError(e instanceof Error ? e.message : String(e)));
-    return () => {
-      alive = false;
-    };
+  // --- load/refetch -------------------------------------------------------
+  // Reusable session-load: fired on mount, on window focus, and on
+  // visibility change (tab/screen comes back). This catches state changes
+  // that happened in another surface — e.g. the owner confirmed a
+  // prepared action from the dashboard carousel and then came back to
+  // the chat tab. Without this refetch, the chat would keep showing
+  // live Confirm/Cancel buttons on a consumed action.
+  const loadSession = useCallback(async () => {
+    try {
+      const s = await getAgentChatSession(sessionId);
+      setSession(s);
+      setMessages(s.messages);
+      // Prefer the new authoritative field; fall back to deprecated
+      // awaiting_action_id for back-compat with older backends in the
+      // (very brief) window before the deploys are aligned.
+      setHasUnresolvedAction(
+        typeof s.has_unresolved_action === "boolean"
+          ? s.has_unresolved_action
+          : Boolean(s.awaiting_action_id),
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
   }, [sessionId]);
+
+  useEffect(() => {
+    void loadSession();
+  }, [loadSession]);
+
+  // Refetch on window focus + tab-visibility return. Two distinct
+  // signals so we cover both the alt-tab case and the
+  // hidden-tab-foregrounded case (some browsers fire only one).
+  useEffect(() => {
+    const onFocus = () => { void loadSession(); };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") void loadSession();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [loadSession]);
 
   // --- scroll to bottom on new message -----------------------------------
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages.length, awaitingId]);
+  }, [messages.length, hasUnresolvedAction]);
 
   // --- helpers ------------------------------------------------------------
   const applyEnvelope = useCallback((env: AgentChatEnvelope) => {
-    setAwaitingId(env.awaiting_action_id);
+    // The envelope carries the just-emitted assistant message; we
+    // append it locally for snappy UI feedback. The has_unresolved_action
+    // gate is sourced from the next loadSession() call — the envelope's
+    // deprecated awaiting_action_id is not reliable enough to be the
+    // source of truth (an awaiting_confirm envelope today carries the
+    // new prepared_action_id but other surfaces may have resolved
+    // other tasks in this session; we re-fetch to learn the truth).
     setMessages((prev) => [
       ...prev,
       {
@@ -82,6 +122,35 @@ export function AgentChatSessionClient({ sessionId }: { sessionId: string }) {
         created_at: env.created_at,
       },
     ]);
+    // Local optimistic flip — the next focus/refetch will reconcile.
+    // True when the just-emitted envelope itself stages a new awaiting
+    // confirm; false on commit_result / cancelled / done.
+    if (env.kind === "awaiting_confirm") {
+      setHasUnresolvedAction(true);
+    } else if (env.kind === "multi_task") {
+      // Multi-task batches: gate the input iff any slot is still live
+      // (awaiting_confirm with no resolution). Done/failed/cancelled
+      // slots don't gate. Same authoritative answer the server's
+      // has_unresolved_action would give us on next refetch.
+      const tasks =
+        (env.payload?.tasks as
+          | Array<{ kind?: string; resolution?: string | null }>
+          | undefined) ?? [];
+      const anyLive = tasks.some(
+        (t) =>
+          t?.kind === "awaiting_confirm"
+          && (t?.resolution === null || t?.resolution === undefined),
+      );
+      setHasUnresolvedAction(anyLive);
+    } else if (
+      env.kind === "commit_result"
+      || env.kind === "cancelled"
+      || env.kind === "done"
+      || env.kind === "error"
+      || env.kind === "exhausted"
+    ) {
+      setHasUnresolvedAction(false);
+    }
   }, []);
 
   const handleSend = useCallback(
@@ -202,7 +271,7 @@ export function AgentChatSessionClient({ sessionId }: { sessionId: string }) {
 
       <ChatInput
         disabled={inFlight}
-        awaitingConfirm={!!awaitingId}
+        awaitingConfirm={hasUnresolvedAction}
         onSend={handleSend}
       />
     </div>

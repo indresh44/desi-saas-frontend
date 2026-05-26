@@ -14,7 +14,11 @@ export type AgentChatKind =
   | "commit_result"
   | "cancelled"
   | "error"
-  | "exhausted";
+  | "exhausted"
+  // Multi-task batch (>=2 tasks split from one owner message). Payload
+  // shape: { batch_id, tasks: MultiTaskSlot[] }. The renderer dispatches
+  // per-slot in components/agent-chat/multi-task-message.tsx.
+  | "multi_task";
 
 export interface AgentChatTurnDetail {
   turn: number;
@@ -68,6 +72,14 @@ export interface AgentChatSessionDetail {
   id: string;
   title: string | null;
   awaiting_action_id: string | null;
+  /**
+   * Authoritative gate for the chat input. True iff this session has at
+   * least one task in awaiting_approval with a real prepared write
+   * pending. Replaces awaiting_action_id (which is deprecated since the
+   * per-task model — a session can have multiple awaiting tasks at once).
+   * Optional for forward-compat with older backends.
+   */
+  has_unresolved_action?: boolean;
   updated_at: string;
   messages: AgentChatMessage[];
 }
@@ -75,10 +87,29 @@ export interface AgentChatSessionDetail {
 // --- payload shapes per kind (best-effort; payload is loosely typed on the
 // wire, narrow at the use site rather than forcing a discriminated union here)
 
+/**
+ * Resolution state of an awaiting_confirm card, populated server-side on
+ * GET /sessions/{id}. null = the underlying task is still actively
+ * waiting on THIS prepared action (live buttons OK). Any other value
+ * means the card is stale and the live confirm/cancel buttons must NOT
+ * be rendered — the action was resolved through another surface
+ * (dashboard carousel, chat /cancel, or a dismiss).
+ */
+export type AwaitingConfirmResolution =
+  | "confirmed"
+  | "cancelled"
+  | "dismissed"
+  | "failed"
+  | "unknown";
+
 export interface AwaitingConfirmPayload {
   prepared_action_id: string;
   preview: string;
   editable_fields: string[];
+  // Populated server-side on session load; absent on the live envelope
+  // from /message which always means pending. Defaults to null in the
+  // renderer.
+  resolution?: AwaitingConfirmResolution | null;
 }
 
 export interface CommitResultPayload {

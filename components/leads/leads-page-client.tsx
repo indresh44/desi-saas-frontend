@@ -192,6 +192,9 @@ export function LeadsPageClient() {
 
   const customerIdFilter = searchParams.get("customer_id");
   const customerNameForFilter = searchParams.get("customer_name") ?? "this customer";
+  // Dashboard's "Follow-ups Today" card lands here with ?followups=today.
+  // Maps to the backend's existing follow_up_today boolean filter.
+  const followupsTodayFilter = searchParams.get("followups") === "today";
 
   useEffect(() => {
     if (customerIdFilter) {
@@ -251,9 +254,10 @@ export function LeadsPageClient() {
     setErrorMessage(null);
 
     try {
-      const data = await fetchLeads(
-        customerIdFilter ? { customer_id: customerIdFilter } : undefined
-      );
+      const data = await fetchLeads({
+        customer_id: customerIdFilter ?? undefined,
+        follow_up_today: followupsTodayFilter || undefined,
+      });
       setLeads(data);
     } catch (error) {
       if (
@@ -269,7 +273,7 @@ export function LeadsPageClient() {
     } finally {
       setIsLoading(false);
     }
-  }, [customerIdFilter]);
+  }, [customerIdFilter, followupsTodayFilter]);
 
   useEffect(() => {
     void loadLeads();

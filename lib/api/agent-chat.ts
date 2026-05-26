@@ -78,3 +78,21 @@ export async function cancelAgentChatAction(
   );
   return data;
 }
+
+/**
+ * Dismiss a stuck ask_user task — the escape hatch for the dashboard's
+ * needs_input bucket. The endpoint name is generic
+ * (/sessions/{id}/tasks/{task_id}/dismiss) but the backend refuses
+ * anything other than an ask_user task, so this can't accidentally
+ * skip a prepared write's confirm flow.
+ */
+export async function dismissAgentChatTask(
+  sessionId: string,
+  taskId: string,
+): Promise<AgentChatEnvelope> {
+  const { data } = await apiClient<AgentChatEnvelope>(
+    `/api/v1/agent-chat/sessions/${sessionId}/tasks/${taskId}/dismiss`,
+    { method: "POST" },
+  );
+  return data;
+}

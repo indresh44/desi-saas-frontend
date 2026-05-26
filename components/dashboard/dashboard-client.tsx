@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Rocket } from "lucide-react";
+import { AssistantTasksSection } from "@/components/dashboard/assistant-tasks-section";
 import { CreateLeadDialog } from "@/components/leads/create-lead-dialog";
 import { fetchDashboardPaymentSummary } from "@/lib/api/dashboard";
 import { fetchBusinessSettings } from "@/lib/api/business-settings";
@@ -301,8 +302,21 @@ export default function DashboardClient() {
               </div>
             ) : null}
 
+            {/* Assistant Tasks section — surfaces what the AI is doing +
+                 the approvals carousel. Slotted above the CRM metric grid
+                 so awaiting-approval counts are the first thing the owner
+                 sees after opening the dashboard. */}
+            <AssistantTasksSection />
+
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="rounded-2xl border bg-card p-5">
+              {/* Clickable card: drills into /leads filtered to leads with
+                   a pending follow-up scheduled today. The ?followups=today
+                   filter is a small backend addition; see leads list endpoint. */}
+              <Link
+                href="/leads?followups=today"
+                className="rounded-2xl border bg-card p-5 transition hover:border-primary/50 hover:bg-muted/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="View leads with follow-ups today"
+              >
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Follow-ups Today
                 </p>
@@ -310,7 +324,7 @@ export default function DashboardClient() {
                   {isLoading ? "..." : pendingFollowUps.length}
                 </p>
                 <p className="mt-2 text-xs text-muted-foreground">Don&apos;t miss these</p>
-              </div>
+              </Link>
 
               <div className="rounded-2xl border bg-card p-5">
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -465,21 +479,30 @@ export default function DashboardClient() {
                       key={followUp.id}
                       className="rounded-xl border bg-card p-4"
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <h3 className="truncate text-sm font-semibold text-foreground">
-                            {followUp.leadTitle || "Lead"}
-                          </h3>
-                          {followUp.customerName ? (
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              {followUp.customerName}
-                            </p>
-                          ) : null}
+                      {/* Title + customer block is a Link to the parent lead;
+                           the "Done" button below remains its own click target
+                           (wrapping the whole card in a Link would swallow it). */}
+                      <Link
+                        href={`/leads/${followUp.leadId}`}
+                        className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                        aria-label={`Open lead ${followUp.leadTitle || "Lead"}`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <h3 className="truncate text-sm font-semibold text-foreground">
+                              {followUp.leadTitle || "Lead"}
+                            </h3>
+                            {followUp.customerName ? (
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                {followUp.customerName}
+                              </p>
+                            ) : null}
+                          </div>
+                          <p className="text-xs font-medium text-muted-foreground">
+                            {formatTime(followUp.scheduledAt)}
+                          </p>
                         </div>
-                        <p className="text-xs font-medium text-muted-foreground">
-                          {formatTime(followUp.scheduledAt)}
-                        </p>
-                      </div>
+                      </Link>
 
                       <div className="mt-3 flex items-end justify-between gap-3">
                         {followUp.note ? (
@@ -528,7 +551,15 @@ export default function DashboardClient() {
                 ) : (
                   <ul className="divide-y divide-border">
                     {recentLeads.map((lead) => (
-                      <li key={lead.id} className="px-4 py-3">
+                      <li key={lead.id}>
+                        {/* Whole row is a Link — no inner click targets, so
+                             wrapping is safe. Existing /leads/[id] page is
+                             the navigation target. */}
+                        <Link
+                          href={`/leads/${lead.id}`}
+                          className="block px-4 py-3 transition hover:bg-muted/30 focus:outline-none focus-visible:bg-muted/40"
+                          aria-label={`Open lead ${lead.title}`}
+                        >
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                             {lead.title}
@@ -548,6 +579,7 @@ export default function DashboardClient() {
                           <span>{formatRupees(lead.estimatedValue)}</span>
                           <span>Service: {formatShortDate(lead.serviceDate)}</span>
                         </div>
+                        </Link>
                       </li>
                     ))}
                   </ul>

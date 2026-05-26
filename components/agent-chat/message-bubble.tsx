@@ -1,9 +1,16 @@
 "use client";
 
-import type { AgentChatMessage } from "@/lib/types/agent-chat";
+import type {
+  AgentChatMessage,
+  AwaitingConfirmResolution,
+} from "@/lib/types/agent-chat";
 import { AgentChatMarkdown } from "@/components/agent-chat/agent-chat-markdown";
 import { AwaitingConfirmCard } from "@/components/agent-chat/awaiting-confirm-card";
 import { DebugPanel } from "@/components/agent-chat/debug-panel";
+import {
+  MultiTaskMessage,
+  type MultiTaskPayload,
+} from "@/components/agent-chat/multi-task-message";
 
 /**
  * One row in the conversation. Dispatches by (role, kind):
@@ -58,26 +65,65 @@ function AssistantBody({
   onConfirm: (preparedActionId: string, edits: Record<string, string> | undefined) => void;
   onCancel: (preparedActionId: string) => void;
 }) {
+  if (msg.kind === "multi_task") {
+    // Per-slot rendering: each task in the batch gets its own labeled
+    // card (awaiting_confirm slots become live AwaitingConfirmCards
+    // inline, done/failed/cancelled become status lines). Closes the
+    // asymmetry where single-task batches were actionable in chat but
+    // multi-task batches forced the owner to the dashboard carousel.
+    const mt = (msg.payload ?? {}) as Partial<MultiTaskPayload>;
+    return (
+      <MultiTaskMessage
+        payload={{
+          batch_id: mt.batch_id ?? "",
+          tasks: mt.tasks ?? [],
+        }}
+        preamble={msg.content}
+        pendingAction={pendingAction}
+        onConfirm={onConfirm}
+        onCancel={onCancel}
+      />
+    );
+  }
+
   if (msg.kind === "awaiting_confirm") {
     const p = (msg.payload ?? {}) as {
       prepared_action_id?: string;
       preview?: string;
       editable_fields?: string[];
+      // Server-populated on session-load. null/absent = still live.
+      // Anything else = the action was resolved elsewhere (dashboard,
+      // dismiss path, parallel chat); the card renders disabled.
+      resolution?: AwaitingConfirmResolution | null;
     };
     if (!p.prepared_action_id) {
       return <Plain text="(missing prepared_action_id)" />;
     }
+    // Compound shape: optional markdown answer text ABOVE the confirm card,
+    // so a single assistant bubble carries both "here's what I found" AND
+    // the prepared action. msg.content holds the answer (may be null/empty,
+    // in which case we render only the card — same as before). One confirm
+    // card per bubble, max — never multiple cards stacked.
+    const answerText = (msg.content ?? "").trim();
     return (
-      <AwaitingConfirmCard
-        payload={{
-          prepared_action_id: p.prepared_action_id,
-          preview: p.preview ?? msg.content ?? "",
-          editable_fields: p.editable_fields ?? [],
-        }}
-        disabled={pendingAction}
-        onConfirm={(edits) => onConfirm(p.prepared_action_id!, edits)}
-        onCancel={() => onCancel(p.prepared_action_id!)}
-      />
+      <div className="space-y-2">
+        {answerText && (
+          <div className="rounded-2xl rounded-tl-sm bg-zinc-100 px-3 py-2 text-sm">
+            <AgentChatMarkdown content={answerText} />
+          </div>
+        )}
+        <AwaitingConfirmCard
+          payload={{
+            prepared_action_id: p.prepared_action_id,
+            preview: p.preview ?? "",
+            editable_fields: p.editable_fields ?? [],
+            resolution: p.resolution ?? null,
+          }}
+          disabled={pendingAction}
+          onConfirm={(edits) => onConfirm(p.prepared_action_id!, edits)}
+          onCancel={() => onCancel(p.prepared_action_id!)}
+        />
+      </div>
     );
   }
 
