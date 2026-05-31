@@ -8,7 +8,7 @@ import {
   LeadApiResponseItem,
 } from "@/lib/types/lead";
 
-function toLeadModel(item: LeadApiResponseItem): Lead {
+export function toLeadModel(item: LeadApiResponseItem): Lead {
   return {
     customerId: item.customer_id,
     customerName: item.customer_name,
@@ -26,6 +26,7 @@ function toLeadModel(item: LeadApiResponseItem): Lead {
     id: item.id,
     createdAt: item.created_at,
     updatedAt: item.updated_at,
+    nextAction: item.next_action ?? null,
   };
 }
 

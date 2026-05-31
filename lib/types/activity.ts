@@ -38,6 +38,9 @@ export interface LeadActivity {
   payload?: Record<string, unknown> | null;
   chatSessionId?: string | null;
   taskId?: string | null;
+  // 0044 — set on rows emitted by resolve_followup; links the activity
+  // to the follow-up it resolved. NULL on all other activity types.
+  followupId?: string | null;
 }
 
 export interface CreateActivityInput {

@@ -1,3 +1,6 @@
+import type { LeadFollowUp } from "@/lib/types/followup";
+import type { NextActionSummary } from "@/lib/types/next-action";
+
 export type LeadApiResponseItem = {
   customer_id: string;
   customer_name: string | null;
@@ -15,6 +18,10 @@ export type LeadApiResponseItem = {
   id: string;
   created_at: string;
   updated_at: string;
+  // Backend started returning this from `GET /leads` and
+  // `GET /leads/{id}` after the next-action cascade shipped. Optional
+  // here so older deploys / responses without it don't break the parser.
+  next_action?: NextActionSummary | null;
 };
 
 export type Lead = {
@@ -34,6 +41,15 @@ export type Lead = {
   id: string;
   createdAt: string;
   updatedAt: string;
+  // Per-lead next action computed server-side. NULL when the backend
+  // didn't provide one (older deploy, or terminal lead's NONE branch
+  // collapses to null on the frontend side — see `toLeadModel`).
+  nextAction: NextActionSummary | null;
+  // 0044 — populated only by the dashboard's leads-needing-action endpoint
+  // (which bulk-stitches the lead's earliest pending follow-up). Other
+  // endpoints leave this undefined; consumers must treat undefined and
+  // null as equivalent ("no open follow-up").
+  openFollowup?: LeadFollowUp | null;
 };
 
 export type CreateLeadInput = {

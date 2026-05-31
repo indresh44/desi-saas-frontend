@@ -9,6 +9,11 @@ export interface LeadFollowUp {
   createdBy: string;
   createdAt: string;
   completedAt: string | null;
+  // 0044 — outcome tracking fields. attemptCount drives the "Called Nx"
+  // red badge on the action card; lastOutcome is rendered as the
+  // subtitle ("Last attempt: no answer").
+  attemptCount: number;
+  lastOutcome: string | null;
   // enriched fields returned by /today endpoint:
   leadTitle?: string;
   customerName?: string;

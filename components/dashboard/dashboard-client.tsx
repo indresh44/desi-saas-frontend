@@ -1,117 +1,139 @@
 "use client";
 
-import Link from "next/link";
+// Action-first dashboard. Replaces the previous metrics-first home screen.
+// Architecture & layout decisions live in `Docs/plans/next-action-cascade.md`
+// and `dashboard-build-plan.md`; this file is the wiring.
+//
+// One endpoint feeds the whole page: `GET /dashboard/leads-needing-action`
+// (items + total + counts_by_type). Recent enquiries reuses `fetchLeads()`
+// (slice 4 most recent). Per-card context lazy-loads via /leads/{id}/context.
+//
+// Layout (Ledger §15.1 — Triage Stream):
+//   greeting row (rollup + [+ New Enquiry])
+//   ┌─────────────────────────────────┬──────────────┐
+//   │ AI panel (hidden when empty)    │              │
+//   │                                 │  Needs-you   │
+//   │ Action list, grouped by         │  + Recent    │
+//   │ next_action.type, headers       │   (desktop)  │
+//   │ shown only when group has items │              │
+//   └─────────────────────────────────┴──────────────┘
+// Mobile (<lg): single column; the rail is hidden entirely.
+//
+// Visual: Ledger design system. Greeting follows §13.1, group headers
+// follow §13.3, the right rail follows §13.4. The action cards
+// themselves are the already-Ledger-styled `ActionCard`.
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Rocket } from "lucide-react";
+import Link from "next/link";
+import { Plus, Rocket, X } from "lucide-react";
+import { ActionCard } from "@/components/dashboard/action-card";
+import { AiPanel } from "@/components/dashboard/ai-panel";
 import { AssistantTasksSection } from "@/components/dashboard/assistant-tasks-section";
+import { NeedsYouRail } from "@/components/dashboard/needs-you-rail";
 import { CreateLeadDialog } from "@/components/leads/create-lead-dialog";
-import { fetchDashboardPaymentSummary } from "@/lib/api/dashboard";
-import { fetchBusinessSettings } from "@/lib/api/business-settings";
-import { fetchTodaysFollowUps, markFollowUpDone } from "@/lib/api/followups";
+import { Eyebrow, LedgerButton, PageTitle } from "@/components/ledger";
+import { useAuth } from "@/lib/auth/auth-context";
+import {
+  fetchLeadsNeedingAction,
+  type LeadsNeedingActionResult,
+} from "@/lib/api/dashboard";
+import { fetchLeadFollowUps, markFollowUpDone } from "@/lib/api/followups";
 import { fetchLeads } from "@/lib/api/leads";
+import { fetchBusinessSettings } from "@/lib/api/business-settings";
 import { APP_NAME } from "@/lib/constants/app";
-import type { DashboardPaymentSummary } from "@/lib/types/dashboard";
+import { presentationFor } from "@/lib/next-action-presentation";
+import type { Lead } from "@/lib/types/lead";
 import type { BusinessSettings } from "@/lib/types/business-settings";
-import { LeadFollowUp } from "@/lib/types/followup";
-import { Lead } from "@/lib/types/lead";
+import type { NextActionType } from "@/lib/types/next-action";
+import { HOME_NEEDS_ACTION_TYPES } from "@/lib/types/next-action";
 
 const SETTINGS_NUDGE_DISMISSED_KEY = "sellnsettle_settings_nudge_dismissed";
+const ACTION_LIST_LIMIT = 10;
+const RECENT_LEAD_LIMIT = 4;
 
-function formatTime(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "-";
-  }
-
-  return date.toLocaleTimeString("en-IN", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
+function greetingForHour(hour: number): string {
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
 }
 
-function formatShortDate(value?: string | null) {
-  if (!value) {
-    return "-";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "-";
-  }
-
-  return date.toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-  });
-}
-
-function formatRupees(value: string | number | null | undefined) {
-  const numericValue = Number(value);
-  if (Number.isNaN(numericValue)) {
-    return "-";
-  }
-
-  return `₹${numericValue.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
-}
-
-function getStageBadgeClass(stageId: string) {
-  const normalized = stageId.toLowerCase();
-
-  if (normalized.includes("hot") || normalized.includes("won")) {
-    return "bg-rose-50 text-rose-700 border-rose-200";
-  }
-
-  if (normalized.includes("warm") || normalized.includes("progress")) {
-    return "bg-amber-50 text-amber-700 border-amber-200";
-  }
-
-  if (normalized.includes("cold") || normalized.includes("lost")) {
-    return "bg-muted text-foreground border";
-  }
-
-  return "bg-sky-50 text-sky-700 border-sky-200";
+function firstWord(name: string | null | undefined): string {
+  return (name || "there").trim().split(/\s+/)[0] || "there";
 }
 
 function isBusinessProfileIncomplete(settings: BusinessSettings | null) {
-  if (!settings) {
-    return false;
-  }
-
-  const normalizedName = settings.name.trim().toLowerCase();
+  if (!settings) return false;
+  const normalised = settings.name.trim().toLowerCase();
   const appName = APP_NAME.trim().toLowerCase();
+  return !settings.logoUrl || !normalised || normalised === appName;
+}
 
-  return !settings.logoUrl || !normalizedName || normalizedName === appName;
+// Lazy resolver: given a leadId, looks up its earliest pending follow-up
+// and marks it done. Hoisted so the parent can pass a stable callback to
+// every ActionCard. Done-without-followup is impossible in cascade types
+// 1 & 2 (FOLLOWUP_OVERDUE / FOLLOWUP_DUE_TODAY require a pending row by
+// definition), but we still no-op gracefully if the row disappeared
+// between page load and click.
+async function markNextPendingFollowupDone(leadId: string): Promise<void> {
+  const followups = await fetchLeadFollowUps(leadId);
+  const pending = followups
+    .filter((f) => f.status === "pending")
+    .sort(
+      (a, b) =>
+        new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
+    );
+  const next = pending[0];
+  if (!next) return;
+  await markFollowUpDone(next.id, {});
 }
 
 export default function DashboardClient() {
   const router = useRouter();
-  const [followUps, setFollowUps] = useState<LeadFollowUp[]>([]);
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [paymentSummary, setPaymentSummary] = useState<DashboardPaymentSummary | null>(null);
-  const [businessSettings, setBusinessSettings] = useState<BusinessSettings | null>(null);
+  const { user } = useAuth();
+
+  const [actionList, setActionList] = useState<LeadsNeedingActionResult | null>(
+    null,
+  );
+  // Lead ids the user has just resolved via an ActionCard's outcome
+  // sheet. We filter them out client-side until the next loadDashboard()
+  // refetch lands — keeps the list "snappy" without waiting for the
+  // server round-trip. Cleared on every refetch.
+  const [optimisticallyRemoved, setOptimisticallyRemoved] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [recentLeads, setRecentLeads] = useState<Lead[]>([]);
+  const [businessSettings, setBusinessSettings] = useState<BusinessSettings | null>(
+    null,
+  );
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSettingsNudgeDismissed, setIsSettingsNudgeDismissed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [markingId, setMarkingId] = useState<string | null>(null);
-
 
   const loadDashboard = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-
     try {
-      const [todaysFollowUps, allLeads, summary] = await Promise.all([
-        fetchTodaysFollowUps(),
+      const [needs, leads] = await Promise.all([
+        fetchLeadsNeedingAction(ACTION_LIST_LIMIT),
         fetchLeads(),
-        fetchDashboardPaymentSummary(),
       ]);
-
-      setFollowUps(todaysFollowUps);
-      setLeads(allLeads);
-      setPaymentSummary(summary);
+      setActionList(needs);
+      // Authoritative refresh — drop the optimistic-removal set now that
+      // we have fresh truth from the backend.
+      setOptimisticallyRemoved(new Set());
+      // Recent = chronological newest-first, cap at RECENT_LEAD_LIMIT.
+      // We sort client-side because /leads doesn't yet accept a `limit`
+      // or `sort=created_at` query param — small list, cheap to sort.
+      setRecentLeads(
+        [...leads]
+          .sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          )
+          .slice(0, RECENT_LEAD_LIMIT),
+      );
     } catch (loadError) {
       const message =
         loadError instanceof Error
@@ -123,471 +145,392 @@ export default function DashboardClient() {
     }
   }, []);
 
-  const refreshFollowUps = useCallback(async () => {
-    const todaysFollowUps = await fetchTodaysFollowUps();
-    setFollowUps(todaysFollowUps);
-  }, []);
-
   useEffect(() => {
-    loadDashboard();
+    void loadDashboard();
   }, [loadDashboard]);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
+    if (typeof window === "undefined") return;
     setIsSettingsNudgeDismissed(
-      window.localStorage.getItem(SETTINGS_NUDGE_DISMISSED_KEY) === "true"
+      window.localStorage.getItem(SETTINGS_NUDGE_DISMISSED_KEY) === "true",
     );
   }, []);
 
   useEffect(() => {
-    if (leads.length === 0) {
+    // Only fetch settings once we know the user has at least one lead —
+    // matches the previous dashboard's behaviour (no nudge on a clean
+    // brand-new account, which has its own welcome surface).
+    if (recentLeads.length === 0) {
       setBusinessSettings(null);
       return;
     }
-
-    let isCancelled = false;
-
-    const loadBusinessSettings = async () => {
+    let cancelled = false;
+    void (async () => {
       try {
         const settings = await fetchBusinessSettings();
-        if (!isCancelled) {
-          setBusinessSettings(settings);
-        }
+        if (!cancelled) setBusinessSettings(settings);
       } catch {
-        if (!isCancelled) {
-          setBusinessSettings(null);
-        }
+        if (!cancelled) setBusinessSettings(null);
       }
-    };
-
-    void loadBusinessSettings();
-
+    })();
     return () => {
-      isCancelled = true;
+      cancelled = true;
     };
-  }, [leads.length]);
+  }, [recentLeads.length]);
 
-  const pendingFollowUps = useMemo(
-    () => followUps.filter((item) => item.status === "pending"),
-    [followUps]
-  );
+  // ---- derived ----
 
-  const recentLeads = useMemo(
-    () =>
-      [...leads]
-        .sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )
-        .slice(0, 5),
-    [leads]
-  );
-
-  const monthComparison = useMemo(() => {
-    if (!paymentSummary) return null;
-    const last = paymentSummary.collections_last_month;
-    const current = paymentSummary.collections_this_month;
-    if (last <= 0) {
-      return null;
+  const groupedActions = useMemo(() => {
+    if (!actionList) return new Map<NextActionType, Lead[]>();
+    const groups = new Map<NextActionType, Lead[]>();
+    for (const type of HOME_NEEDS_ACTION_TYPES) groups.set(type, []);
+    for (const lead of actionList.items) {
+      // Hide just-resolved cards immediately; the refetch will reseed.
+      if (optimisticallyRemoved.has(lead.id)) continue;
+      const type = lead.nextAction?.type;
+      if (type && groups.has(type)) {
+        groups.get(type)!.push(lead);
+      }
     }
+    return groups;
+  }, [actionList, optimisticallyRemoved]);
 
-    const deltaPercent = ((current - last) / last) * 100;
-    return {
-      value: Math.abs(deltaPercent),
-      isUp: deltaPercent >= 0,
-    };
-  }, [paymentSummary]);
+  const totalNeedingAction = actionList?.total ?? 0;
+  const countsByType = actionList?.countsByType ?? ({} as Record<NextActionType, number>);
 
-  const overdueInvoices = paymentSummary?.overdue_invoices ?? [];
-  const isNewUser = !isLoading && !error && leads.length === 0;
+  const greeting = useMemo(() => {
+    const phrase = greetingForHour(new Date().getHours());
+    return `${phrase}, ${firstWord(user?.name)}`;
+  }, [user?.name]);
+
+  // Inbox-zero state: user has leads (so they're not new) but no active
+  // urgent buckets. "All caught up" beats showing four empty headers.
+  const isNewUser = !isLoading && !error && recentLeads.length === 0;
+  const isInboxZero =
+    !isLoading && !error && !isNewUser && totalNeedingAction === 0;
+
   const shouldShowSettingsNudge =
     !isNewUser &&
-    leads.length > 0 &&
     !isSettingsNudgeDismissed &&
     isBusinessProfileIncomplete(businessSettings);
-
-  const handleMarkDone = useCallback(
-    async (id: string) => {
-      setMarkingId(id);
-      try {
-        await markFollowUpDone(id, {});
-        await refreshFollowUps();
-      } catch (markError) {
-        const message =
-          markError instanceof Error
-            ? markError.message
-            : "Unable to update follow-up status.";
-        setError(message);
-      } finally {
-        setMarkingId(null);
-      }
-    },
-    [refreshFollowUps]
-  );
 
   const handleDismissSettingsNudge = () => {
     if (typeof window !== "undefined") {
       window.localStorage.setItem(SETTINGS_NUDGE_DISMISSED_KEY, "true");
     }
-
     setIsSettingsNudgeDismissed(true);
   };
 
+  const handleMarkDone = useCallback(
+    async (leadId: string) => {
+      try {
+        await markNextPendingFollowupDone(leadId);
+        await loadDashboard();
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Unable to mark follow-up done.";
+        setError(message);
+      }
+    },
+    [loadDashboard],
+  );
+
+  const handleSetFollowUp = useCallback(
+    (leadId: string) => {
+      // No dedicated set-follow-up modal yet — punt to the lead detail
+      // page where the existing follow-up form lives. Tracked in
+      // dashboard-build-plan §H (parked).
+      router.push(`/leads/${leadId}`);
+    },
+    [router],
+  );
+
+  // After an ActionCard's outcome sheet posts to /resolve, drop the
+  // card from the list immediately and refetch the source of truth. The
+  // backend leaves the lead in the list iff its next_action still
+  // qualifies (e.g. a no_answer reschedule to later today keeps it; a
+  // positive outcome with next_dt in 3 days moves it out entirely).
+  const handleResolved = useCallback(
+    (leadId: string) => {
+      setOptimisticallyRemoved((prev) => {
+        const next = new Set(prev);
+        next.add(leadId);
+        return next;
+      });
+      void loadDashboard();
+    },
+    [loadDashboard],
+  );
+
+  // ---- render ----
+
+  if (isNewUser) {
+    return (
+      <>
+        <section className="flex min-h-[calc(100vh-14rem)] items-center justify-center">
+          <div
+            className="mx-auto flex max-w-xl flex-col items-center px-6 py-10 text-center"
+            style={{
+              background: "var(--color-surface)",
+              border: "1px solid var(--color-border)",
+              borderRadius: "var(--ledger-radius-card)",
+            }}
+          >
+            <div
+              className="flex h-20 w-20 items-center justify-center"
+              style={{
+                background: "var(--color-accent-soft)",
+                color: "var(--color-accent)",
+                borderRadius: "50%",
+              }}
+            >
+              <Rocket className="h-10 w-10" strokeWidth={1.8} />
+            </div>
+            <h1
+              className="mt-6 text-[28px] font-bold tracking-[-0.03em]"
+              style={{ color: "var(--color-text)" }}
+            >
+              Welcome to SellNSettle! 🎉
+            </h1>
+            <p
+              className="mt-3 max-w-md text-[14px] leading-6"
+              style={{ color: "var(--color-text-muted)" }}
+            >
+              Track your enquiries, send quotes, and collect payments — all in
+              one place.
+            </p>
+            <LedgerButton
+              variant="primary"
+              size="lg"
+              className="mt-8"
+              onClick={() => setIsCreateOpen(true)}
+            >
+              <Plus className="size-[16px]" strokeWidth={2} />
+              Add Your First Enquiry
+            </LedgerButton>
+          </div>
+        </section>
+        <CreateLeadDialog
+          isOpen={isCreateOpen}
+          onClose={() => setIsCreateOpen(false)}
+          onCreated={loadDashboard}
+        />
+      </>
+    );
+  }
+
   return (
     <>
-      <section className="space-y-8">
+      <section className="space-y-6">
         {error ? (
-          <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <div
+            className="text-[13px]"
+            style={{
+              background: "var(--follow-overdue-bg)",
+              border: "1px solid color-mix(in oklch, var(--follow-overdue) 30%, transparent)",
+              color: "var(--follow-overdue)",
+              padding: "12px 16px",
+              borderRadius: "var(--ledger-radius-control)",
+            }}
+          >
             {error}
           </div>
         ) : null}
 
-        {isNewUser ? (
-          <div className="flex min-h-[calc(100vh-14rem)] items-center justify-center">
-            <div className="mx-auto flex max-w-xl flex-col items-center rounded-3xl border bg-card px-6 py-10 text-center shadow-sm">
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-sky-50 text-sky-600">
-                <Rocket className="h-10 w-10" />
-              </div>
-              <h1 className="mt-6 text-3xl font-semibold tracking-tight text-foreground">
-                Welcome to SellNSettle! 🎉
-              </h1>
-              <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-                Track your enquiries, send quotes, and collect payments - all in one place.
-              </p>
+        {/* Greeting row — §13.1. Lead count is bold in the subtitle. */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <PageTitle
+              className="text-[27px] sm:text-[28px]"
+              style={{ letterSpacing: "-0.03em", fontWeight: 700 }}
+            >
+              {greeting}
+            </PageTitle>
+            <p
+              className="mt-1 text-[14.5px]"
+              style={{ color: "var(--color-text-muted)" }}
+            >
+              {isLoading ? (
+                "Loading your day…"
+              ) : totalNeedingAction === 0 ? (
+                "Nothing pressing today. ☀️"
+              ) : (
+                <>
+                  <b
+                    className="font-semibold"
+                    style={{ color: "var(--color-text)" }}
+                  >
+                    {totalNeedingAction}{" "}
+                    {totalNeedingAction === 1 ? "enquiry" : "enquiries"}
+                  </b>{" "}
+                  {totalNeedingAction === 1 ? "needs" : "need"} you today
+                </>
+              )}
+            </p>
+          </div>
+          <LedgerButton
+            variant="primary"
+            size="lg"
+            onClick={() => setIsCreateOpen(true)}
+          >
+            <Plus className="size-[16px]" strokeWidth={2} />
+            New Enquiry
+          </LedgerButton>
+        </div>
+
+        {shouldShowSettingsNudge ? (
+          <div
+            className="flex flex-col gap-3 text-[13px] md:flex-row md:items-center md:justify-between"
+            style={{
+              background: "var(--color-accent-soft)",
+              border: "1px solid color-mix(in oklch, var(--color-accent) 22%, transparent)",
+              color: "color-mix(in oklch, var(--color-accent) 70%, var(--color-text))",
+              padding: "12px 16px",
+              borderRadius: "var(--ledger-radius-control)",
+            }}
+          >
+            <p>
+              💡 Tip: Add your business name and logo in Settings to make your
+              invoices look professional.
+            </p>
+            <div className="flex items-center gap-2">
+              <LedgerButton
+                variant="action"
+                size="sm"
+                onClick={() => router.push("/settings")}
+              >
+                Go to Settings
+              </LedgerButton>
               <button
                 type="button"
-                onClick={() => setIsCreateOpen(true)}
-                className="mt-8 inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
+                onClick={handleDismissSettingsNudge}
+                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12.5px] font-semibold transition hover:bg-[var(--color-surface)]"
+                style={{ color: "var(--color-text-muted)" }}
+                aria-label="Dismiss tip"
               >
-                <Plus className="h-4 w-4" />
-                Add Your First Enquiry
+                <X className="size-[12px]" /> Dismiss
               </button>
             </div>
           </div>
-        ) : (
-          <>
-            <div className="space-y-1">
-              <h1 className="text-2xl font-semibold tracking-tight ">
-                Dashboard
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Quick snapshot of what needs attention today.
-              </p>
-            </div>
+        ) : null}
 
-            {shouldShowSettingsNudge ? (
-              <div className="flex flex-col gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 md:flex-row md:items-center md:justify-between">
-                <p>
-                  💡 Tip: Add your business name and logo in Settings to make your invoices look professional.
-                </p>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => router.push("/settings")}
-                    className="rounded-lg border border-blue-300 bg-card px-3 py-1.5 font-medium text-blue-800 transition hover:bg-blue-100"
-                  >
-                    Go to Settings
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleDismissSettingsNudge}
-                    className="rounded-lg px-3 py-1.5 font-medium text-blue-800 transition hover:bg-blue-100"
-                  >
-                    Dismiss
-                  </button>
-                </div>
-              </div>
-            ) : null}
+        {/* Two-column responsive grid. Right rail hidden on <lg. */}
+        <div className="grid gap-6 lg:grid-cols-3 lg:items-start">
+          <div className="min-w-0 space-y-6 lg:col-span-2">
+            {/* AI panel (placeholder — empty until agent_tasks is wired) */}
+            <AiPanel items={[]} />
 
-            {/* Assistant Tasks section — surfaces what the AI is doing +
-                 the approvals carousel. Slotted above the CRM metric grid
-                 so awaiting-approval counts are the first thing the owner
-                 sees after opening the dashboard. */}
+            {/* Assistant Tasks section is kept as a temporary bridge to
+                the real AI surface — it shows running / awaiting /
+                recently-done agent tasks today. When the AI panel above
+                lands real items, this whole block becomes redundant and
+                can be removed in one delete. */}
             <AssistantTasksSection />
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {/* Clickable card: drills into /leads filtered to leads with
-                   a pending follow-up scheduled today. The ?followups=today
-                   filter is a small backend addition; see leads list endpoint. */}
-              <Link
-                href="/leads?followups=today"
-                className="rounded-2xl border bg-card p-5 transition hover:border-primary/50 hover:bg-muted/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label="View leads with follow-ups today"
+            {/* Action list — grouped, empty groups hidden. */}
+            {isLoading ? (
+              <div className="space-y-3">
+                <SkeletonRow />
+                <SkeletonRow />
+                <SkeletonRow />
+              </div>
+            ) : isInboxZero ? (
+              <div
+                className="px-4 py-10 text-center"
+                style={{
+                  background: "var(--color-surface)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: "var(--ledger-radius-card)",
+                }}
               >
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Follow-ups Today
-                </p>
-                <p className="mt-3 text-3xl font-semibold text-primary">
-                  {isLoading ? "..." : pendingFollowUps.length}
-                </p>
-                <p className="mt-2 text-xs text-muted-foreground">Don&apos;t miss these</p>
-              </Link>
-
-              <div className="rounded-2xl border bg-card p-5">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Collections This Month
-                </p>
-                <p className="mt-3 text-3xl font-semibold text-primary">
-                  {isLoading || !paymentSummary
-                    ? "..."
-                    : formatRupees(paymentSummary.collections_this_month)}
-                </p>
-                {monthComparison ? (
-                  <p className={`mt-2 text-xs ${monthComparison.isUp ? "text-emerald-600" : "text-rose-600"}`}>
-                    {monthComparison.isUp ? "↑" : "↓"} {monthComparison.value.toFixed(0)}% vs last month
-                  </p>
-                ) : (
-                  <p className="mt-2 text-xs text-muted-foreground">Current month total</p>
-                )}
-              </div>
-
-              <div className="rounded-2xl border bg-card p-5">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Total Outstanding
-                </p>
-                <p className="mt-3 text-3xl font-semibold text-primary">
-                  {isLoading || !paymentSummary
-                    ? "..."
-                    : formatRupees(paymentSummary.total_outstanding)}
-                </p>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {isLoading || !paymentSummary
-                    ? "..."
-                    : `${paymentSummary.outstanding_invoice_count} invoices pending`}
-                </p>
-              </div>
-            </div>
-
-            <section className="space-y-4">
-              <h2 className="text-lg font-semibold text-foreground">Overdue Payments</h2>
-
-              {isLoading ? (
-                <div className="rounded-xl border bg-card p-4">
-                  <div className="h-12 animate-pulse rounded-md bg-muted" />
-                </div>
-              ) : overdueInvoices.length === 0 ? (
-                <div className="rounded-xl border bg-card px-4 py-6 text-sm text-muted-foreground">
-                  No overdue payments. All clear! ✅
-                </div>
-              ) : (
-                <div className="rounded-xl border bg-card">
-                  <ul className="divide-y divide-border">
-                    {overdueInvoices.map((invoice) => {
-                      const firstName = (invoice.customer_name || "Customer").trim().split(/\s+/)[0] || "Customer";
-                      const digits = (invoice.customer_phone || "").replace(/\D/g, "");
-                      const normalized = digits.length === 10 ? `91${digits}` : digits;
-                      const whatsappMessage = `Hi ${firstName}, reminder about invoice ${invoice.invoice_number} for ₹${invoice.balance_due.toLocaleString("en-IN", {
-                        maximumFractionDigits: 0,
-                      })} due on ${invoice.due_date}. Kindly clear at earliest. Thank you!`;
-                      const whatsappHref = normalized
-                        ? `https://wa.me/${normalized}?text=${encodeURIComponent(whatsappMessage)}`
-                        : "#";
-
-                      return (
-                        <li key={invoice.invoice_id} className="px-4 py-3">
-                          <div className="flex flex-wrap items-start justify-between gap-3">
-                            <div>
-                              <p className="text-sm font-semibold text-foreground">
-                                {invoice.customer_name || "Unknown Customer"}
-                              </p>
-                              <p className="text-xs text-muted-foreground">{invoice.invoice_number}</p>
-                            </div>
-
-                            <div className="text-right">
-                              <p className="text-sm font-semibold text-rose-600">{formatRupees(invoice.balance_due)}</p>
-                              <p className="text-xs text-muted-foreground">{invoice.days_overdue} days overdue</p>
-                            </div>
-                          </div>
-
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            {/* Deep-link to /invoices with the invoice number
-                                as a search query — the invoice list page reads
-                                ?q= and pre-filters to this invoice. Replaces
-                                the previous /leads/{id} link which dropped the
-                                user on the lead page and made them hunt for
-                                the invoice. */}
-                            <Link
-                              href={`/invoices?q=${encodeURIComponent(invoice.invoice_number)}`}
-                              className="inline-flex items-center rounded-lg border border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-accent"
-                            >
-                              View Invoice
-                            </Link>
-
-                            <a
-                              href={whatsappHref}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className={`inline-flex items-center rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
-                                normalized
-                                  ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                                  : "cursor-not-allowed border bg-muted text-muted-foreground"
-                              }`}
-                              aria-disabled={!normalized}
-                              onClick={(event) => {
-                                if (!normalized) {
-                                  event.preventDefault();
-                                }
-                              }}
-                            >
-                              WhatsApp
-                            </a>
-
-                            <a
-                              href={invoice.customer_phone ? `tel:${invoice.customer_phone}` : "#"}
-                              className={`inline-flex items-center rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
-                                invoice.customer_phone
-                                  ? "border text-foreground hover:bg-accent"
-                                  : "cursor-not-allowed border bg-muted text-muted-foreground"
-                              }`}
-                              aria-disabled={!invoice.customer_phone}
-                              onClick={(event) => {
-                                if (!invoice.customer_phone) {
-                                  event.preventDefault();
-                                }
-                              }}
-                            >
-                              Call
-                            </a>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              )}
-            </section>
-
-            <section className="space-y-4">
-              <h2 className="text-lg font-semibold text-foreground">Today&apos;s Follow-ups</h2>
-
-              {isLoading ? (
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className="h-32 animate-pulse rounded-xl border border bg-muted" />
-                  <div className="h-32 animate-pulse rounded-xl border border bg-muted" />
-                </div>
-              ) : pendingFollowUps.length === 0 ? (
-                <div className="rounded-xl border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
-                  No follow-ups today. Enjoy your day! ☀️
-                </div>
-              ) : (
-                <div className="grid gap-3 md:grid-cols-2">
-                  {pendingFollowUps.map((followUp) => (
-                    <article
-                      key={followUp.id}
-                      className="rounded-xl border bg-card p-4"
-                    >
-                      {/* Title + customer block is a Link to the parent lead;
-                           the "Done" button below remains its own click target
-                           (wrapping the whole card in a Link would swallow it). */}
-                      <Link
-                        href={`/leads/${followUp.leadId}`}
-                        className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
-                        aria-label={`Open lead ${followUp.leadTitle || "Lead"}`}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <h3 className="truncate text-sm font-semibold text-foreground">
-                              {followUp.leadTitle || "Lead"}
-                            </h3>
-                            {followUp.customerName ? (
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                {followUp.customerName}
-                              </p>
-                            ) : null}
-                          </div>
-                          <p className="text-xs font-medium text-muted-foreground">
-                            {formatTime(followUp.scheduledAt)}
-                          </p>
-                        </div>
-                      </Link>
-
-                      <div className="mt-3 flex items-end justify-between gap-3">
-                        {followUp.note ? (
-                          <p className="line-clamp-2 text-sm text-foreground">
-                            {followUp.note}
-                          </p>
-                        ) : <div />}
-
-                        <button
-                          type="button"
-                          onClick={() => handleMarkDone(followUp.id)}
-                          disabled={markingId === followUp.id}
-                          className="inline-flex shrink-0 min-h-[44px] items-center rounded-lg border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {markingId === followUp.id ? "Updating..." : "✓ Done"}
-                        </button>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            <section className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-foreground">Recent Leads</h2>
-                <Link
-                  href="/leads"
-                  className="text-sm font-medium text-foreground transition hover:text-foreground"
+                <p
+                  className="text-[15px] font-bold"
+                  style={{ color: "var(--color-text)" }}
                 >
-                  View All →
-                </Link>
+                  All caught up ✨
+                </p>
+                <p
+                  className="mt-1 text-[13.5px]"
+                  style={{ color: "var(--color-text-muted)" }}
+                >
+                  No follow-ups need attention right now.
+                </p>
               </div>
-
-              <div className="rounded-xl border bg-card">
-                {isLoading ? (
-                  <div className="space-y-2 p-4">
-                    <div className="h-12 animate-pulse rounded-md bg-muted" />
-                    <div className="h-12 animate-pulse rounded-md bg-muted" />
-                    <div className="h-12 animate-pulse rounded-md bg-muted" />
-                  </div>
-                ) : recentLeads.length === 0 ? (
-                  <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-                    No leads yet. Start by adding one.
-                  </div>
-                ) : (
-                  <ul className="divide-y divide-border">
-                    {recentLeads.map((lead) => (
-                      <li key={lead.id}>
-                        {/* Whole row is a Link — no inner click targets, so
-                             wrapping is safe. Existing /leads/[id] page is
-                             the navigation target. */}
-                        <Link
-                          href={`/leads/${lead.id}`}
-                          className="block px-4 py-3 transition hover:bg-muted/30 focus:outline-none focus-visible:bg-muted/40"
-                          aria-label={`Open lead ${lead.title}`}
+            ) : (
+              <div className="space-y-6">
+                {HOME_NEEDS_ACTION_TYPES.map((type) => {
+                  const groupItems = groupedActions.get(type) ?? [];
+                  if (groupItems.length === 0) return null;
+                  const totalForType = countsByType[type] ?? groupItems.length;
+                  const hiddenInType = Math.max(
+                    0,
+                    totalForType - groupItems.length,
+                  );
+                  const p = presentationFor(type);
+                  return (
+                    <section key={type} id={`group-${type}`}>
+                      {/* Group header — §13.3. Eyebrow + hairline rule
+                          + pill count. */}
+                      <div className="mb-2 flex items-center gap-3 px-1">
+                        <Eyebrow>{p.groupLabel}</Eyebrow>
+                        <span
+                          aria-hidden
+                          className="h-px flex-1"
+                          style={{ background: "var(--color-border-subtle)" }}
+                        />
+                        <span
+                          className="ledger-mono text-[11px] font-semibold"
+                          style={{
+                            color: "var(--color-text-faint)",
+                            background: "var(--color-surface-raised)",
+                            border: "1px solid var(--color-border)",
+                            borderRadius: "var(--ledger-radius-sm)",
+                            padding: "1px 7px",
+                          }}
                         >
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-                            {lead.title}
-                          </p>
-                          <p className="max-w-[45%] truncate text-xs text-muted-foreground">
-                            {lead.customerName ?? "Unknown Customer"}
-                          </p>
-                        </div>
-                        <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                          <span
-                            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${getStageBadgeClass(
-                              lead.stageName ?? lead.stageId
-                            )}`}
+                          {totalForType}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {groupItems.map((lead) => (
+                          <ActionCard
+                            key={lead.id}
+                            lead={lead}
+                            onMarkDone={handleMarkDone}
+                            onSetFollowUp={handleSetFollowUp}
+                            onResolved={handleResolved}
+                          />
+                        ))}
+                        {hiddenInType > 0 ? (
+                          <Link
+                            href="/leads"
+                            className="block py-2 text-center text-[12.5px] font-semibold transition hover:underline"
+                            style={{ color: "var(--color-text-muted)" }}
                           >
-                            {lead.stageName ?? "Unknown Stage"}
-                          </span>
-                          <span>{formatRupees(lead.estimatedValue)}</span>
-                          <span>Service: {formatShortDate(lead.serviceDate)}</span>
-                        </div>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                            + {hiddenInType} more {p.groupLabel.toLowerCase()}
+                          </Link>
+                        ) : null}
+                      </div>
+                    </section>
+                  );
+                })}
               </div>
-            </section>
-          </>
-        )}
+            )}
+          </div>
+
+          {/* Right rail — desktop only. The grid template above places
+              this in the second column at lg; below lg the column
+              collapses and we hide the rail outright (build plan §A:
+              "right rail is HIDDEN entirely" on mobile). */}
+          <div className="hidden lg:block">
+            {actionList ? (
+              <NeedsYouRail
+                countsByType={actionList.countsByType}
+                recentLeads={recentLeads}
+              />
+            ) : null}
+          </div>
+        </div>
       </section>
 
       <CreateLeadDialog
@@ -596,5 +539,19 @@ export default function DashboardClient() {
         onCreated={loadDashboard}
       />
     </>
+  );
+}
+
+function SkeletonRow() {
+  return (
+    <div
+      className="animate-pulse"
+      style={{
+        height: 80,
+        background: "var(--color-surface)",
+        border: "1px solid var(--color-border)",
+        borderRadius: "var(--ledger-radius-card)",
+      }}
+    />
   );
 }

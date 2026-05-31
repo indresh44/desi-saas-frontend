@@ -17,6 +17,8 @@ type LeadFollowUpApiResponse = {
   created_by: string;
   created_at: string;
   completed_at: string | null;
+  attempt_count?: number;
+  last_outcome?: string | null;
   lead_title?: string;
   customer_name?: string;
   customer_phone?: string;
@@ -43,6 +45,8 @@ function toFollowUpModel(raw: LeadFollowUpApiResponse): LeadFollowUp {
     createdBy: raw.created_by,
     createdAt: raw.created_at,
     completedAt: raw.completed_at,
+    attemptCount: raw.attempt_count ?? 0,
+    lastOutcome: raw.last_outcome ?? null,
     leadTitle: raw.lead_title,
     customerName: raw.customer_name,
     customerPhone: raw.customer_phone,
