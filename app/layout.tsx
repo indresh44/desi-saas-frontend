@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { Inter, Geist_Mono, Plus_Jakarta_Sans, Hanken_Grotesk, Spline_Sans_Mono } from "next/font/google";
 import { LayoutContent } from "@/components/layout/layout-content";
 import { AuthProvider } from "@/lib/auth/auth-context";
 import { themeInitScript } from "@/lib/theme";
@@ -20,6 +20,22 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+// Ledger design system — body face. Weights 400 / 500 / 600 / 700 / 800.
+const hankenGrotesk = Hanken_Grotesk({
+  variable: "--font-hanken-grotesk",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+});
+
+// Ledger design system — mono face. Dates / money / counts / eyebrows.
+const splineSansMono = Spline_Sans_Mono({
+  variable: "--font-spline-sans-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
 });
 
 // ── Default metadata for all pages (landing page overrides in its own page.tsx) ──
@@ -91,7 +107,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body
-        className={`${inter.className} ${inter.variable} ${plusJakartaSans.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.className} ${inter.variable} ${plusJakartaSans.variable} ${geistMono.variable} ${hankenGrotesk.variable} ${splineSansMono.variable} antialiased`}
       >
         <AuthProvider>
           <LayoutContent>{children}</LayoutContent>

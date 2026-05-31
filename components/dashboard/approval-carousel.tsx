@@ -209,7 +209,16 @@ export function ApprovalCarousel({
             )}
 
             {errorForCurrent && (
-              <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900">
+              <div
+                className="text-[13px]"
+                style={{
+                  background: "var(--follow-overdue-bg)",
+                  border: "1px solid color-mix(in oklch, var(--follow-overdue) 30%, transparent)",
+                  color: "var(--follow-overdue)",
+                  padding: "8px 12px",
+                  borderRadius: "var(--ledger-radius-control)",
+                }}
+              >
                 {errorForCurrent}
                 {/* Owner can choose: retry by hitting Confirm again on the
                     card above, OR skip past this one explicitly. */}

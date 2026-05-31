@@ -1,0 +1,173 @@
+/* ============================================================
+   Ledger Design System — global tokens
+   Vikram Interiors CRM · "Warm Paper + Terracotta" · Light & Dark
+   ------------------------------------------------------------
+   Tokens apply at :root so the entire app inherits the warm
+   paper palette. Shadcn semantic tokens (--background, --card,
+   --primary, …) are remapped to Ledger tokens so existing
+   shadcn-styled components adopt the new look automatically.
+
+   Theme switching: light is the default; dark applies when
+   `<html class="dark">` (legacy) OR `<html data-theme="dark">`
+   (Ledger spec) is set. `lib/theme.ts` keeps both selectors in
+   sync.
+
+   Colours are authored in oklch(L C H) — do NOT round-trip
+   through hex.
+   ============================================================ */
+
+:root {
+  /* ---- type ----
+     Loaded via Next/font in app/layout.tsx as `--font-hanken-grotesk`
+     and `--font-spline-sans-mono`. Inter / Geist Mono kept as fallback. */
+  --ledger-font-sans: var(--font-hanken-grotesk), var(--font-inter), system-ui, sans-serif;
+  --ledger-font-mono: var(--font-spline-sans-mono), var(--font-geist-mono), ui-monospace, monospace;
+
+  /* ---- radius ---- */
+  --ledger-radius-card: 14px;
+  --ledger-radius-control: 8px;
+  --ledger-radius-pill: 999px;
+  --ledger-radius-badge: 7px;
+  --ledger-radius-sm: 6px;
+
+  /* ============ LIGHT (default) ============ */
+  --color-bg: oklch(0.955 0.012 84);
+  --color-surface: oklch(0.99 0.008 86);
+  --color-surface-raised: oklch(0.975 0.012 84);
+  --color-text: oklch(0.27 0.02 60);
+  --color-text-secondary: oklch(0.42 0.025 58);
+  --color-text-muted: oklch(0.56 0.025 60);
+  --color-text-faint: oklch(0.70 0.02 62);
+  --color-border: oklch(0.90 0.015 78);
+  --color-border-subtle: oklch(0.93 0.012 80);
+  --color-accent: oklch(0.56 0.14 41);
+  --color-accent-contrast: #ffffff;
+  --color-accent-soft: oklch(0.95 0.035 50);
+
+  --stage-new-fg: oklch(0.46 0.13 258);        --stage-new-bg: oklch(0.955 0.028 258);
+  --stage-interested-fg: oklch(0.52 0.12 66);  --stage-interested-bg: oklch(0.955 0.045 78);
+  --stage-visit-fg: oklch(0.49 0.15 300);      --stage-visit-bg: oklch(0.955 0.04 300);
+  --stage-wip-fg: oklch(0.47 0.085 215);       --stage-wip-bg: oklch(0.955 0.03 215);
+  --stage-done-fg: oklch(0.47 0.105 158);      --stage-done-bg: oklch(0.955 0.04 158);
+
+  --follow-overdue: oklch(0.56 0.20 26);       --follow-overdue-bg: oklch(0.955 0.04 26);
+  --follow-unset: oklch(0.60 0.15 58);
+  --follow-done: oklch(0.50 0.10 158);
+
+  --wa: oklch(0.50 0.13 150);
+
+  --shadow-card-hover: 0 6px 20px -10px oklch(0.27 0.03 60 / 0.18);
+  --focus-ring: 0 0 0 2px color-mix(in oklch, var(--color-accent) 40%, transparent);
+
+  /* ------------------------------------------------------------
+     Bridge: remap shadcn / app-shell semantic tokens to Ledger
+     tokens at :root so every existing shadcn-styled component
+     (Button, Dialog, Sheet, the dashboard cards, etc.) adopts the
+     warm paper palette without any per-component refactor.
+     ------------------------------------------------------------ */
+  --background: var(--color-bg);
+  --foreground: var(--color-text);
+  --card: var(--color-surface);
+  --card-foreground: var(--color-text);
+  --popover: var(--color-surface);
+  --popover-foreground: var(--color-text);
+  --primary: var(--color-accent);
+  --primary-foreground: var(--color-accent-contrast);
+  --secondary: var(--color-surface-raised);
+  --secondary-foreground: var(--color-text-secondary);
+  --muted: var(--color-surface-raised);
+  --muted-foreground: var(--color-text-muted);
+  --accent: var(--color-accent-soft);
+  --accent-foreground: var(--color-accent);
+  --destructive: var(--follow-overdue);
+  --border: var(--color-border);
+  --input: var(--color-border);
+  --ring: var(--color-accent);
+
+  /* AppShell tokens used by the existing layout (`components/layout/*`). */
+  --shell-bg: var(--color-bg);
+  --shell-sidebar-bg: var(--color-surface);
+  --shell-sidebar-active: var(--color-accent-soft);
+  --shell-sidebar-active-text: var(--color-accent);
+  --shell-sidebar-text: var(--color-text-secondary);
+  --shell-sidebar-hover: var(--color-surface-raised);
+  --shell-header-bg: var(--color-surface);
+  --shell-border: var(--color-border);
+}
+
+/* ============ DARK ============
+   Honour both `.dark` (legacy) and `[data-theme="dark"]` (Ledger).
+   Either selector flips the whole tree to dark.
+*/
+.dark,
+:root.dark,
+[data-theme="dark"] {
+  --color-bg: oklch(0.205 0.012 64);
+  --color-surface: oklch(0.248 0.014 62);
+  --color-surface-raised: oklch(0.228 0.013 62);
+  --color-text: oklch(0.93 0.012 80);
+  --color-text-secondary: oklch(0.80 0.014 76);
+  --color-text-muted: oklch(0.66 0.016 72);
+  --color-text-faint: oklch(0.52 0.015 70);
+  --color-border: oklch(0.33 0.015 64);
+  --color-border-subtle: oklch(0.285 0.013 64);
+  --color-accent: oklch(0.66 0.145 46);
+  --color-accent-contrast: oklch(0.19 0.012 50);
+  --color-accent-soft: oklch(0.31 0.05 50);
+
+  --stage-new-fg: oklch(0.80 0.085 256);       --stage-new-bg: oklch(0.33 0.05 258);
+  --stage-interested-fg: oklch(0.83 0.10 82);  --stage-interested-bg: oklch(0.34 0.055 72);
+  --stage-visit-fg: oklch(0.82 0.10 300);      --stage-visit-bg: oklch(0.34 0.055 300);
+  --stage-wip-fg: oklch(0.82 0.065 215);       --stage-wip-bg: oklch(0.33 0.04 215);
+  --stage-done-fg: oklch(0.82 0.10 158);       --stage-done-bg: oklch(0.32 0.05 158);
+
+  --follow-overdue: oklch(0.74 0.16 28);       --follow-overdue-bg: oklch(0.32 0.07 28);
+  --follow-unset: oklch(0.80 0.13 62);
+  --follow-done: oklch(0.74 0.10 158);
+
+  --wa: oklch(0.82 0.13 152);
+  --shadow-card-hover: 0 1px 0 oklch(0.30 0.012 64);
+}
+
+/* ------------------------------------------------------------
+   Global font + smoothing — applies once at the body level.
+   The legacy `body` rule in globals.css sets bg/colour from
+   --background/--foreground which now resolve to Ledger tokens.
+   ------------------------------------------------------------ */
+html {
+  font-family: var(--ledger-font-sans);
+  letter-spacing: -0.01em;
+}
+
+body {
+  font-family: var(--ledger-font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Mono utility — for dates, money, counts, eyebrows, IDs. */
+.ledger-mono {
+  font-family: var(--ledger-font-mono);
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+/* Eyebrow — UPPERCASE mono label used above grouped lists. */
+.ledger-eyebrow {
+  font-family: var(--ledger-font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+}
+
+/* Ledger enquiry table — hover + last-row affordances. */
+.ledger-table tbody tr {
+  border-bottom: 1px solid var(--color-border-subtle);
+  transition: background-color 0.15s;
+}
+.ledger-table tbody tr:last-child { border-bottom: none; }
+.ledger-table tbody tr:hover { background: var(--color-surface-raised); }
+
+/* No-op wrapper retained for backwards compatibility — the design
+   system is now global so `.ledger-theme` no longer scopes anything. */
+.ledger-theme { }

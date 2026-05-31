@@ -96,7 +96,11 @@ function StatusMarker({ isFailed }: { isFailed: boolean }) {
   if (isFailed) {
     return (
       <span
-        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-700"
+        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
+        style={{
+          background: "var(--follow-overdue-bg)",
+          color: "var(--follow-overdue)",
+        }}
         title="Failed"
         aria-label="Failed"
       >
@@ -106,7 +110,11 @@ function StatusMarker({ isFailed }: { isFailed: boolean }) {
   }
   return (
     <span
-      className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700"
+      className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
+      style={{
+        background: "color-mix(in oklch, var(--follow-done) 18%, var(--color-surface))",
+        color: "var(--follow-done)",
+      }}
       title="Done"
       aria-label="Done"
     >

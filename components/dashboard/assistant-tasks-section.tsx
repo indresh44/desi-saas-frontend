@@ -87,11 +87,25 @@ export function AssistantTasksSection() {
     recentlyDone.length === 0;
 
   return (
-    <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
-      {/* Section header */}
+    <section
+      className="p-4"
+      style={{
+        background: "var(--color-surface)",
+        border: "1px solid var(--color-border)",
+        borderRadius: "var(--ledger-radius-control)",
+      }}
+    >
+      {/* Section header — sparkles in accent flags this as the AI surface. */}
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
-          <Sparkles className="h-4 w-4 text-amber-500" aria-hidden />
+        <h2
+          className="flex items-center gap-2 text-[15px] font-bold"
+          style={{ color: "var(--color-text)" }}
+        >
+          <Sparkles
+            className="h-4 w-4"
+            style={{ color: "var(--color-accent)" }}
+            aria-hidden
+          />
           {SECTION_TITLE}
         </h2>
         <Button
@@ -106,15 +120,33 @@ export function AssistantTasksSection() {
       </div>
 
       {error && (
-        <div className="mb-3 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900">
+        <div
+          className="mb-3 text-[13px]"
+          style={{
+            background: "var(--follow-overdue-bg)",
+            border: "1px solid color-mix(in oklch, var(--follow-overdue) 30%, transparent)",
+            color: "var(--follow-overdue)",
+            padding: "8px 12px",
+            borderRadius: "var(--ledger-radius-control)",
+          }}
+        >
           {error}
         </div>
       )}
 
       {isLoading && !data ? (
-        <div className="text-sm text-muted-foreground">Loading…</div>
+        <div className="text-[13.5px]" style={{ color: "var(--color-text-muted)" }}>
+          Loading…
+        </div>
       ) : isEmpty ? (
-        <div className="rounded-md bg-muted/30 px-3 py-4 text-sm text-muted-foreground">
+        <div
+          className="px-3 py-4 text-[13.5px]"
+          style={{
+            background: "var(--color-surface-raised)",
+            color: "var(--color-text-muted)",
+            borderRadius: "var(--ledger-radius-control)",
+          }}
+        >
           Your assistant has nothing in flight right now.
         </div>
       ) : (
@@ -165,11 +197,21 @@ function AwaitingGroup({
   onOpenCarousel: (startIndex: number) => void;
 }) {
   return (
-    <div className="rounded-md border border-amber-300 bg-amber-50/60 p-3">
+    <div
+      className="p-3"
+      style={{
+        background: "color-mix(in oklch, var(--follow-unset) 10%, var(--color-surface))",
+        border: "1px solid color-mix(in oklch, var(--follow-unset) 34%, var(--color-border))",
+        borderRadius: "var(--ledger-radius-control)",
+      }}
+    >
       <div className="mb-2 flex items-center justify-between">
-        <div className="text-sm font-medium text-amber-900">
+        <div
+          className="text-[13.5px] font-semibold"
+          style={{ color: "var(--follow-unset)" }}
+        >
           Awaiting your approval ·{" "}
-          <span className="text-amber-700">{tasks.length}</span>
+          <span className="ledger-mono">{tasks.length}</span>
         </div>
         <Button
           size="sm"
@@ -183,12 +225,18 @@ function AwaitingGroup({
         {tasks.map((t, i) => (
           <li
             key={t.id}
-            className="flex items-center justify-between gap-2 rounded px-2 py-1 text-sm hover:bg-amber-100/60"
+            className="flex items-center justify-between gap-2 rounded px-2 py-1 text-[13px] transition-colors hover:bg-[color:color-mix(in_oklch,var(--follow-unset)_14%,transparent)]"
           >
-            <span className="truncate text-amber-950">{t.description}</span>
+            <span
+              className="truncate"
+              style={{ color: "var(--color-text)" }}
+            >
+              {t.description}
+            </span>
             <button
               type="button"
-              className="shrink-0 text-xs font-medium text-amber-800 underline-offset-2 hover:underline"
+              className="shrink-0 text-[12px] font-semibold underline-offset-2 hover:underline"
+              style={{ color: "var(--follow-unset)" }}
               onClick={() => onOpenCarousel(i)}
             >
               Review
@@ -213,12 +261,22 @@ function NeedsInputGroup({
   onAfterDismiss: () => void;
 }) {
   return (
-    <div className="rounded-md border border-sky-300 bg-sky-50/60 p-3">
-      <div className="mb-2 flex items-center gap-2 text-sm font-medium text-sky-900">
+    <div
+      className="p-3"
+      style={{
+        background: "color-mix(in oklch, var(--stage-new-fg) 10%, var(--color-surface))",
+        border: "1px solid color-mix(in oklch, var(--stage-new-fg) 30%, var(--color-border))",
+        borderRadius: "var(--ledger-radius-control)",
+      }}
+    >
+      <div
+        className="mb-2 flex items-center gap-2 text-[13.5px] font-semibold"
+        style={{ color: "var(--stage-new-fg)" }}
+      >
         <HelpCircle className="h-4 w-4" aria-hidden />
         <span>
           Assistant needs your input ·{" "}
-          <span className="text-sky-700">{tasks.length}</span>
+          <span className="ledger-mono">{tasks.length}</span>
         </span>
       </div>
       <ul className="space-y-2">
@@ -260,8 +318,14 @@ function NeedsInputRow({
   }, [task.session_id, task.id, onAfterDismiss]);
 
   return (
-    <li className="rounded bg-white/60 p-2 text-sm">
-      <div className="text-sky-950">{task.description}</div>
+    <li
+      className="p-2 text-[13px]"
+      style={{
+        background: "var(--color-surface)",
+        borderRadius: "var(--ledger-radius-sm)",
+      }}
+    >
+      <div style={{ color: "var(--color-text)" }}>{task.description}</div>
       <div className="mt-2 flex items-center gap-2">
         <Link
           href={`/agent-chat/${task.session_id}`}
@@ -278,7 +342,12 @@ function NeedsInputRow({
           {dismissing ? "Dismissing…" : "Dismiss"}
         </Button>
         {error && (
-          <span className="text-xs text-red-700">{error}</span>
+          <span
+            className="text-[12px] font-semibold"
+            style={{ color: "var(--follow-overdue)" }}
+          >
+            {error}
+          </span>
         )}
       </div>
     </li>
@@ -293,16 +362,24 @@ function NeedsInputRow({
 function RunningGroup({ tasks }: { tasks: AssistantTaskSummary[] }) {
   return (
     <div>
-      <div className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      <div
+        className="ledger-mono mb-1 text-[11px] font-semibold uppercase tracking-[0.06em]"
+        style={{ color: "var(--color-text-faint)" }}
+      >
         Running · {tasks.length}
       </div>
       <ul className="space-y-1">
         {tasks.map((t) => (
           <li
             key={t.id}
-            className="flex items-center gap-2 rounded px-2 py-1 text-sm text-foreground"
+            className="flex items-center gap-2 rounded px-2 py-1 text-[13px]"
+            style={{ color: "var(--color-text)" }}
           >
-            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-sky-500" aria-hidden />
+            <span
+              aria-hidden
+              className="inline-block h-1.5 w-1.5 animate-pulse rounded-full"
+              style={{ background: "var(--color-accent)" }}
+            />
             <span className="truncate">{t.description}</span>
           </li>
         ))}

@@ -2,8 +2,15 @@
 
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowRight, MessageCircle, Pencil, Phone, Plus, Search } from "lucide-react";
+import { ArrowRight, Pencil, Phone, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  LedgerButton,
+  LedgerSearchInput,
+  Mono,
+  PageTitle,
+  WhatsAppIcon,
+} from "@/components/ledger";
 import { createCustomer, fetchCustomers, updateCustomer } from "@/lib/api/customers";
 import { fetchCustomerOutstanding } from "@/lib/api/invoices";
 import { Customer, UpdateCustomerInput } from "@/lib/types/customer";
@@ -64,7 +71,7 @@ export default function CustomersPageClient() {
   // disappears. `text-base md:text-sm` keeps the input at 16px on mobile
   // so iOS doesn't auto-zoom on focus.
   const inputClassName =
-    "w-full rounded-lg border bg-background px-3 py-2 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50 md:text-sm";
+    "w-full rounded-[var(--ledger-radius-control)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 text-base text-[color:var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]/30 disabled:opacity-50 md:text-sm placeholder:text-[color:var(--color-text-faint)]";
 
   const loadCustomers = useCallback(async () => {
     setIsLoading(true);
@@ -285,42 +292,50 @@ export default function CustomersPageClient() {
     <section className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Customers
-          </h1>
-          <p className="text-sm text-muted-foreground">
+          <PageTitle>Customers</PageTitle>
+          <p
+            className="mt-1 text-[14px]"
+            style={{ color: "var(--color-text-muted)" }}
+          >
             Track customers, dues, and quick actions.
           </p>
         </div>
       </div>
 
       {errorMessage ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div
+          className="text-[13px]"
+          style={{
+            background: "var(--follow-overdue-bg)",
+            border: "1px solid color-mix(in oklch, var(--follow-overdue) 30%, transparent)",
+            color: "var(--follow-overdue)",
+            padding: "10px 14px",
+            borderRadius: "var(--ledger-radius-control)",
+          }}
+        >
           {errorMessage}
         </div>
       ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-        <div className="relative w-full sm:min-w-52 sm:flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
+        <div className="w-full sm:min-w-52 sm:flex-1">
+          <LedgerSearchInput
             placeholder="Search by name or phone..."
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            className="w-full rounded-lg border bg-card py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
 
-        <Button
-          type="button"
+        <LedgerButton
+          variant="primary"
+          size="lg"
           onClick={() => setShowCreateForm((prev) => !prev)}
           disabled={isSavingEdit}
           className="w-full sm:w-auto"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="size-[16px]" strokeWidth={2} />
           New Customer
-        </Button>
+        </LedgerButton>
       </div>
 
       {showCreateForm ? (
@@ -551,72 +566,102 @@ export default function CustomersPageClient() {
                       <>
                         <div className="flex items-start justify-between gap-2">
                           <div>
-                            <p className="text-sm font-semibold text-primary">{customer.name}</p>
-                            <p className="mt-0.5 text-sm text-muted-foreground">{customer.phone}</p>
+                            <p
+                              className="text-[14px] font-semibold"
+                              style={{ color: "var(--color-accent)" }}
+                            >
+                              {customer.name}
+                            </p>
+                            <Mono
+                              as="p"
+                              className="mt-0.5 text-[13px]"
+                              style={{ color: "var(--color-text-muted)" }}
+                            >
+                              {customer.phone}
+                            </Mono>
                             {customer.email ? (
-                              <p className="text-xs text-muted-foreground">{customer.email}</p>
+                              <p
+                                className="text-[12px]"
+                                style={{ color: "var(--color-text-muted)" }}
+                              >
+                                {customer.email}
+                              </p>
                             ) : null}
                           </div>
                           <div className="text-right">
                             {outstandingState?.isLoading || outstanding === undefined ? (
-                              <span className="text-sm text-muted-foreground">...</span>
-                            ) : outstanding === null ? (
-                              <span className="text-sm text-muted-foreground">-</span>
-                            ) : outstanding > 0 ? (
-                              <span className="text-sm font-semibold text-red-600">
-                                {formatRupees(outstanding)}
+                              <span
+                                className="text-[13px]"
+                                style={{ color: "var(--color-text-muted)" }}
+                              >
+                                ...
                               </span>
+                            ) : outstanding === null ? (
+                              <span
+                                className="text-[13px]"
+                                style={{ color: "var(--color-text-muted)" }}
+                              >
+                                -
+                              </span>
+                            ) : outstanding > 0 ? (
+                              <Mono
+                                className="text-[13.5px] font-semibold"
+                                style={{ color: "var(--follow-overdue)" }}
+                              >
+                                {formatRupees(outstanding)}
+                              </Mono>
                             ) : (
-                              <span className="text-sm font-medium text-green-600">✓ Clear</span>
+                              <span
+                                className="text-[13px] font-semibold"
+                                style={{ color: "var(--follow-done)" }}
+                              >
+                                ✓ Clear
+                              </span>
                             )}
                           </div>
                         </div>
-                        {/* Compact size="sm" buttons (matches leads card)
-                            with per-action color tints: blue Call, green
-                            WhatsApp, slate Edit. `fill-current` fills the
-                            stroked Phone / MessageCircle glyphs with the
-                            text color so the icon reads as a solid badge.
-                            Dark variants keep contrast in dark mode. */}
+                        {/* Action cluster — Ledger §7.3. WhatsApp uses the
+                            sanctioned --wa green; Call is a neutral
+                            action; Edit is a ghost. */}
                         <div className="mt-3 flex flex-wrap items-center gap-2">
-                          {customer.phone ? (
-                            <a href={`tel:${customer.phone}`}>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="gap-1.5 border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/50 dark:hover:text-blue-300"
-                              >
-                                <Phone className="h-3.5 w-3.5 fill-current" />
-                                Call
-                              </Button>
-                            </a>
-                          ) : null}
-                          <Button
-                            type="button"
-                            variant="ghost"
+                          <LedgerButton
+                            variant="whatsapp"
                             size="sm"
-                            className="gap-1.5 border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 dark:hover:text-emerald-300"
                             onClick={() => handleWhatsApp(customer.phone)}
+                            disabled={!customer.phone}
                           >
-                            <MessageCircle className="h-3.5 w-3.5 fill-current" />
+                            <WhatsAppIcon size={14} />
                             WhatsApp
-                          </Button>
-                          <Button
-                            type="button"
+                          </LedgerButton>
+                          <LedgerButton
+                            variant="action"
+                            size="sm"
+                            onClick={
+                              customer.phone
+                                ? () => {
+                                    window.location.href = `tel:${customer.phone}`;
+                                  }
+                                : undefined
+                            }
+                            disabled={!customer.phone}
+                          >
+                            <Phone className="size-[14px]" strokeWidth={1.8} />
+                            Call
+                          </LedgerButton>
+                          <LedgerButton
                             variant="ghost"
                             size="sm"
-                            className="gap-1.5 border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-700 dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-300 dark:hover:bg-slate-800/60 dark:hover:text-slate-300"
                             onClick={() => handleStartEdit(customer)}
                             disabled={isAnotherRowEditing || isSavingEdit}
                           >
-                            <Pencil className="h-3.5 w-3.5 fill-current" />
+                            <Pencil className="size-[14px]" strokeWidth={1.8} />
                             Edit
-                          </Button>
+                          </LedgerButton>
                           <Link href={`/customers/${customer.id}`} className="ml-auto">
-                            <Button type="button" variant="ghost" size="sm" className="gap-1">
+                            <LedgerButton variant="ghost" size="sm">
                               Details
-                              <ArrowRight className="h-3.5 w-3.5" />
-                            </Button>
+                              <ArrowRight className="size-[14px]" strokeWidth={1.8} />
+                            </LedgerButton>
                           </Link>
                         </div>
                       </>
@@ -648,7 +693,10 @@ export default function CustomersPageClient() {
 
                     return (
                       <tr key={customer.id}>
-                        <td className="px-4 py-3 font-medium text-primary">
+                        <td
+                          className="px-4 py-3 font-semibold"
+                          style={{ color: "var(--color-accent)" }}
+                        >
                           {isEditing ? (
                             <input
                               type="text"
@@ -691,15 +739,23 @@ export default function CustomersPageClient() {
                         </td>
                         <td className="px-4 py-3">
                           {outstandingState?.isLoading || outstanding === undefined ? (
-                            <span className="text-muted-foreground">...</span>
+                            <span style={{ color: "var(--color-text-muted)" }}>...</span>
                           ) : outstanding === null ? (
-                            <span className="text-muted-foreground">-</span>
+                            <span style={{ color: "var(--color-text-muted)" }}>-</span>
                           ) : outstanding > 0 ? (
-                            <span className="font-medium text-red-600">
+                            <Mono
+                              className="font-semibold"
+                              style={{ color: "var(--follow-overdue)" }}
+                            >
                               {formatRupees(outstanding)}
-                            </span>
+                            </Mono>
                           ) : (
-                            <span className="font-medium text-green-600">✓ Clear</span>
+                            <span
+                              className="font-semibold"
+                              style={{ color: "var(--follow-done)" }}
+                            >
+                              ✓ Clear
+                            </span>
                           )}
                         </td>
                         <td className="whitespace-nowrap px-4 py-3">
@@ -729,32 +785,36 @@ export default function CustomersPageClient() {
                                 {customer.phone ? (
                                   <a
                                     href={`tel:${customer.phone}`}
-                                    className="inline-flex items-center gap-1 text-sm font-medium text-blue-700 transition hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-200"
+                                    className="inline-flex items-center gap-1 text-[13.5px] font-semibold transition hover:underline"
+                                    style={{ color: "var(--color-text-secondary)" }}
                                   >
-                                    <Phone className="h-4 w-4" />
+                                    <Phone className="size-[14px]" strokeWidth={1.8} />
                                     Call
                                   </a>
                                 ) : null}
                                 <button
                                   type="button"
                                   onClick={() => handleWhatsApp(customer.phone)}
-                                  className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 transition hover:text-emerald-800 dark:text-emerald-300 dark:hover:text-emerald-200"
+                                  className="inline-flex items-center gap-1 text-[13.5px] font-semibold transition hover:underline"
+                                  style={{ color: "var(--wa)" }}
                                 >
-                                  <MessageCircle className="h-4 w-4" />
+                                  <WhatsAppIcon size={14} />
                                   WhatsApp
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleStartEdit(customer)}
-                                  className="inline-flex items-center gap-1 text-sm font-medium text-foreground transition hover:text-foreground disabled:cursor-not-allowed disabled:text-muted-foreground"
+                                  className="inline-flex items-center gap-1 text-[13.5px] font-semibold transition hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                                  style={{ color: "var(--color-text-secondary)" }}
                                   disabled={isAnotherRowEditing || isSavingEdit}
                                 >
-                                  <Pencil className="h-4 w-4" />
+                                  <Pencil className="size-[14px]" strokeWidth={1.8} />
                                   Edit
                                 </button>
                                 <Link
                                   href={`/customers/${customer.id}`}
-                                  className="text-sm font-medium text-foreground transition hover:text-foreground"
+                                  className="text-[13.5px] font-semibold transition hover:underline"
+                                  style={{ color: "var(--color-accent)" }}
                                 >
                                   View Details -&gt;
                                 </Link>

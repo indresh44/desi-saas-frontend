@@ -75,8 +75,10 @@ function isActive(pathname: string, href: string): boolean {
  * header — see app-header.tsx — to avoid covering content with a
  * floating button.
  *
- * Active state matches `app-sidebar.tsx` styling for visual consistency.
- * Safe-area inset is applied so the bar clears the iPhone home indicator.
+ * Visual: Ledger §7.12. Surface @ 88% with a 12px backdrop blur, top
+ * 1px border, 26px bottom padding clears the iPhone home indicator
+ * (env(safe-area-inset-bottom) adds extra runway where reported).
+ * Active tab uses `--color-accent`.
  */
 export function AppBottomNav() {
   const pathname = usePathname();
@@ -90,8 +92,14 @@ export function AppBottomNav() {
     <>
       <nav
         aria-label="Primary navigation"
-        className="fixed inset-x-0 bottom-0 z-30 flex h-16 items-stretch border-t border-shell-border bg-shell-sidebar-bg md:hidden"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        className="fixed inset-x-0 bottom-0 z-30 flex items-stretch md:hidden"
+        style={{
+          background: "color-mix(in oklch, var(--color-surface) 88%, transparent)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          borderTop: "1px solid var(--color-border)",
+          padding: "9px 8px calc(26px + env(safe-area-inset-bottom))",
+        }}
       >
         {TABS.map((tab) => {
           const Icon = tab.icon;
@@ -103,16 +111,21 @@ export function AppBottomNav() {
                 : false;
 
           const className = cn(
-            "flex flex-1 flex-col items-center justify-center gap-0.5 px-1 py-1 text-[11px] font-medium transition-colors",
-            active
-              ? "text-primary"
-              : "text-muted-foreground hover:text-foreground"
+            "flex flex-1 flex-col items-center justify-center gap-[3px] px-1 text-[10.5px] font-semibold transition-colors",
           );
+          const colorStyle: React.CSSProperties = {
+            color: active ? "var(--color-accent)" : "var(--color-text-faint)",
+          };
 
           if (tab.kind === "link") {
             return (
-              <Link key={tab.key} href={tab.href} className={className}>
-                <Icon className="h-5 w-5" aria-hidden="true" />
+              <Link
+                key={tab.key}
+                href={tab.href}
+                className={className}
+                style={colorStyle}
+              >
+                <Icon className="size-[22px]" strokeWidth={1.8} aria-hidden />
                 <span>{tab.label}</span>
               </Link>
             );
@@ -123,11 +136,12 @@ export function AppBottomNav() {
               key={tab.key}
               type="button"
               className={className}
+              style={colorStyle}
               onClick={() => setIsMoreOpen(true)}
               aria-label={tab.label}
               aria-pressed={active}
             >
-              <Icon className="h-5 w-5" aria-hidden="true" />
+              <Icon className="size-[22px]" strokeWidth={1.8} aria-hidden />
               <span>{tab.label}</span>
             </button>
           );
@@ -137,10 +151,10 @@ export function AppBottomNav() {
       <Sheet open={isMoreOpen} onOpenChange={setIsMoreOpen}>
         <SheetContent
           side="bottom"
-          className="flex flex-col gap-0 rounded-t-2xl p-0"
+          className="flex flex-col gap-0 rounded-t-[var(--ledger-radius-card)] bg-[color:var(--color-surface)] p-0"
         >
-          <SheetHeader className="border-b px-5 py-4">
-            <SheetTitle>More</SheetTitle>
+          <SheetHeader className="border-b border-[color:var(--color-border-subtle)] px-5 py-4">
+            <SheetTitle className="text-[color:var(--color-text)]">More</SheetTitle>
           </SheetHeader>
           <ul
             className="flex flex-col py-2"
@@ -155,9 +169,9 @@ export function AppBottomNav() {
                     href={item.href}
                     onClick={() => setIsMoreOpen(false)}
                     className={cn(
-                      "flex min-h-12 items-center gap-3 px-5 py-3 text-sm",
+                      "flex min-h-12 items-center gap-3 px-5 py-3 text-[14px]",
                       active
-                        ? "bg-shell-sidebar-active text-shell-sidebar-active-text font-medium"
+                        ? "bg-shell-sidebar-active text-shell-sidebar-active-text font-semibold"
                         : "text-foreground hover:bg-shell-sidebar-hover"
                     )}
                   >

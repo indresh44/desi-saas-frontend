@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Loader2, MessageCircle, Pencil, Phone } from "lucide-react";
+import { ArrowLeft, Loader2, Pencil, Phone } from "lucide-react";
 import { InvoiceListView } from "@/components/invoices/invoice-list-view";
 import { Button } from "@/components/ui/button";
+import { LedgerButton, Mono, PageTitle, WhatsAppIcon } from "@/components/ledger";
 import { fetchCustomerSummary, updateCustomer } from "@/lib/api/customers";
 import { fetchInvoices } from "@/lib/api/invoices";
 import { fetchLeads } from "@/lib/api/leads";
@@ -21,6 +22,110 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "leads", label: "Leads" },
   { key: "invoices", label: "Invoices" },
 ];
+
+/** Surface-tinted panel used for the overview cards. */
+function OverviewCard({
+  title,
+  action,
+  children,
+}: {
+  title: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      className="p-4"
+      style={{
+        background: "var(--color-surface)",
+        border: "1px solid var(--color-border)",
+        borderRadius: "var(--ledger-radius-control)",
+      }}
+    >
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-[14px] font-bold" style={{ color: "var(--color-text)" }}>
+          {title}
+        </h3>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function ViewAllLink({
+  onClick,
+  children,
+}: {
+  onClick?: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="text-[12px] font-semibold transition hover:underline"
+      style={{ color: "var(--color-accent)" }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function EmptyLine({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[13.5px]" style={{ color: "var(--color-text-muted)" }}>
+      {children}
+    </p>
+  );
+}
+
+/**
+ * Stat tile — clickable summary chip used in the customer header.
+ * Mono value + muted label, tinted border on hover. `tone="warn"` flags
+ * the outstanding-balance tile when there's money owed.
+ */
+function StatTile({
+  value,
+  label,
+  onClick,
+  tone = "neutral",
+}: {
+  value: string;
+  label: string;
+  onClick?: () => void;
+  tone?: "neutral" | "warn";
+}) {
+  const valueColor =
+    tone === "warn" ? "var(--follow-overdue)" : "var(--color-text)";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="text-left transition-colors"
+      style={{
+        background: "var(--color-surface-raised)",
+        border: "1px solid var(--color-border)",
+        borderRadius: "var(--ledger-radius-control)",
+        padding: "10px 14px",
+      }}
+    >
+      <Mono
+        as="p"
+        className="text-[17px] font-bold tracking-[-0.01em]"
+        style={{ color: valueColor }}
+      >
+        {value}
+      </Mono>
+      <p
+        className="ledger-mono mt-1 text-[10.5px] font-semibold uppercase tracking-[0.06em]"
+        style={{ color: "var(--color-text-faint)" }}
+      >
+        {label}
+      </p>
+    </button>
+  );
+}
 
 function formatRupees(value: number): string {
   return new Intl.NumberFormat("en-IN", {
@@ -207,7 +312,10 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <Loader2
+          className="h-6 w-6 animate-spin"
+          style={{ color: "var(--color-text-muted)" }}
+        />
       </div>
     );
   }
@@ -215,12 +323,14 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
   if (!summary) {
     return (
       <div className="space-y-4 py-10 text-center">
-        <p className="text-sm text-red-600">{errorMessage ?? "Customer not found."}</p>
+        <p className="text-[13px]" style={{ color: "var(--follow-overdue)" }}>
+          {errorMessage ?? "Customer not found."}
+        </p>
         <Link href="/customers">
-          <Button type="button" variant="outline">
+          <LedgerButton variant="action" size="sm">
             <ArrowLeft className="h-4 w-4" />
             Back to customers
-          </Button>
+          </LedgerButton>
         </Link>
       </div>
     );
@@ -231,159 +341,216 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
 
   return (
     <section className="space-y-6">
-      <Link href="/customers" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        href="/customers"
+        className="inline-flex items-center gap-1 text-[13px] font-semibold transition hover:underline"
+        style={{ color: "var(--color-text-muted)" }}
+      >
         <ArrowLeft className="h-4 w-4" />
         Customers
       </Link>
 
       {errorMessage ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div
+          className="text-[13px]"
+          style={{
+            background: "var(--follow-overdue-bg)",
+            border: "1px solid color-mix(in oklch, var(--follow-overdue) 30%, transparent)",
+            color: "var(--follow-overdue)",
+            padding: "10px 14px",
+            borderRadius: "var(--ledger-radius-control)",
+          }}
+        >
           {errorMessage}
         </div>
       ) : null}
 
-      <header className="space-y-4 rounded-xl border bg-card p-4">
+      <header
+        className="space-y-4 p-4"
+        style={{
+          background: "var(--color-surface)",
+          border: "1px solid var(--color-border)",
+          borderRadius: "var(--ledger-radius-control)",
+        }}
+      >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-primary">{summary.customer.name}</h1>
-            <p className="text-sm text-muted-foreground">{summary.customer.phone}{summary.customer.email ? `  |  ${summary.customer.email}` : ""}</p>
+            <PageTitle style={{ color: "var(--color-accent)" }}>
+              {summary.customer.name}
+            </PageTitle>
+            <p
+              className="mt-1 text-[13.5px]"
+              style={{ color: "var(--color-text-muted)" }}
+            >
+              <Mono>{summary.customer.phone}</Mono>
+              {summary.customer.email ? `  |  ${summary.customer.email}` : ""}
+            </p>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <a href={callHref}>
-              <Button
-                type="button"
-                variant="outline"
-                className="border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/50 dark:hover:text-blue-200"
-              >
-                <Phone className="h-4 w-4 fill-current" />
-                Call
-              </Button>
-            </a>
             <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
-              <Button
-                type="button"
-                variant="outline"
-                className="border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 dark:hover:text-emerald-200"
-              >
-                <MessageCircle className="h-4 w-4 fill-current" />
+              <LedgerButton variant="whatsapp" size="md">
+                <WhatsAppIcon size={15} />
                 WhatsApp
-              </Button>
+              </LedgerButton>
             </a>
-            <Button type="button" variant="outline" onClick={startEdit}>
-              <Pencil className="h-4 w-4" />
+            <a href={callHref}>
+              <LedgerButton variant="action" size="md">
+                <Phone className="size-[15px]" strokeWidth={1.8} />
+                Call
+              </LedgerButton>
+            </a>
+            <LedgerButton variant="action" size="md" onClick={startEdit}>
+              <Pencil className="size-[15px]" strokeWidth={1.8} />
               Edit
-            </Button>
+            </LedgerButton>
           </div>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <button
-            type="button"
+          <StatTile
+            value={formatRupees(summary.lifetimeValue)}
+            label="Lifetime Revenue"
             onClick={() => switchTab("overview")}
-            className="rounded-lg border bg-muted px-3 py-3 text-left"
-          >
-            <p className="text-lg font-semibold text-primary">{formatRupees(summary.lifetimeValue)}</p>
-            <p className="text-xs text-muted-foreground">Lifetime Revenue</p>
-          </button>
-
-          <button
-            type="button"
+          />
+          <StatTile
+            value={formatRupees(summary.totalOutstanding)}
+            label="Outstanding"
             onClick={() => {
               setInvoiceStatusPreset("partial");
               switchTab("invoices");
             }}
-            className="rounded-lg border bg-muted px-3 py-3 text-left"
-          >
-            <p className="text-lg font-semibold text-primary">{formatRupees(summary.totalOutstanding)}</p>
-            <p className="text-xs text-muted-foreground">Outstanding</p>
-          </button>
-
-          <button
-            type="button"
+            tone={summary.totalOutstanding > 0 ? "warn" : "neutral"}
+          />
+          <StatTile
+            value={`${summary.activeLeads} active`}
+            label={`Leads (${summary.totalLeads} total)`}
             onClick={() => switchTab("leads")}
-            className="rounded-lg border bg-muted px-3 py-3 text-left"
-          >
-            <p className="text-lg font-semibold text-primary">{summary.activeLeads} active</p>
-            <p className="text-xs text-muted-foreground">Leads ({summary.totalLeads} total)</p>
-          </button>
+          />
         </div>
       </header>
 
-      <nav className="flex flex-wrap gap-2 rounded-xl border bg-card p-2">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => switchTab(tab.key)}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-              activeTab === tab.key
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <nav
+        className="flex flex-wrap gap-2 p-2"
+        style={{
+          background: "var(--color-surface)",
+          border: "1px solid var(--color-border)",
+          borderRadius: "var(--ledger-radius-control)",
+        }}
+      >
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => switchTab(tab.key)}
+              className="px-3 py-1.5 text-[13px] font-semibold transition-colors"
+              style={{
+                borderRadius: "var(--ledger-radius-sm)",
+                background: isActive ? "var(--color-accent)" : "transparent",
+                color: isActive
+                  ? "var(--color-accent-contrast)"
+                  : "var(--color-text-muted)",
+              }}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </nav>
 
       {activeTab === "overview" ? (
         <div className="grid gap-4 lg:grid-cols-2">
-          <section className="rounded-xl border bg-card p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">Recent Activity</h3>
-            </div>
+          <OverviewCard title="Recent Activity">
             {summary.recentActivities.length ? (
               <div className="space-y-2">
                 {summary.recentActivities.map((activity, index) => (
-                  <div key={`${activity.date}-${index}`} className="rounded-lg border border-border bg-muted p-2">
-                    <p className="text-xs text-muted-foreground">{formatDateTime(activity.date)}</p>
-                    <p className="text-sm text-foreground">{activity.description}</p>
-                    {activity.leadTitle ? <p className="text-xs text-muted-foreground">{activity.leadTitle}</p> : null}
+                  <div
+                    key={`${activity.date}-${index}`}
+                    className="p-2"
+                    style={{
+                      background: "var(--color-surface-raised)",
+                      border: "1px solid var(--color-border-subtle)",
+                      borderRadius: "var(--ledger-radius-sm)",
+                    }}
+                  >
+                    <Mono
+                      as="p"
+                      className="text-[11.5px]"
+                      style={{ color: "var(--color-text-faint)" }}
+                    >
+                      {formatDateTime(activity.date)}
+                    </Mono>
+                    <p className="text-[13.5px]" style={{ color: "var(--color-text)" }}>
+                      {activity.description}
+                    </p>
+                    {activity.leadTitle ? (
+                      <p className="text-[12px]" style={{ color: "var(--color-text-muted)" }}>
+                        {activity.leadTitle}
+                      </p>
+                    ) : null}
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">No recent activity yet.</p>
+              <EmptyLine>No recent activity yet.</EmptyLine>
             )}
-          </section>
+          </OverviewCard>
 
-          <section className="rounded-xl border bg-card p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">Active Leads</h3>
-              <button type="button" className="text-xs text-primary hover:underline" onClick={() => switchTab("leads")}>View All</button>
-            </div>
+          <OverviewCard
+            title="Active Leads"
+            action={
+              <ViewAllLink onClick={() => switchTab("leads")}>View All</ViewAllLink>
+            }
+          >
             {activeLeads.length ? (
               <div className="space-y-2">
                 {activeLeads.slice(0, 4).map((lead) => (
-                  <Link key={lead.id} href={`/leads/${lead.id}`} className="block rounded-lg border border-border bg-muted px-3 py-2 hover:bg-accent">
-                    <p className="text-sm font-medium text-primary">{lead.title}</p>
-                    <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
+                  <Link
+                    key={lead.id}
+                    href={`/leads/${lead.id}`}
+                    className="block px-3 py-2 transition-colors hover:bg-[color:var(--color-surface)]"
+                    style={{
+                      background: "var(--color-surface-raised)",
+                      border: "1px solid var(--color-border-subtle)",
+                      borderRadius: "var(--ledger-radius-sm)",
+                    }}
+                  >
+                    <p
+                      className="text-[13.5px] font-semibold"
+                      style={{ color: "var(--color-text)" }}
+                    >
+                      {lead.title}
+                    </p>
+                    <div
+                      className="mt-1 flex items-center justify-between text-[12px]"
+                      style={{ color: "var(--color-text-muted)" }}
+                    >
                       <span>{lead.stageName ?? "Unknown stage"}</span>
-                      <span>{lead.estimatedValue ? formatRupees(Number(lead.estimatedValue)) : "-"}</span>
+                      <Mono>{lead.estimatedValue ? formatRupees(Number(lead.estimatedValue)) : "-"}</Mono>
                     </div>
                   </Link>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">No active leads.</p>
+              <EmptyLine>No active leads.</EmptyLine>
             )}
-          </section>
+          </OverviewCard>
 
-          <section className="rounded-xl border bg-card p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">Pending Invoices</h3>
-              <button
-                type="button"
-                className="text-xs text-primary hover:underline"
+          <OverviewCard
+            title="Pending Invoices"
+            action={
+              <ViewAllLink
                 onClick={() => {
                   setInvoiceStatusPreset("all");
                   switchTab("invoices");
                 }}
               >
                 View All
-              </button>
-            </div>
+              </ViewAllLink>
+            }
+          >
             {pendingInvoices.length ? (
               <div className="space-y-2">
                 {pendingInvoices.map((invoice) => {
@@ -392,20 +559,58 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
                     `Hi ${summary.customer.name.split(" ")[0]}, reminder for invoice ${invoice.invoiceNumber} of ${formatRupees(Number(invoice.totalAmount))}.`
                   );
                   const href = `https://wa.me/91${normalizePhone(phone)}?text=${reminderText}`;
+                  const isApproved = invoice.status === "approved";
 
                   return (
-                    <div key={invoice.id} className="rounded-lg border border-border bg-muted px-3 py-2">
+                    <div
+                      key={invoice.id}
+                      className="px-3 py-2"
+                      style={{
+                        background: "var(--color-surface-raised)",
+                        border: "1px solid var(--color-border-subtle)",
+                        borderRadius: "var(--ledger-radius-sm)",
+                      }}
+                    >
                       <div className="flex items-center justify-between gap-2">
                         <div>
-                          <p className="text-sm font-medium text-primary">{invoice.invoiceNumber}</p>
-                          <p className="text-xs text-muted-foreground">{formatRupees(Number(invoice.totalAmount))}</p>
+                          <Mono
+                            as="p"
+                            className="text-[13.5px] font-semibold"
+                            style={{ color: "var(--color-text)" }}
+                          >
+                            {invoice.invoiceNumber}
+                          </Mono>
+                          <Mono
+                            as="p"
+                            className="text-[12px]"
+                            style={{ color: "var(--color-text-muted)" }}
+                          >
+                            {formatRupees(Number(invoice.totalAmount))}
+                          </Mono>
                         </div>
-                        <span className={`rounded-full px-2 py-1 text-xs font-medium capitalize ${invoice.status === "approved" ? "bg-teal-100 text-teal-700" : "bg-amber-100 text-amber-700"}`}>
+                        <span
+                          className="inline-flex items-center px-2 py-0.5 text-[11px] font-semibold capitalize"
+                          style={{
+                            color: isApproved
+                              ? "var(--stage-done-fg)"
+                              : "var(--stage-interested-fg)",
+                            background: isApproved
+                              ? "var(--stage-done-bg)"
+                              : "var(--stage-interested-bg)",
+                            borderRadius: "var(--ledger-radius-badge)",
+                          }}
+                        >
                           {invoice.status}
                         </span>
                       </div>
                       <div className="mt-2">
-                        <a href={href} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
+                        <a
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[12px] font-semibold transition hover:underline"
+                          style={{ color: "var(--wa)" }}
+                        >
                           Send WhatsApp reminder
                         </a>
                       </div>
@@ -414,27 +619,57 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
                 })}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">No pending invoices.</p>
+              <EmptyLine>No pending invoices.</EmptyLine>
             )}
-          </section>
-
+          </OverviewCard>
         </div>
       ) : null}
 
       {activeTab === "leads" ? (
-        <section className="space-y-3 rounded-xl border bg-card p-4">
+        <section
+          className="space-y-3 p-4"
+          style={{
+            background: "var(--color-surface)",
+            border: "1px solid var(--color-border)",
+            borderRadius: "var(--ledger-radius-control)",
+          }}
+        >
           {leads.length ? (
             <div className="grid gap-3 md:grid-cols-2">
               {leads.map((lead) => (
-                <Link key={lead.id} href={`/leads/${lead.id}`} className="rounded-lg border bg-muted p-3 hover:bg-accent">
-                  <p className="text-sm font-semibold text-primary">{lead.title}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">Stage: {lead.stageName ?? "Unknown"}</p>
-                  <p className="text-xs text-muted-foreground">Value: {lead.estimatedValue ? formatRupees(Number(lead.estimatedValue)) : "-"}</p>
+                <Link
+                  key={lead.id}
+                  href={`/leads/${lead.id}`}
+                  className="block p-3 transition-colors hover:bg-[color:var(--color-surface)]"
+                  style={{
+                    background: "var(--color-surface-raised)",
+                    border: "1px solid var(--color-border-subtle)",
+                    borderRadius: "var(--ledger-radius-sm)",
+                  }}
+                >
+                  <p
+                    className="text-[13.5px] font-semibold"
+                    style={{ color: "var(--color-text)" }}
+                  >
+                    {lead.title}
+                  </p>
+                  <p
+                    className="mt-1 text-[12px]"
+                    style={{ color: "var(--color-text-muted)" }}
+                  >
+                    Stage: {lead.stageName ?? "Unknown"}
+                  </p>
+                  <p className="text-[12px]" style={{ color: "var(--color-text-muted)" }}>
+                    Value:{" "}
+                    <Mono>
+                      {lead.estimatedValue ? formatRupees(Number(lead.estimatedValue)) : "-"}
+                    </Mono>
+                  </p>
                 </Link>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">No leads found for this customer.</p>
+            <EmptyLine>No leads found for this customer.</EmptyLine>
           )}
         </section>
       ) : null}
@@ -463,7 +698,16 @@ export default function CustomerDetailClient({ customerId }: { customerId: strin
               <h3 className="text-base font-semibold text-foreground">Edit Customer</h3>
 
               {editError ? (
-                <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                <div
+                  className="mt-3 text-[13px]"
+                  style={{
+                    background: "var(--follow-overdue-bg)",
+                    border: "1px solid color-mix(in oklch, var(--follow-overdue) 30%, transparent)",
+                    color: "var(--follow-overdue)",
+                    padding: "10px 14px",
+                    borderRadius: "var(--ledger-radius-control)",
+                  }}
+                >
                   {editError}
                 </div>
               ) : null}

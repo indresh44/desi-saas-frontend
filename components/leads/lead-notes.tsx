@@ -135,24 +135,36 @@ export function LeadNotes({ leadId, initialNotes, onSave }: LeadNotesProps) {
   }, []);
 
   return (
-    <section className="space-y-2 rounded-xl border bg-card p-3">
+    <section
+      className="space-y-2 p-3"
+      style={{
+        background: "var(--color-surface)",
+        border: "1px solid var(--color-border)",
+        borderRadius: "var(--ledger-radius-control)",
+      }}
+    >
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-primary">Notes</h2>
+        <h2
+          className="text-[13px] font-bold uppercase tracking-[0.06em] ledger-mono"
+          style={{ color: "var(--color-text-faint)", fontSize: 11 }}
+        >
+          Notes
+        </h2>
         <span
-          className={`text-xs transition-opacity duration-300 ${
+          className={`text-[12px] transition-opacity duration-300 ${
             saveStatus === "idle" ? "opacity-0" : "opacity-100"
           }`}
           aria-live="polite"
           data-lead-id={leadId}
         >
           {saveStatus === "saving" ? (
-            <span className="text-muted-foreground">Saving...</span>
+            <span style={{ color: "var(--color-text-muted)" }}>Saving...</span>
           ) : null}
           {saveStatus === "saved" ? (
-            <span className="text-green-600">Saved ✓</span>
+            <span style={{ color: "var(--follow-done)" }}>Saved ✓</span>
           ) : null}
           {saveStatus === "error" ? (
-            <span className="text-red-600">Failed to save</span>
+            <span style={{ color: "var(--follow-overdue)" }}>Failed to save</span>
           ) : null}
         </span>
       </div>
@@ -165,7 +177,7 @@ export function LeadNotes({ leadId, initialNotes, onSave }: LeadNotesProps) {
           onBlur={() => {
             void handleBlur();
           }}
-          className="w-full min-h-[96px] resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm leading-relaxed text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+          className="min-h-[96px] w-full resize-none rounded-[var(--ledger-radius-control)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-raised)] px-3 py-2 text-[13.5px] leading-relaxed text-[color:var(--color-text)] outline-none placeholder:text-[color:var(--color-text-faint)] focus:border-[color:var(--color-accent)] focus:ring-2 focus:ring-[color:var(--color-accent)]/30"
           placeholder="Add notes — requirements, specs, reminders..."
         />
       ) : (
@@ -179,12 +191,19 @@ export function LeadNotes({ leadId, initialNotes, onSave }: LeadNotesProps) {
               handleClick();
             }
           }}
-          className="min-h-[44px] cursor-text rounded-lg px-3 py-2 text-sm leading-relaxed transition-colors hover:bg-muted/60"
+          className="min-h-[44px] cursor-text rounded-[var(--ledger-radius-control)] px-3 py-2 text-[13.5px] leading-relaxed transition-colors hover:bg-[color:var(--color-surface-raised)]"
         >
           {notes ? (
-            <p className="whitespace-pre-wrap text-foreground">{notes}</p>
+            <p
+              className="whitespace-pre-wrap"
+              style={{ color: "var(--color-text)" }}
+            >
+              {notes}
+            </p>
           ) : (
-            <p className="italic text-muted-foreground">Click to add notes...</p>
+            <p className="italic" style={{ color: "var(--color-text-muted)" }}>
+              Click to add notes...
+            </p>
           )}
         </div>
       )}
