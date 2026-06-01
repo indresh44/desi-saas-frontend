@@ -27,6 +27,12 @@ export function toLeadModel(item: LeadApiResponseItem): Lead {
     createdAt: item.created_at,
     updatedAt: item.updated_at,
     nextAction: item.next_action ?? null,
+    requirementSummary: item.requirement_summary ?? null,
+    activitySummary: item.activity_summary ?? null,
+    demandTags: (item.demand_tags ?? []).map((t) => ({
+      id: t.id,
+      name: t.name,
+    })),
   };
 }
 

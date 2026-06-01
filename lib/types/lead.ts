@@ -1,6 +1,13 @@
 import type { LeadFollowUp } from "@/lib/types/followup";
 import type { NextActionSummary } from "@/lib/types/next-action";
 
+export type DemandTagApiItem = {
+  id: string;
+  // Server-side canonical form: lowercase, trimmed, whitespace-collapsed.
+  // The UI Title Cases at render time — never mutate the stored value.
+  name: string;
+};
+
 export type LeadApiResponseItem = {
   customer_id: string;
   customer_name: string | null;
@@ -22,6 +29,18 @@ export type LeadApiResponseItem = {
   // `GET /leads/{id}` after the next-action cascade shipped. Optional
   // here so older deploys / responses without it don't break the parser.
   next_action?: NextActionSummary | null;
+  // 0045 — per-enquiry computed intelligence. All three are optional so
+  // pre-0045 deploys keep parsing. Each renders independently and hides
+  // when null / empty.
+  requirement_summary?: string | null;
+  activity_summary?: string | null;
+  demand_tags?: DemandTagApiItem[] | null;
+};
+
+export type DemandTag = {
+  id: string;
+  // Stored canonical form: lowercase. Title-case at render time only.
+  name: string;
 };
 
 export type Lead = {
@@ -50,6 +69,13 @@ export type Lead = {
   // endpoints leave this undefined; consumers must treat undefined and
   // null as equivalent ("no open follow-up").
   openFollowup?: LeadFollowUp | null;
+  // 0045 — per-enquiry computed intelligence. The two summaries are
+  // static text from background LLM jobs (absolute dates only — render
+  // verbatim, never re-relativise). `demandTags` is always an array
+  // (empty when the lead has no tags), so callers can skip null checks.
+  requirementSummary: string | null;
+  activitySummary: string | null;
+  demandTags: DemandTag[];
 };
 
 export type CreateLeadInput = {

@@ -46,6 +46,9 @@ function mkLead(overrides: Partial<Lead>): Lead {
       urgency_rank: 2,
       relevant_date: new Date().toISOString(),
     },
+    requirementSummary: null,
+    activitySummary: null,
+    demandTags: [],
     ...overrides,
   };
 }

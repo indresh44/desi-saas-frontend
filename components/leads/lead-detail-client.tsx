@@ -113,6 +113,45 @@ function formatDate(value: string): string {
   });
 }
 
+// 0045 — Title Case for demand tag chips. Storage stays lowercase
+// (analytics canonicalisation); presentation Title Cases each whitespace-
+// separated word so chips read as "Modular Kitchen", "Full-Home Interiors".
+function titleCase(value: string): string {
+  return value
+    .split(/(\s+)/)
+    .map((part) =>
+      part.length === 0 || /^\s+$/.test(part)
+        ? part
+        : part[0].toUpperCase() + part.slice(1),
+    )
+    .join("");
+}
+
+// 0045 — render inline `**bold**` runs from the activity / requirement
+// summaries as terracotta-tinted <strong> spans. The summary prompts emit
+// only inline bold (no headings, no lists, no other markdown), so a tiny
+// regex split beats pulling in a full markdown renderer. Unmatched `**`
+// fall through as literal text — safe and stable on partial output.
+function renderInlineBold(text: string): React.ReactNode[] {
+  const parts = text.split(/(\*\*[^*\n]+\*\*)/g);
+  return parts.map((part, idx) => {
+    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+      return (
+        <strong
+          key={idx}
+          style={{
+            color: "var(--color-accent)",
+            fontWeight: 600,
+          }}
+        >
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    return <span key={idx}>{part}</span>;
+  });
+}
+
 function timeAgo(isoString: string): string {
   const diff = Date.now() - new Date(isoString).getTime();
   const minutes = Math.floor(diff / 60000);
@@ -901,6 +940,25 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
                 {lead.source}
               </span>
             ) : null}
+            {/* 0045 — demand tag chips render right after `source`. Title
+                Case for display, lowercase value stays in `tag.name`. */}
+            {lead.demandTags.map((tag) => (
+              <span
+                key={tag.id}
+                className="inline-flex items-center text-[11.5px] font-semibold uppercase tracking-[0.04em]"
+                style={{
+                  background: "var(--color-accent-soft)",
+                  color: "var(--color-accent)",
+                  border:
+                    "1px solid color-mix(in oklch, var(--color-accent) 22%, transparent)",
+                  padding: "2px 8px",
+                  borderRadius: "var(--ledger-radius-pill)",
+                }}
+                title={tag.name}
+              >
+                {titleCase(tag.name)}
+              </span>
+            ))}
             {lead.serviceDate ? (
               <Mono
                 className="text-[12.5px]"
@@ -910,6 +968,26 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
               </Mono>
             ) : null}
           </div>
+
+          {/* 0045 — requirement_summary one-liner. Lives directly under the
+              meta line and above the activity card. Hides entirely when
+              null/empty so a pre-intelligence lead looks unchanged. Kept
+              separate from the Notes block intentionally (different
+              source, different audience). */}
+          {lead.requirementSummary && lead.requirementSummary.trim() ? (
+            <p
+              className="text-[13.5px] leading-snug"
+              style={{ color: "var(--color-text)", textWrap: "pretty" }}
+            >
+              <span
+                className="mr-1.5 text-[11px] font-semibold uppercase tracking-[0.06em]"
+                style={{ color: "var(--color-text-muted)" }}
+              >
+                Requirement
+              </span>
+              {renderInlineBold(lead.requirementSummary)}
+            </p>
+          ) : null}
         </div>
 
         {/* Follow-up action card — top slot. Renders the FollowupActionCard
@@ -1115,6 +1193,38 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
                   </Button>
                 </div>
               </div>
+            </div>
+          ) : null}
+
+          {/* 0045 — activity_summary acts as a TL;DR header above the
+              timeline. Rendered verbatim (already absolute-date-only from
+              the backend; never relativise). Hides when null/empty so the
+              section reads exactly as before for unsummarised leads. */}
+          {lead.activitySummary && lead.activitySummary.trim() ? (
+            <div
+              className="px-3 py-2.5"
+              style={{
+                background: "var(--color-surface-raised)",
+                border: "1px solid var(--color-border)",
+                borderRadius: "var(--ledger-radius-card)",
+              }}
+            >
+              <Eyebrow
+                className="mb-1"
+                style={{ color: "var(--color-text-muted)" }}
+              >
+                Summary
+              </Eyebrow>
+              <p
+                className="text-[13.5px] leading-snug"
+                style={{
+                  color: "var(--color-text)",
+                  textWrap: "pretty",
+                  whiteSpace: "pre-wrap",
+                }}
+              >
+                {renderInlineBold(lead.activitySummary)}
+              </p>
             </div>
           ) : null}
 

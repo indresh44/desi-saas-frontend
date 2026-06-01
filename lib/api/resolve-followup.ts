@@ -89,6 +89,12 @@ function toLeadModel(raw: LeadApiResponseItem): Lead {
     createdAt: raw.created_at,
     updatedAt: raw.updated_at,
     nextAction: raw.next_action ?? null,
+    requirementSummary: raw.requirement_summary ?? null,
+    activitySummary: raw.activity_summary ?? null,
+    demandTags: (raw.demand_tags ?? []).map((t) => ({
+      id: t.id,
+      name: t.name,
+    })),
   };
 }
 
