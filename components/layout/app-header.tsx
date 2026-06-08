@@ -65,7 +65,9 @@ export function AppHeader() {
 
         <div className="flex items-center gap-2 md:gap-3">
           {/* Ask AI pill — §7.14. Tinted accent-soft surface so it reads
-              as the screen's one AI affordance, not "another menu". */}
+              as the screen's one AI affordance, not "another menu".
+              TEMPORARILY HIDDEN — flip `false` back to render it again. */}
+          {false && (
           <button
             type="button"
             onClick={toggleChat}
@@ -86,6 +88,7 @@ export function AppHeader() {
             <Sparkles className="size-[15px]" aria-hidden strokeWidth={1.8} />
             <span className="hidden sm:inline">Ask AI</span>
           </button>
+          )}
 
           <LedgerThemeToggle />
 

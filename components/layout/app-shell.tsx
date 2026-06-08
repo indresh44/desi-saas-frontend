@@ -30,7 +30,8 @@ export function AppShell({ children }: AppShellProps) {
           </div>
         </div>
       </div>
-      <ChatToggleButton />
+      {/* Floating chat toggle — TEMPORARILY HIDDEN. Flip `false` to restore. */}
+      {false && <ChatToggleButton />}
       <ChatPanel />
       <AppBottomNav />
     </ChatProvider>
