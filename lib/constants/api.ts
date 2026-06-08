@@ -19,6 +19,8 @@ export const API_ENDPOINTS = {
   pipelineStages: "/api/v1/pipeline-stages",
   leadFollowUps: "/api/v1/lead_followups",
   leadFollowUpsToday: "/api/v1/lead_followups/today",
+  leadFollowUpResolve: (id: string) =>
+    `/api/v1/lead_followups/${id}/resolve`,
   leadActivities: "/api/v1/lead_activities",
   invoices: "/api/v1/invoices",
   payments: "/api/v1/payments",
@@ -26,6 +28,9 @@ export const API_ENDPOINTS = {
   catalogItems: "/api/v1/catalog-items",
   meetings: "/api/v1/meetings",
   dashboardPaymentSummary: "/api/v1/dashboard/payment-summary",
+  dashboardAssistantTasks: "/api/v1/dashboard/assistant-tasks",
+  dashboardLeadsNeedingAction: "/api/v1/dashboard/leads-needing-action",
+  leadContext: (id: string) => `/api/v1/leads/${id}/context`,
   customerOutstanding: (id: string) => `/api/v1/customers/${id}/outstanding`,
   customerSummary: (id: string) => `/api/v1/customers/${id}/summary`,
   invoiceById: (id: string) => `/api/v1/invoices/${id}`,

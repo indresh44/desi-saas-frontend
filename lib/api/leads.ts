@@ -8,7 +8,7 @@ import {
   LeadApiResponseItem,
 } from "@/lib/types/lead";
 
-function toLeadModel(item: LeadApiResponseItem): Lead {
+export function toLeadModel(item: LeadApiResponseItem): Lead {
   return {
     customerId: item.customer_id,
     customerName: item.customer_name,
@@ -26,6 +26,13 @@ function toLeadModel(item: LeadApiResponseItem): Lead {
     id: item.id,
     createdAt: item.created_at,
     updatedAt: item.updated_at,
+    nextAction: item.next_action ?? null,
+    requirementSummary: item.requirement_summary ?? null,
+    activitySummary: item.activity_summary ?? null,
+    demandTags: (item.demand_tags ?? []).map((t) => ({
+      id: t.id,
+      name: t.name,
+    })),
   };
 }
 
@@ -66,10 +73,13 @@ function withQuery(base: string, params: Record<string, string | undefined>): st
 }
 
 export async function fetchLeads(
-  filters?: { customer_id?: string }
+  filters?: { customer_id?: string; follow_up_today?: boolean }
 ): Promise<Lead[]> {
   const path = withQuery(API_ENDPOINTS.leads, {
     customer_id: filters?.customer_id,
+    // Maps to the backend's existing `follow_up_today: bool` query param
+    // (app/api/v1/leads.py). Only sent when true — keeps the URL clean.
+    follow_up_today: filters?.follow_up_today ? "true" : undefined,
   });
 
   const result = await apiClient<LeadApiResponseItem[]>(path, {

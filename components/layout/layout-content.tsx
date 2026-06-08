@@ -6,7 +6,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { PwaProvider } from "@/components/pwa/pwa-provider";
 import { useAuth } from "@/lib/auth/auth-context";
 
-const PUBLIC_ROUTES = ["/", "/login", "/register", "/forgot-password", "/reset-password", "/blog", "/privacy-policy", "/terms-and-conditions"];
+const PUBLIC_ROUTES = ["/", "/login", "/register", "/forgot-password", "/reset-password", "/blog", "/privacy-policy", "/terms-and-conditions", "/landing_page_old"];
 const FULL_SCREEN_ROUTES = ["/onboarding"];
 
 // Public invoice view: /invoices/{uuid}/filename.pdf

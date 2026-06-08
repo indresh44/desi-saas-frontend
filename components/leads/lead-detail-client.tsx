@@ -31,12 +31,32 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Eyebrow,
+  LedgerButton,
+  Mono,
+  StageBadge,
+  WhatsAppIcon,
+} from "@/components/ledger";
 import { LeadWhatsAppChatDrawer } from "@/components/whatsapp/lead-whatsapp-chat-drawer";
 import { CreateInvoiceModal } from "@/components/leads/create-invoice-modal";
 import { InvoiceCard } from "@/components/leads/invoice-card";
 import { SaveAsTemplateDialog } from "@/components/invoices/templates/save-as-template-dialog";
 import { TemplatePickerDialog } from "@/components/invoices/templates/template-picker-dialog";
 import { LeadNotes } from "@/components/leads/lead-notes";
+import { FollowupActionCard } from "@/components/followup-card/followup-action-card";
+import {
+  activityAccentColor,
+  activityActorLabel,
+  activityFallbackDescription,
+  activityLabel,
+  activityNote,
+  activityPayloadVersion,
+  isResolutionActivity,
+  resolutionSummary,
+  resolvedFollowupLabel,
+  statusChangeTransition,
+} from "@/lib/activity-presentation";
 import { useLookupMaps } from "@/hooks/use-lookup-maps";
 import { fetchLeads, moveLeadStage, updateLeadNotes } from "@/lib/api/leads";
 import {
@@ -98,6 +118,45 @@ function formatDate(value: string): string {
   });
 }
 
+// 0045 — Title Case for demand tag chips. Storage stays lowercase
+// (analytics canonicalisation); presentation Title Cases each whitespace-
+// separated word so chips read as "Modular Kitchen", "Full-Home Interiors".
+function titleCase(value: string): string {
+  return value
+    .split(/(\s+)/)
+    .map((part) =>
+      part.length === 0 || /^\s+$/.test(part)
+        ? part
+        : part[0].toUpperCase() + part.slice(1),
+    )
+    .join("");
+}
+
+// 0045 — render inline `**bold**` runs from the activity / requirement
+// summaries as terracotta-tinted <strong> spans. The summary prompts emit
+// only inline bold (no headings, no lists, no other markdown), so a tiny
+// regex split beats pulling in a full markdown renderer. Unmatched `**`
+// fall through as literal text — safe and stable on partial output.
+function renderInlineBold(text: string): React.ReactNode[] {
+  const parts = text.split(/(\*\*[^*\n]+\*\*)/g);
+  return parts.map((part, idx) => {
+    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+      return (
+        <strong
+          key={idx}
+          style={{
+            color: "var(--color-accent)",
+            fontWeight: 600,
+          }}
+        >
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    return <span key={idx}>{part}</span>;
+  });
+}
+
 function timeAgo(isoString: string): string {
   const diff = Date.now() - new Date(isoString).getTime();
   const minutes = Math.floor(diff / 60000);
@@ -129,16 +188,81 @@ const ACTIVITY_OPTIONS: { value: ActivityType; label: string }[] = [
   { value: "meeting", label: "🤝 Meeting" },
 ];
 
+// Activity icon — colour is driven by Ledger tokens so the timeline
+// matches the rest of the system (stage hues for call/meeting, WhatsApp
+// green via --wa, follow-done for payments).
+function activityColor(type: ActivityType): string {
+  switch (type) {
+    case "call":
+      return "var(--stage-new-fg)";
+    case "whatsapp":
+      return "var(--wa)";
+    case "meeting":
+      return "var(--stage-visit-fg)";
+    case "payment_recorded":
+      return "var(--follow-done)";
+    case "payment_edited":
+      return "var(--follow-unset)";
+    case "payment_voided":
+      return "var(--follow-overdue)";
+    case "payment_moved":
+      return "var(--stage-new-fg)";
+    default:
+      return "var(--color-text-muted)";
+  }
+}
+
 function ActivityIcon({ type }: { type: ActivityType }) {
   const cls = "h-3.5 w-3.5";
-  if (type === "call") return <Phone className={`${cls} text-blue-500`} />;
-  if (type === "whatsapp") return <MessageCircle className={`${cls} text-green-500`} />;
-  if (type === "meeting") return <Users className={`${cls} text-purple-500`} />;
-  if (type === "payment_recorded") return <Receipt className={`${cls} text-green-600`} />;
-  if (type === "payment_edited") return <Pencil className={`${cls} text-amber-600`} />;
-  if (type === "payment_voided") return <Ban className={`${cls} text-red-500`} />;
-  if (type === "payment_moved") return <ArrowRightLeft className={`${cls} text-blue-500`} />;
-  return <FileText className={`${cls} text-muted-foreground`} />;
+  return (
+    <span style={{ color: activityColor(type) }} className="inline-flex">
+      {type === "call" && <Phone className={cls} />}
+      {type === "whatsapp" && <MessageCircle className={cls} />}
+      {type === "meeting" && <Users className={cls} />}
+      {type === "payment_recorded" && <Receipt className={cls} />}
+      {type === "payment_edited" && <Pencil className={cls} />}
+      {type === "payment_voided" && <Ban className={cls} />}
+      {type === "payment_moved" && <ArrowRightLeft className={cls} />}
+      {type !== "call" &&
+        type !== "whatsapp" &&
+        type !== "meeting" &&
+        type !== "payment_recorded" &&
+        type !== "payment_edited" &&
+        type !== "payment_voided" &&
+        type !== "payment_moved" && <FileText className={cls} />}
+    </span>
+  );
+}
+
+// Tile wrapper — §14.4. 34×34 circular tint by activity colour, mixed
+// against the warm surface so it stays calm against the row background.
+function ActivityIconTile({ type }: { type: ActivityType }) {
+  const color = activityColor(type);
+  return (
+    <span
+      className="mt-0.5 flex h-[34px] w-[34px] shrink-0 items-center justify-center"
+      style={{
+        color,
+        background: `color-mix(in oklch, ${color} 13%, var(--color-surface))`,
+        border: `1px solid color-mix(in oklch, ${color} 24%, var(--color-border))`,
+        borderRadius: "50%",
+      }}
+    >
+      <ActivityIcon type={type} />
+    </span>
+  );
+}
+
+// Two-letter initials for the customer avatar tile (§14.5). Falls back
+// to a single "?" for unknown customers so the avatar tile never goes
+// blank.
+function initialsOf(name: string | null | undefined): string {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 0 || parts[0] === "") return "?";
+  const first = parts[0][0] ?? "";
+  const second = parts.length > 1 ? parts[parts.length - 1][0] ?? "" : "";
+  return (first + second).toUpperCase() || "?";
 }
 
 function extractErrorMessage(err: unknown, fallback: string): string {
@@ -153,8 +277,12 @@ function extractErrorMessage(err: unknown, fallback: string): string {
   return fallback;
 }
 
+// Shared form input style — reads Ledger surface tokens so inputs sit
+// flush against panels. Uses --color-surface (slightly lighter than
+// --color-bg) for the field so dropdowns and inline forms stay visible
+// against the warm paper background.
 const inputCls =
-  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20";
+  "w-full rounded-[var(--ledger-radius-control)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 text-[13.5px] text-[color:var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]/30 placeholder:text-[color:var(--color-text-faint)]";
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
@@ -230,6 +358,21 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
         return a.position - b.position;
       }),
     [stageMap]
+  );
+
+  // Earliest pending follow-up powers the FollowupActionCard slot at the
+  // top of the page. Null when the lead has no open follow-up — in that
+  // case the slot collapses to a "[Set a follow-up]" affordance.
+  const openFollowup = useMemo<LeadFollowUp | null>(
+    () =>
+      followUps
+        .filter((f) => f.status === "pending")
+        .sort(
+          (a, b) =>
+            new Date(a.scheduledAt).getTime() -
+            new Date(b.scheduledAt).getTime(),
+        )[0] ?? null,
+    [followUps],
   );
 
   // ─── Data loading ──────────────────────────────────────────────────────────
@@ -667,7 +810,10 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <Loader2
+          className="h-6 w-6 animate-spin"
+          style={{ color: "var(--color-text-muted)" }}
+        />
       </div>
     );
   }
@@ -675,12 +821,17 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
   if (loadError || !lead) {
     return (
       <div className="space-y-4 py-12 text-center">
-        <p className="text-sm text-red-600">{loadError ?? "Lead not found."}</p>
+        <p
+          className="text-[13px]"
+          style={{ color: "var(--follow-overdue)" }}
+        >
+          {loadError ?? "Lead not found."}
+        </p>
         <Link href="/leads">
-          <Button variant="outline" size="sm">
+          <LedgerButton variant="action" size="sm">
             <ArrowLeft className="h-4 w-4" />
             Back to Leads
-          </Button>
+          </LedgerButton>
         </Link>
       </div>
     );
@@ -692,84 +843,200 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
     <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
       {/* ══ LEFT COLUMN ═══════════════════════════════════════════════════════ */}
       <div className="min-w-0 space-y-8">
-        {/* Header */}
+        {/* Header — §14.2. Breadcrumb · title + stage badge ·
+            change-stage select · meta line (value · source · service
+            date). The title uses neutral text per §0.1 (terracotta is
+            reserved for primary actions). */}
         <div className="space-y-3">
           <Link
             href="/leads"
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+            className="inline-flex items-center gap-1 text-[13px] font-semibold transition hover:underline"
+            style={{ color: "var(--color-text-muted)" }}
           >
             <ArrowLeft className="h-4 w-4" />
             Leads
           </Link>
 
           <div className="flex flex-wrap items-start gap-3">
-            <h1 className="flex-1 text-2xl font-bold leading-tight text-primary">
+            <h1
+              className="flex-1 text-[28px] font-bold leading-tight tracking-[-0.03em]"
+              style={{ color: "var(--color-text)" }}
+            >
               {lead.title}
             </h1>
             {(lead.stageName || lead.stageId) ? (
-              <span
-                className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold text-foreground"
-                style={{
-                  backgroundColor:
-                    lead.stageColor ?? stageMap[lead.stageId]?.color ?? "#e4e4e7",
-                }}
-              >
-                {lead.stageName ?? stageMap[lead.stageId]?.name ?? lead.stageId}
-              </span>
+              <StageBadge
+                name={lead.stageName ?? stageMap[lead.stageId]?.name ?? lead.stageId}
+                color={lead.stageColor ?? stageMap[lead.stageId]?.color ?? null}
+                className="shrink-0"
+              />
             ) : null}
 
-            <select
-              value={selectedStageId}
-              onChange={(e) => {
-                const nextStageId = e.target.value;
-                setSelectedStageId(nextStageId);
-                void handleStageChange(nextStageId);
-              }}
-              className="w-full rounded-lg border px-3 py-2 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 sm:w-44"
-              disabled={isLoadingStages || isMovingStage || stageOptions.length === 0}
-            >
-              <option value="">
-                {isLoadingStages
-                  ? "Loading stages..."
-                  : isMovingStage
-                    ? "Changing..."
-                    : "Change Stage"}
-              </option>
-              {stageOptions.map((stage) => (
-                <option key={stage.id} value={stage.id}>
-                  {stage.name}
+            <div className="relative w-full sm:w-44">
+              <select
+                value={selectedStageId}
+                onChange={(e) => {
+                  const nextStageId = e.target.value;
+                  setSelectedStageId(nextStageId);
+                  void handleStageChange(nextStageId);
+                }}
+                className="w-full appearance-none px-3 py-2 pr-9 text-[13px] font-medium"
+                style={{
+                  background: "var(--color-surface)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: "var(--ledger-radius-control)",
+                  color: "var(--color-text-secondary)",
+                }}
+                disabled={isLoadingStages || isMovingStage || stageOptions.length === 0}
+              >
+                <option value="">
+                  {isLoadingStages
+                    ? "Loading stages..."
+                    : isMovingStage
+                      ? "Changing..."
+                      : "Change Stage"}
                 </option>
-              ))}
-            </select>
+                {stageOptions.map((stage) => (
+                  <option key={stage.id} value={stage.id}>
+                    {stage.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                aria-hidden
+                className="pointer-events-none absolute right-3 top-1/2 size-[14px] -translate-y-1/2"
+                strokeWidth={1.8}
+                style={{ color: "var(--color-text-faint)" }}
+              />
+            </div>
           </div>
 
           {stageMoveError ? (
-            <p className="text-xs text-red-600">{stageMoveError}</p>
+            <p className="text-[12px]" style={{ color: "var(--follow-overdue)" }}>
+              {stageMoveError}
+            </p>
           ) : null}
 
           {stageMoveSuccess ? (
-            <p className="text-xs text-green-600">{stageMoveSuccess}</p>
+            <p className="text-[12px]" style={{ color: "var(--follow-done)" }}>
+              {stageMoveSuccess}
+            </p>
           ) : null}
 
-          <div className="flex flex-wrap items-center gap-2 text-sm">
+          <div className="flex flex-wrap items-center gap-3 text-[13.5px]">
             {lead.estimatedValue ? (
-              <span className="font-semibold text-foreground">
+              <Mono
+                className="text-[16px] font-semibold"
+                style={{ color: "var(--color-text)" }}
+              >
                 {formatRupees(lead.estimatedValue)}
-              </span>
+              </Mono>
             ) : null}
             {lead.source ? (
-              <span className="rounded-md bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
+              <span
+                className="inline-flex items-center gap-[5px] text-[12.5px] font-medium"
+                style={{ color: "var(--color-text-muted)" }}
+              >
+                <span
+                  aria-hidden
+                  className="inline-block size-[6px] rounded-[2px]"
+                  style={{ background: "var(--color-text-faint)" }}
+                />
                 {lead.source}
               </span>
             ) : null}
-            {lead.serviceDate ? (
-              <span className="text-xs text-muted-foreground">
-                Service: {formatDate(lead.serviceDate)}
+            {/* 0045 — demand tag chips render right after `source`. Title
+                Case for display, lowercase value stays in `tag.name`. */}
+            {lead.demandTags.map((tag) => (
+              <span
+                key={tag.id}
+                className="inline-flex items-center text-[11.5px] font-semibold uppercase tracking-[0.04em]"
+                style={{
+                  background: "var(--color-accent-soft)",
+                  color: "var(--color-accent)",
+                  border:
+                    "1px solid color-mix(in oklch, var(--color-accent) 22%, transparent)",
+                  padding: "2px 8px",
+                  borderRadius: "var(--ledger-radius-pill)",
+                }}
+                title={tag.name}
+              >
+                {titleCase(tag.name)}
               </span>
+            ))}
+            {lead.serviceDate ? (
+              <Mono
+                className="text-[12.5px]"
+                style={{ color: "var(--color-text-faint)" }}
+              >
+                Service: {formatDate(lead.serviceDate)}
+              </Mono>
             ) : null}
           </div>
 
+          {/* 0045 — requirement_summary one-liner. Lives directly under the
+              meta line and above the activity card. Hides entirely when
+              null/empty so a pre-intelligence lead looks unchanged. Kept
+              separate from the Notes block intentionally (different
+              source, different audience). */}
+          {lead.requirementSummary && lead.requirementSummary.trim() ? (
+            <p
+              className="text-[13.5px] leading-snug"
+              style={{ color: "var(--color-text)", textWrap: "pretty" }}
+            >
+              <span
+                className="mr-1.5 text-[11px] font-semibold uppercase tracking-[0.06em]"
+                style={{ color: "var(--color-text-muted)" }}
+              >
+                Requirement
+              </span>
+              {renderInlineBold(lead.requirementSummary)}
+            </p>
+          ) : null}
         </div>
+
+        {/* Follow-up action card — top slot. Renders the FollowupActionCard
+            when an open pending follow-up exists; otherwise collapses to
+            a [Set a follow-up] affordance that toggles the existing form
+            further down the page. After resolve we call loadAll() to
+            refetch the lead (stage, last_contacted_at) and follow-ups
+            (the new pending one, if any). The activity log lives further
+            down and rehydrates off the same loadAll(). */}
+        {openFollowup ? (
+          <FollowupActionCard
+            key={openFollowup.id}
+            followup={openFollowup}
+            lead={lead}
+            stages={stageOptions}
+            onResolved={() => {
+              void loadAll();
+            }}
+          />
+        ) : (
+          <div
+            className="flex items-center justify-between gap-3 px-4 py-3"
+            style={{
+              background: "var(--color-surface)",
+              border: "1px solid var(--color-border)",
+              borderRadius: "var(--ledger-radius-card)",
+            }}
+          >
+            <p
+              className="text-[13.5px]"
+              style={{ color: "var(--color-text-muted)" }}
+            >
+              No open follow-up.
+            </p>
+            <LedgerButton
+              variant="action"
+              size="sm"
+              onClick={() => setShowFollowUpForm(true)}
+            >
+              <Plus className="size-[14px]" strokeWidth={2} />
+              Set a follow-up
+            </LedgerButton>
+          </div>
+        )}
 
         <LeadNotes
           leadId={leadId}
@@ -777,25 +1044,29 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
           onSave={handleSaveNotes}
         />
 
-        {/* Activity Log */}
+        {/* Activity Log — §14.4 timeline */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold text-primary">Activity</h2>
-            <Button
-              type="button"
+            <h2
+              className="text-[15px] font-bold"
+              style={{ color: "var(--color-text)" }}
+            >
+              Activity
+            </h2>
+            <LedgerButton
+              variant="action"
               size="sm"
-              variant="outline"
               onClick={() => setShowActivityForm((p) => !p)}
             >
               <Plus className="h-3.5 w-3.5" />
               Log Activity
-            </Button>
+            </LedgerButton>
           </div>
 
           {showActivityForm ? (
             <div className="space-y-2 rounded-xl border bg-card p-3">
               {activityError ? (
-                <p className="text-xs text-red-600">{activityError}</p>
+                <p className="text-[12px]" style={{ color: "var(--follow-overdue)" }}>{activityError}</p>
               ) : null}
               <select
                 className={inputCls}
@@ -881,7 +1152,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
               ) : null}
 
               {activityFilesError ? (
-                <p className="text-xs text-red-600">{activityFilesError}</p>
+                <p className="text-[12px]" style={{ color: "var(--follow-overdue)" }}>{activityFilesError}</p>
               ) : null}
 
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -930,29 +1201,96 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
             </div>
           ) : null}
 
+          {/* 0045 — activity_summary acts as a TL;DR header above the
+              timeline. Rendered verbatim (already absolute-date-only from
+              the backend; never relativise). Hides when null/empty so the
+              section reads exactly as before for unsummarised leads. */}
+          {lead.activitySummary && lead.activitySummary.trim() ? (
+            <div
+              className="px-3 py-2.5"
+              style={{
+                background: "var(--color-surface-raised)",
+                border: "1px solid var(--color-border)",
+                borderRadius: "var(--ledger-radius-card)",
+              }}
+            >
+              <Eyebrow
+                className="mb-1"
+                style={{ color: "var(--color-text-muted)" }}
+              >
+                Summary
+              </Eyebrow>
+              <p
+                className="text-[13.5px] leading-snug"
+                style={{
+                  color: "var(--color-text)",
+                  textWrap: "pretty",
+                  whiteSpace: "pre-wrap",
+                }}
+              >
+                {renderInlineBold(lead.activitySummary)}
+              </p>
+            </div>
+          ) : null}
+
           {activities.length === 0 ? (
             <p className="text-sm text-muted-foreground">No activity yet.</p>
           ) : (
             <div className="space-y-2">
               {activities.map((a) => {
                 const atts = attachmentsByActivity[a.id] ?? [];
-                const editable = EDITABLE_ACTIVITY_TYPES.has(a.type);
+                // Resolution rows (carry a result_action in payload) and
+                // status_change rows are audit-trail entries — never editable.
+                const editable =
+                  EDITABLE_ACTIVITY_TYPES.has(a.type) && !isResolutionActivity(a);
                 const isEditing = editingActivityId === a.id;
-                const typeLabel = ACTIVITY_TYPE_LABELS[a.type] ?? a.type;
+                const baseLabel = ACTIVITY_TYPE_LABELS[a.type] ?? a.type;
+                const typeLabel = activityLabel(a, baseLabel).toUpperCase();
+                const accent = activityAccentColor(a);
+                // For status_change rows we prefer the resolved "{from} → {to}"
+                // string over the row's existing "Stage moved to X" description.
+                const stageTransition = statusChangeTransition(a, stageMap);
+                // Rich resolution rendering only for payload v2 rows (carry
+                // next_dt / next_regarding / to_stage_name / note). Pre-v2 rows
+                // fall through to the legacy description/fallback path.
+                const richResolution =
+                  isResolutionActivity(a) && activityPayloadVersion(a) >= 2;
+                const resolution = richResolution ? resolutionSummary(a) : null;
+                const resolutionNote = richResolution ? activityNote(a) : null;
+                // Every resolution row resolved a follow-up — lead with
+                // "Follow-up: …" (its topic, or the lead title as fallback) so
+                // the row shows what the touch was about, and demote the
+                // result ("Rescheduled to …") to a muted sub-line.
+                const followupTopic = richResolution
+                  ? resolvedFollowupLabel(a)
+                  : null;
+                const actorBadge = activityActorLabel(a);
+                const fallbackDesc = activityFallbackDescription(a);
+                const displayDescription =
+                  stageTransition ??
+                  (followupTopic ? `Follow-up: “${followupTopic}”` : null) ??
+                  resolution ??
+                  (a.description && a.description.trim() ? a.description : null);
+                // Result/next-step line, shown only when the topic is the
+                // primary line (otherwise the result IS the primary line).
+                const nextStepLine = followupTopic ? resolution : null;
 
                 return (
                   <div
                     key={a.id}
-                    className="flex items-start gap-3 rounded-xl border border-border bg-card px-3 py-2.5"
+                    className="flex items-start gap-3 px-3 py-2.5"
+                    style={{
+                      background: "var(--color-surface)",
+                      border: "1px solid var(--color-border)",
+                      borderRadius: "var(--ledger-radius-card)",
+                    }}
                   >
-                    <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted">
-                      <ActivityIcon type={a.type} />
-                    </span>
+                    <ActivityIconTile type={a.type} />
                     <div className="min-w-0 flex-1">
                       {isEditing ? (
                         <div className="space-y-2">
                           {editError ? (
-                            <p className="text-xs text-red-600">{editError}</p>
+                            <p className="text-[12px]" style={{ color: "var(--follow-overdue)" }}>{editError}</p>
                           ) : null}
                           <select
                             className={inputCls}
@@ -1064,7 +1402,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
                           ) : null}
 
                           {editFilesError ? (
-                            <p className="text-xs text-red-600">{editFilesError}</p>
+                            <p className="text-[12px]" style={{ color: "var(--follow-overdue)" }}>{editFilesError}</p>
                           ) : null}
 
                           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1120,32 +1458,75 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
                       ) : (
                         <>
                           <div className="flex items-start justify-between gap-2">
-                            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                            <Eyebrow style={accent ? { color: accent } : undefined}>
                               {typeLabel}
-                            </p>
+                            </Eyebrow>
                             {editable ? (
                               <button
                                 type="button"
                                 onClick={() => startEditActivity(a)}
-                                className="-mt-0.5 -mr-1 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                className="-mt-0.5 -mr-1 rounded p-1 transition"
+                                style={{ color: "var(--color-text-muted)" }}
                                 aria-label="Edit activity"
                               >
                                 <Pencil className="h-3.5 w-3.5" />
                               </button>
                             ) : null}
                           </div>
-                          <p className="text-sm leading-snug text-foreground">
-                            {a.description}
-                          </p>
+                          {displayDescription ? (
+                            <p
+                              className="text-[14px] leading-snug"
+                              style={{
+                                color: "var(--color-text)",
+                                textWrap: "pretty",
+                              }}
+                            >
+                              {displayDescription}
+                            </p>
+                          ) : fallbackDesc ? (
+                            <p
+                              className="text-[13px] italic leading-snug"
+                              style={{
+                                color: "var(--color-text-muted)",
+                                textWrap: "pretty",
+                              }}
+                            >
+                              {fallbackDesc}
+                            </p>
+                          ) : null}
+                          {nextStepLine ? (
+                            <p
+                              className="mt-0.5 text-[12.5px] leading-snug"
+                              style={{ color: "var(--color-text-muted)" }}
+                            >
+                              {nextStepLine}
+                            </p>
+                          ) : null}
+                          {resolutionNote ? (
+                            <p
+                              className="mt-1 text-[13px] italic leading-snug"
+                              style={{
+                                color: "var(--color-text-muted)",
+                                textWrap: "pretty",
+                              }}
+                            >
+                              &ldquo;{resolutionNote}&rdquo;
+                            </p>
+                          ) : null}
                           <ActivityAttachmentStrip
                             attachments={atts}
                             onOpen={(idx) =>
                               setViewer({ activityId: a.id, index: idx })
                             }
                           />
-                          <p className="mt-1 text-xs text-muted-foreground">
+                          <Mono
+                            as="p"
+                            className="mt-1 text-[12px]"
+                            style={{ color: "var(--color-text-faint)" }}
+                          >
                             {timeAgo(a.createdAt)}
-                          </p>
+                            {actorBadge ? ` · ${actorBadge}` : ""}
+                          </Mono>
                         </>
                       )}
                     </div>
@@ -1159,18 +1540,22 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
         {/* Invoices */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold text-primary">Invoices</h2>
+            <h2
+              className="text-[15px] font-bold"
+              style={{ color: "var(--color-text)" }}
+            >
+              Invoices
+            </h2>
             <div className="inline-flex items-center gap-0.5">
-              <Button
-                type="button"
+              <LedgerButton
+                variant="action"
                 size="sm"
-                variant="outline"
                 onClick={handleCreateInvoice}
                 className="rounded-r-none"
               >
                 <Plus className="h-3.5 w-3.5" />
                 New Invoice
-              </Button>
+              </LedgerButton>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -1193,7 +1578,9 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
           </div>
 
           {invoices.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No invoices yet.</p>
+            <p className="text-[13.5px]" style={{ color: "var(--color-text-muted)" }}>
+              No invoices yet.
+            </p>
           ) : (
             <div className="space-y-2">
               {invoices.map((inv) => (
@@ -1220,77 +1607,109 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
 
       {/* ══ RIGHT SIDEBAR ═════════════════════════════════════════════════════ */}
       <div className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-        {/* Customer card */}
-        <div className="space-y-3 rounded-xl border bg-card p-4">
-          <h2 className="text-sm font-semibold text-primary">Customer</h2>
-          <p className="text-sm font-medium text-foreground">
-            {lead.customerName ?? "Unknown Customer"}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {lead.customerPhone ?? "Phone not available"}
-          </p>
+        {/* Customer card — §14.5 */}
+        <div
+          className="space-y-3 p-4"
+          style={{
+            background: "var(--color-surface)",
+            border: "1px solid var(--color-border)",
+            borderRadius: "var(--ledger-radius-control)",
+          }}
+        >
+          <Eyebrow>Customer</Eyebrow>
+          <div className="flex items-center gap-3">
+            <div
+              aria-hidden
+              className="grid place-items-center text-[15px] font-bold"
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: "50%",
+                background: "var(--color-accent-soft)",
+                color: "var(--color-accent)",
+                border: "1px solid color-mix(in oklch, var(--color-accent) 18%, transparent)",
+              }}
+            >
+              {initialsOf(lead.customerName)}
+            </div>
+            <div className="min-w-0">
+              <p
+                className="truncate text-[15px] font-bold"
+                style={{ color: "var(--color-text)" }}
+              >
+                {lead.customerName ?? "Unknown Customer"}
+              </p>
+              <Mono
+                as="p"
+                className="text-[12.5px]"
+                style={{ color: "var(--color-text-muted)" }}
+              >
+                {lead.customerPhone ?? "Phone not available"}
+              </Mono>
+            </div>
+          </div>
           <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="flex-1 gap-1.5"
+            <LedgerButton
+              variant="whatsapp"
+              size="md"
+              className="flex-1"
               onClick={() => {
                 const phone = lead.customerPhone?.replace(/\D/g, "") ?? "";
                 if (phone) {
                   window.open(`https://wa.me/${phone}`, "_blank", "noopener,noreferrer");
                 }
               }}
+              disabled={!lead.customerPhone}
             >
-              <MessageCircle className="h-3.5 w-3.5" />
+              <WhatsAppIcon size={15} />
               WhatsApp
-            </Button>
-            {lead.customerPhone ? (
-              <a href={`tel:${lead.customerPhone}`} className="flex-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-full gap-1.5"
-                >
-                  <Phone className="h-3.5 w-3.5" />
-                  Call
-                </Button>
-              </a>
-            ) : (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="flex-1 gap-1.5"
-                disabled
-                title="Phone not available"
-              >
-                <Phone className="h-3.5 w-3.5" />
-                Call
-              </Button>
-            )}
+            </LedgerButton>
+            <LedgerButton
+              variant="action"
+              size="md"
+              className="flex-1"
+              onClick={
+                lead.customerPhone
+                  ? () => {
+                      window.location.href = `tel:${lead.customerPhone}`;
+                    }
+                  : undefined
+              }
+              disabled={!lead.customerPhone}
+              title={lead.customerPhone ? undefined : "Phone not available"}
+            >
+              <Phone className="h-3.5 w-3.5" strokeWidth={1.8} />
+              Call
+            </LedgerButton>
           </div>
         </div>
 
-        {/* Follow-ups */}
-        <section className="space-y-3 rounded-xl border bg-card p-4">
+        {/* Follow-ups — §14.5 */}
+        <section
+          className="space-y-3 p-4"
+          style={{
+            background: "var(--color-surface)",
+            border: "1px solid var(--color-border)",
+            borderRadius: "var(--ledger-radius-control)",
+          }}
+        >
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-primary">Follow-ups</h2>
-            <Button
+            <Eyebrow>Follow-ups</Eyebrow>
+            <button
               type="button"
-              size="sm"
-              variant="ghost"
               onClick={() => setShowFollowUpForm((p) => !p)}
+              aria-label={showFollowUpForm ? "Hide follow-up form" : "Add follow-up"}
+              className="-mr-1 rounded p-1 transition hover:bg-[var(--color-surface-raised)]"
+              style={{ color: "var(--color-text-muted)" }}
             >
-              <Plus className="h-3.5 w-3.5" />
-            </Button>
+              <Plus className="h-4 w-4" />
+            </button>
           </div>
 
           {showFollowUpForm ? (
             <div className="space-y-2 rounded-lg border border-border bg-muted p-2.5">
               {followUpError ? (
-                <p className="text-xs text-red-600">{followUpError}</p>
+                <p className="text-[12px]" style={{ color: "var(--follow-overdue)" }}>{followUpError}</p>
               ) : null}
               <input
                 type="date"
@@ -1330,61 +1749,103 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
           ) : null}
 
           {followUps.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No follow-ups scheduled.</p>
+            <p className="text-[12.5px]" style={{ color: "var(--color-text-muted)" }}>
+              No follow-ups scheduled.
+            </p>
           ) : (
             <div className="space-y-2">
               {followUps.map((fu) => {
                 const isDone = fu.status === "done";
                 const isCancelled = fu.status === "cancelled";
                 const isTerminal = isDone || isCancelled;
+                // §14.5: pending follow-ups get a 3px accent left edge,
+                // done items use --follow-done, cancelled items go quiet.
+                const edgeColor = isDone
+                  ? "var(--follow-done)"
+                  : isCancelled
+                    ? "var(--color-border)"
+                    : "var(--color-accent)";
                 return (
                   <div
                     key={fu.id}
-                    className={`rounded-lg border p-2.5 ${
-                      isTerminal
-                        ? "border-border bg-muted opacity-60"
-                        : "border bg-card"
-                    }`}
+                    className="relative overflow-hidden p-2.5"
+                    style={{
+                      background: isTerminal
+                        ? "var(--color-surface-raised)"
+                        : "var(--color-surface)",
+                      border: "1px solid var(--color-border)",
+                      borderRadius: "var(--ledger-radius-control)",
+                      opacity: isTerminal ? 0.7 : 1,
+                    }}
                   >
-                    <div className="flex items-start justify-between gap-2">
+                    <span
+                      aria-hidden
+                      style={{
+                        position: "absolute",
+                        left: 0,
+                        top: 0,
+                        bottom: 0,
+                        width: 3,
+                        background: edgeColor,
+                      }}
+                    />
+                    <div className="flex items-start justify-between gap-2 pl-1.5">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-1.5">
                           <p
-                            className={`text-xs font-medium ${
-                              isTerminal
-                                ? "text-muted-foreground line-through"
-                                : "text-foreground"
-                            }`}
+                            className="text-[13px] font-semibold"
+                            style={{
+                              color: isTerminal
+                                ? "var(--color-text-muted)"
+                                : "var(--color-text)",
+                              textDecoration: isTerminal ? "line-through" : undefined,
+                            }}
                           >
                             {formatDate(fu.scheduledAt)}
                           </p>
                           {isCancelled ? (
-                            <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-red-700">
+                            <span
+                              className="text-[10px] font-bold uppercase tracking-[0.06em]"
+                              style={{
+                                background: "var(--follow-overdue-bg)",
+                                color: "var(--follow-overdue)",
+                                padding: "1px 7px",
+                                borderRadius: "var(--ledger-radius-pill)",
+                              }}
+                            >
                               Cancelled
                             </span>
                           ) : null}
                         </div>
                         {fu.note ? (
-                          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                          <p
+                            className="mt-0.5 truncate text-[12px]"
+                            style={{ color: "var(--color-text-muted)" }}
+                          >
                             {fu.note}
                           </p>
                         ) : null}
                       </div>
                       {isDone ? (
-                        <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
+                        <CheckCircle2
+                          className="h-4 w-4 shrink-0"
+                          style={{ color: "var(--follow-done)" }}
+                        />
                       ) : isCancelled ? (
-                        <XCircle className="h-4 w-4 shrink-0 text-red-500" />
+                        <XCircle
+                          className="h-4 w-4 shrink-0"
+                          style={{ color: "var(--follow-overdue)" }}
+                        />
                       ) : (
                         <div className="flex shrink-0 items-center gap-1">
-                          <Button
-                            type="button"
+                          <LedgerButton
+                            variant="action"
                             size="sm"
-                            variant="outline"
-                            className="h-6 px-2 text-xs"
+                            className="h-6 px-2 text-[12px]"
                             onClick={() => void handleMarkDone(fu.id)}
                           >
                             Mark Done
-                          </Button>
+                          </LedgerButton>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button
@@ -1448,7 +1909,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
           {showTaskForm ? (
             <div className="space-y-2 rounded-lg border border-zinc-100 bg-muted p-2.5">
               {taskError ? (
-                <p className="text-xs text-red-600">{taskError}</p>
+                <p className="text-[12px]" style={{ color: "var(--follow-overdue)" }}>{taskError}</p>
               ) : null}
               <input
                 className={inputCls}

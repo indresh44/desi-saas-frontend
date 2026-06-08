@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   FileText,
   LayoutDashboard,
+  MessageSquare,
   Package,
   Settings,
   Shield,
@@ -35,6 +36,7 @@ const BASE_GROUPS: SidebarNavGroup[] = [
       { href: "/customers", label: "Customers", icon: Users },
       { href: "/invoices", label: "Invoices", icon: FileText },
       { href: "/catalog", label: "Catalog", icon: Package },
+      { href: "/agent-chat", label: "Agent chat", icon: MessageSquare },
       { href: "/settings", label: "Settings", icon: Settings },
     ],
   },

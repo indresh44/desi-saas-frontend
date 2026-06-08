@@ -22,13 +22,13 @@ function SidebarNavLink({
       key={item.href}
       href={item.href}
       className={cn(
-        "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm transition-colors",
+        "flex items-center gap-[11px] rounded-[var(--ledger-radius-sm)] px-[11px] py-[9px] text-[14px] transition-colors",
         isActive
-          ? "bg-shell-sidebar-active text-shell-sidebar-active-text font-medium"
-          : "text-primary hover:bg-shell-sidebar-hover hover:text-foreground"
+          ? "bg-shell-sidebar-active text-shell-sidebar-active-text font-semibold"
+          : "text-shell-sidebar-text hover:bg-shell-sidebar-hover hover:text-foreground"
       )}
     >
-      <Icon className="h-4 w-4" />
+      <Icon className="size-[18px] shrink-0" strokeWidth={1.7} />
       <span>{item.label}</span>
     </Link>
   );
@@ -38,11 +38,14 @@ function SidebarNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex-1 space-y-1 p-3">
+    <nav className="flex-1 space-y-1 px-[14px] pb-4 pt-4">
       {SIDEBAR_NAV_GROUPS.map((group, index) => (
         <div
           key={group.key}
-          className={cn(index > 0 && "mt-2 border-t border-shell-border pt-2")}
+          className={cn(
+            index > 0 && "mt-3 border-t pt-3",
+          )}
+          style={index > 0 ? { borderColor: "var(--color-border-subtle)" } : undefined}
         >
           <div className="space-y-1">
             {group.items.map((item) => (
@@ -60,12 +63,12 @@ function SidebarNav() {
 }
 
 /**
- * Desktop-only sidebar (`>=md`). Mobile uses the bottom nav in
- * `app-bottom-nav.tsx` instead of a drawer — see the mobile UX plan.
+ * Desktop-only sidebar (`>=md`) — Ledger §7.2. Brand block + nav.
+ * Mobile uses `AppBottomNav` instead of a drawer (see mobile UX plan).
  */
 export function AppSidebar() {
   return (
-    <aside className="hidden w-60 shrink-0 border-r border-shell-border bg-shell-sidebar-bg md:flex md:flex-col">
+    <aside className="hidden w-[220px] shrink-0 border-r border-shell-border bg-shell-sidebar-bg md:flex md:flex-col">
       <SidebarNav />
     </aside>
   );
