@@ -1,247 +1,118 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Mic } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogBody, DialogFooter, DialogHeader } from "@/components/ui/dialog";
-import type { Outcome, ResolveChannel, ResolveFollowupRequest } from "@/lib/api/resolve-followup";
-import type { LeadFollowUp } from "@/lib/types/followup";
+import type {
+  Outcome,
+  ResolveChannel,
+  ResolveFollowupRequest,
+} from "@/lib/api/resolve-followup";
+import type { LeadFollowUp, NegativeAttempts } from "@/lib/types/followup";
 import type { Lead } from "@/lib/types/lead";
 import type { PipelineStage } from "@/lib/types/pipeline";
 import { cn } from "@/lib/utils";
 
-import { CHIP_GROUPS, OUTCOME_META, type LifecyclePill, type OutcomeMeta } from "./outcome-config";
+import {
+  getOutcomes,
+  OUTCOME_META,
+  pickLostStage,
+  pickNextStage,
+  stageBucketOf,
+  type OutcomeChip,
+  type OutcomeFlow,
+  type Sentiment,
+} from "./outcome-config";
 
-// --- Stage-block derivation ---------------------------------------------
-// All the "what dropdown should I show and how should I style it?" logic
-// lives here so the render is a flat read.
+const DAY = 24 * 60 * 60 * 1000;
 
-type StageBlockMode =
-  | { kind: "none" }
-  | { kind: "default-current"; selectedStageId: string }
-  | { kind: "highlight-next"; selectedStageId: string; hint: string }
-  | { kind: "lost"; selectedStageId: string };
+// --- "What next?" options per flow -------------------------------------
 
-interface DerivedFlow {
-  meta: OutcomeMeta;
-  stage: StageBlockMode;
-  note: { mode: "open" | "collapsed" | "none"; placeholder?: string };
-  dateChips: { label: string; offsetMs: number | null }[]; // null = open calendar
-  escapeLabel: string | null;
-  /** When true, the "Mark Lost" terminal flow replaces the regular action chips. */
-  terminal?: { lostStageId: string };
+type NextActionId = "reschedule" | "newfu" | "checkin" | "lost" | "done";
+
+interface NextOption {
+  id: NextActionId;
+  label: string;
+  sub: string;
+  danger?: boolean;
 }
 
-const HOUR = 60 * 60 * 1000;
-const DAY = 24 * HOUR;
-
-function findStage(stages: PipelineStage[], predicate: (s: PipelineStage) => boolean) {
-  return stages.find(predicate) ?? null;
-}
-
-function pickNextStage(stages: PipelineStage[], currentId: string): PipelineStage | null {
-  const current = findStage(stages, (s) => s.id === currentId);
-  if (!current) return null;
-  const next = stages.find((s) => s.position === current.position + 1);
-  return next ?? null;
-}
-
-function pickLostStage(stages: PipelineStage[]): PipelineStage | null {
-  return (
-    findStage(stages, (s) => s.name.toLowerCase() === "lost") ??
-    // Conventionally the last stage in every persona template — fall back if
-    // a custom pipeline doesn't have a literal "Lost".
-    stages[stages.length - 1] ??
-    null
-  );
-}
-
-function pickFirstStage(stages: PipelineStage[]): PipelineStage | null {
-  return findStage(stages, (s) => s.position === 1);
-}
-
-function pickInterestedStage(stages: PipelineStage[]): PipelineStage | null {
-  // "Interested" by name across every persona template, falls back to
-  // position=2 if owners renamed it.
-  return (
-    findStage(stages, (s) => s.name.toLowerCase() === "interested") ??
-    findStage(stages, (s) => s.position === 2) ??
-    null
-  );
-}
-
-function deriveFlow(
-  meta: OutcomeMeta,
-  lead: Lead,
-  followup: LeadFollowUp,
-  stages: PipelineStage[],
-): DerivedFlow {
-  const attemptAfter = (followup.attemptCount ?? 0) + 1;
-
-  switch (meta.bucket) {
-    case "positive": {
-      const isAtFirstStage = pickFirstStage(stages)?.id === lead.stageId;
-      const preselected = isAtFirstStage
-        ? pickInterestedStage(stages)
-        : pickNextStage(stages, lead.stageId);
-      const fallback = preselected ?? findStage(stages, (s) => s.id === lead.stageId);
-      return {
-        meta,
-        stage: {
-          kind: "highlight-next",
-          selectedStageId: fallback?.id ?? lead.stageId,
-          hint: isAtFirstStage
-            ? "First conversation — usually moves to Interested. Change if needed."
-            : "Next step in your pipeline — change if it didn't move.",
-        },
-        note: {
-          mode: "open",
-          placeholder: "What did they say? Budget, requirements, objections…",
-        },
-        dateChips: [
-          { label: "In 3 days", offsetMs: 3 * DAY },
-          { label: "Next week", offsetMs: 7 * DAY },
-          { label: "Pick a date", offsetMs: null },
-        ],
-        escapeLabel: "Just mark done, set nothing",
-      };
-    }
-    case "neutral":
-      return {
-        meta,
-        stage: { kind: "default-current", selectedStageId: lead.stageId },
-        note: { mode: "open", placeholder: "Why / when?" },
-        dateChips: [
-          { label: "Tomorrow", offsetMs: 1 * DAY },
-          { label: "In 3 days", offsetMs: 3 * DAY },
-          { label: "Pick a date", offsetMs: null },
-        ],
-        escapeLabel: "Just mark done, set nothing",
-      };
-    case "sent":
-      return {
-        meta,
-        stage: { kind: "none" },
-        note: { mode: "collapsed", placeholder: "+ Add a note" },
-        dateChips: [{ label: "Resurface in 2 days", offsetMs: 2 * DAY }],
-        escapeLabel: "Just log it",
-      };
-    case "no_contact": {
-      // Terminal switch — after this attempt, no_answer streak hits 3+.
-      const hitsThree = meta.outcome === "no_answer" && attemptAfter >= 3;
-      if (hitsThree) {
-        const lost = pickLostStage(stages);
-        return {
-          meta: {
-            ...meta,
-            lifecycle: [
-              { key: "done", label: "✓ Follow-up done", tone: "ok" },
-              { key: "lost", label: "✕ Move to Lost", tone: "bad" },
-            ],
-            suggestion: "Three no-answers — most leads at this point are gone. Mark Lost or try WhatsApp.",
-          },
-          stage: lost
-            ? { kind: "lost", selectedStageId: lost.id }
-            : { kind: "none" },
-          note: { mode: "collapsed", placeholder: "+ Add a note" },
-          dateChips: [],
-          escapeLabel: "Pick a different date",
-          terminal: lost ? { lostStageId: lost.id } : undefined,
-        };
-      }
-      const chips = [
-        { label: "In 2 hrs", offsetMs: 2 * HOUR },
-        { label: "Tomorrow", offsetMs: 1 * DAY },
+/** Per-flow "What next?" segment options; first entry is the default. */
+function nextOptionsFor(flow: OutcomeFlow): NextOption[] {
+  switch (flow) {
+    case "retry":
+      return [
+        { id: "reschedule", label: "Reschedule", sub: "Try again later" },
+        { id: "done", label: "Just log it", sub: "Keep follow-up open" },
+        { id: "lost", label: "Mark lost", sub: "Stop chasing", danger: true },
       ];
-      if (attemptAfter >= 2) {
-        // The "Switch to WhatsApp" path opens the WhatsApp chip flow.
-        // We handle that via a sentinel in the parent — represent it as a
-        // pseudo-chip with offsetMs=-1.
-        chips.push({ label: "Switch to WhatsApp", offsetMs: -1 });
-      }
-      return {
-        meta,
-        stage: { kind: "none" },
-        note: { mode: "collapsed", placeholder: "+ Add a note" },
-        dateChips: chips,
-        escapeLabel: "Pick a different date",
-      };
-    }
-    case "wa_no_number":
-      return {
-        meta,
-        stage: { kind: "none" },
-        note: { mode: "collapsed", placeholder: "+ Add a note" },
-        dateChips: [{ label: "Call instead", offsetMs: -1 }],
-        escapeLabel: "Pick a different date",
-      };
-    case "terminal": {
-      const lost = pickLostStage(stages);
-      return {
-        meta,
-        stage: lost
-          ? { kind: "lost", selectedStageId: lost.id }
-          : { kind: "none" },
-        note: {
-          mode: "open",
-          placeholder: "Reason for losing — helps spot patterns",
-        },
-        dateChips: [],
-        escapeLabel: "Keep open instead",
-        terminal: lost ? { lostStageId: lost.id } : undefined,
-      };
-    }
-    case "wrong_number":
-      return {
-        meta,
-        stage: { kind: "none" },
-        note: { mode: "none" },
-        dateChips: [],
-        escapeLabel: null,
-      };
+    case "terminal":
+      return [
+        { id: "lost", label: "Mark lost", sub: "Not a fit", danger: true },
+        { id: "done", label: "Just log it", sub: "No next step" },
+      ];
+    case "awaiting":
+      // "Sent · awaiting reply" is a pure holding state — note only, no next
+      // step. Saving keeps the follow-up open & flagged; the card then shows
+      // an "Awaiting reply" button to log the resolution later.
+      return [];
+    case "positive":
+    default:
+      return [
+        { id: "newfu", label: "Next follow-up", sub: "Schedule + topic" },
+        { id: "done", label: "Done for now", sub: "No next step" },
+      ];
   }
 }
 
-// --- Pill helpers -------------------------------------------------------
+const NEEDS_SCHEDULE: ReadonlySet<NextActionId> = new Set([
+  "reschedule",
+  "newfu",
+  "checkin",
+]);
 
-function pillClass(tone: LifecyclePill["tone"]) {
-  switch (tone) {
-    case "ok":
-      return "border-emerald-200 bg-emerald-50 text-emerald-800";
-    case "warn":
-      return "border-amber-200 bg-amber-50 text-amber-800";
-    case "bad":
-      return "border-rose-200 bg-rose-50 text-rose-800";
-  }
+// --- Date chips --------------------------------------------------------
+
+interface DateChip {
+  label: string;
+  days: number | null; // null = open the calendar picker
 }
 
-function ChipButton({
-  active,
-  onClick,
-  children,
-  className,
-}: {
-  active?: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "min-h-11 rounded-full border px-3.5 py-2 text-left text-sm font-medium transition-colors md:min-h-9",
-        active
-          ? "border-primary bg-primary text-primary-foreground"
-          : "border-border bg-background text-foreground hover:bg-muted",
-        className,
-      )}
-    >
-      {children}
-    </button>
-  );
+const DATE_CHIPS: DateChip[] = [
+  { label: "Tomorrow", days: 1 },
+  { label: "In 2 days", days: 2 },
+  { label: "Next week", days: 7 },
+  { label: "Pick date", days: null },
+];
+
+// --- Styling helpers ---------------------------------------------------
+
+function chipClass(sentiment: Sentiment, selected: boolean): string {
+  if (selected) {
+    if (sentiment === "pos") return "border-teal-600 bg-teal-600 text-white";
+    if (sentiment === "neu") return "border-amber-500 bg-amber-500 text-white";
+    return "border-rose-500 bg-rose-500 text-white";
+  }
+  if (sentiment === "pos")
+    return "border-teal-200 bg-background text-teal-700 hover:bg-teal-50";
+  if (sentiment === "neu")
+    return "border-amber-200 bg-background text-amber-700 hover:bg-amber-50";
+  return "border-rose-200 bg-background text-rose-700 hover:bg-rose-50";
+}
+
+const NEG_LABELS: Record<keyof Omit<NegativeAttempts, "total">, string> = {
+  no_answer: "No answer",
+  busy: "Busy",
+  wa_not_replied: "Not replied",
+};
+
+function earlierAttemptsText(neg: NegativeAttempts | null | undefined): string | null {
+  if (!neg || !neg.total) return null;
+  const parts = (Object.keys(NEG_LABELS) as (keyof typeof NEG_LABELS)[])
+    .filter((k) => neg[k] > 0)
+    .map((k) => `${NEG_LABELS[k]} ×${neg[k]}`);
+  return parts.length ? `Earlier attempts — ${parts.join(" · ")}` : null;
 }
 
 // --- Component ---------------------------------------------------------
@@ -254,9 +125,6 @@ export interface OutcomeSheetProps {
   lead: Lead;
   stages: PipelineStage[];
   onSubmit: (request: ResolveFollowupRequest) => Promise<void>;
-  /** Allows the WhatsApp/Call switch chips inside no_contact / wa_no_number to
-   * swap the channel without closing the sheet. */
-  onSwitchChannel?: (next: ResolveChannel) => void;
 }
 
 export function OutcomeSheet({
@@ -267,74 +135,156 @@ export function OutcomeSheet({
   lead,
   stages,
   onSubmit,
-  onSwitchChannel,
 }: OutcomeSheetProps) {
   const [picked, setPicked] = useState<Outcome | null>(null);
-  const [selectedStageId, setSelectedStageId] = useState<string>(lead.stageId);
-  const [noteValue, setNoteValue] = useState<string>("");
-  const [noteExpanded, setNoteExpanded] = useState<boolean>(false);
-  const [pickedDate, setPickedDate] = useState<string>(""); // datetime-local
-  const [pickerOpen, setPickerOpen] = useState<boolean>(false);
-  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [note, setNote] = useState("");
+  const [nextAction, setNextAction] = useState<NextActionId | null>(null);
+  const [schedDays, setSchedDays] = useState<number | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickedDate, setPickedDate] = useState(""); // datetime-local
+  const [regarding, setRegarding] = useState("");
+  const [moveStage, setMoveStage] = useState(false);
+  const [targetStageId, setTargetStageId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Reset whenever the sheet opens or the channel switches.
+  const firstName = (lead.customerName ?? "this lead").split(" ")[0];
+  const lostStage = useMemo(() => pickLostStage(stages), [stages]);
+  const nextStage = useMemo(
+    () => pickNextStage(stages, lead.stageId),
+    [stages, lead.stageId],
+  );
+  const chips: OutcomeChip[] = useMemo(() => {
+    const all = getOutcomes(stageBucketOf(lead.stageId, stages), channel);
+    // Once the follow-up is already awaiting a reply, drop the
+    // "Sent · awaiting reply" chip — the next log is the resolution
+    // (Replied / Not replied / Not interested), not another "sent".
+    if (followup.lastOutcome === "wa_sent") {
+      return all.filter((c) => c.outcome !== "wa_sent");
+    }
+    return all;
+  }, [lead.stageId, stages, channel, followup.lastOutcome]);
+
+  const flow: OutcomeFlow | null = picked ? OUTCOME_META[picked].flow : null;
+
+  // Reset everything when the sheet opens or the channel switches.
   useEffect(() => {
     if (!open) return;
     setPicked(null);
-    setSelectedStageId(lead.stageId);
-    setNoteValue("");
-    setNoteExpanded(false);
-    setPickedDate("");
+    setNote("");
+    setNextAction(null);
+    setSchedDays(null);
     setPickerOpen(false);
+    setPickedDate("");
+    setRegarding("");
+    setMoveStage(false);
+    setTargetStageId(null);
     setError(null);
-  }, [open, channel, lead.stageId]);
+  }, [open, channel]);
 
-  const flow: DerivedFlow | null = useMemo(() => {
-    if (!picked) return null;
-    return deriveFlow(OUTCOME_META[picked], lead, followup, stages);
-  }, [picked, lead, followup, stages]);
+  // When an outcome is chosen, seed the default "What next?" + stage block.
+  function selectOutcome(outcome: Outcome) {
+    setPicked(outcome);
+    setError(null);
+    setNote("");
+    setRegarding("");
+    setPickerOpen(false);
+    setPickedDate("");
 
-  // Seed selectedStageId when stage block mode requires it.
-  useEffect(() => {
-    if (!flow) return;
-    if (flow.stage.kind !== "none") {
-      setSelectedStageId(flow.stage.selectedStageId);
+    const f = OUTCOME_META[outcome].flow;
+    const opts = nextOptionsFor(f);
+    if (opts.length > 0) {
+      applyNextAction(opts[0].id, f);
+    } else {
+      // Awaiting — note-only, no next step / stage change.
+      setNextAction(null);
+      setSchedDays(null);
+      setPickerOpen(false);
+      setMoveStage(false);
+      setTargetStageId(null);
     }
-  }, [flow]);
+  }
 
-  async function submit(opts: {
-    nextDt: string | null;
-    setNoFollowup?: boolean;
-    forceStageTo?: string | null;
-  }) {
-    if (!flow) return;
+  // Apply a "What next?" choice + cascade its schedule/stage defaults.
+  function applyNextAction(id: NextActionId, f: OutcomeFlow) {
+    setNextAction(id);
+
+    // Schedule defaults.
+    if (NEEDS_SCHEDULE.has(id)) {
+      setSchedDays((prev) => prev ?? (id === "checkin" ? 2 : 1));
+    } else {
+      setSchedDays(null);
+      setPickerOpen(false);
+    }
+
+    // Stage defaults.
+    if (id === "lost") {
+      setMoveStage(true);
+      setTargetStageId(lostStage?.id ?? null);
+    } else if (f === "positive") {
+      setMoveStage(Boolean(nextStage));
+      setTargetStageId(nextStage?.id ?? null);
+    } else {
+      setMoveStage(false);
+      setTargetStageId(null);
+    }
+  }
+
+  function handleDateChip(chip: DateChip) {
+    if (chip.days === null) {
+      setPickerOpen(true);
+      return;
+    }
+    setPickerOpen(false);
+    setSchedDays(chip.days);
+  }
+
+  function resolveNextDt(): string | null {
+    if (!nextAction || !NEEDS_SCHEDULE.has(nextAction)) return null;
+    if (pickerOpen) {
+      return pickedDate ? new Date(pickedDate).toISOString() : null;
+    }
+    if (schedDays === null) return null;
+    return new Date(Date.now() + schedDays * DAY).toISOString();
+  }
+
+  const stageName = (id: string | null): string | null =>
+    id ? (stages.find((s) => s.id === id)?.name ?? null) : null;
+
+  // Save is ready once an outcome is picked AND any required date is set.
+  const needsSchedule = nextAction ? NEEDS_SCHEDULE.has(nextAction) : false;
+  const scheduleReady = !needsSchedule || resolveNextDt() !== null;
+  const canSave = Boolean(picked) && scheduleReady && !submitting;
+
+  async function handleSave() {
+    if (!picked) return; // nextAction may be null for awaiting (note-only)
+    const nextDt = resolveNextDt();
+    if (needsSchedule && !nextDt) {
+      setError("Pick when to follow up.");
+      return;
+    }
+
+    const stageTo =
+      nextAction === "lost"
+        ? (stageName(targetStageId) ?? lostStage?.name ?? "Lost")
+        : moveStage
+          ? stageName(targetStageId)
+          : null;
+
+    const request: ResolveFollowupRequest = {
+      channel,
+      outcome: picked,
+      note: note.trim() ? note.trim() : null,
+      next_dt: nextDt,
+      next_regarding: regarding.trim() ? regarding.trim() : null,
+      stage_to: stageTo,
+      set_no_followup: !needsSchedule,
+    };
+
     setSubmitting(true);
     setError(null);
     try {
-      // stage_to is only sent on flows where the stage block is shown
-      // AND the user has either kept the highlighted "next" or selected
-      // any non-current stage. For "default-current" / "none" we omit.
-      let stageTo: string | null = null;
-      if (opts.forceStageTo !== undefined) {
-        stageTo = opts.forceStageTo;
-      } else if (flow.stage.kind === "highlight-next" || flow.stage.kind === "lost") {
-        const chosen = stages.find((s) => s.id === selectedStageId);
-        stageTo = chosen?.name ?? null;
-      } else if (flow.stage.kind === "default-current") {
-        const chosen = stages.find((s) => s.id === selectedStageId);
-        // Only send if user changed away from current.
-        if (chosen && chosen.id !== lead.stageId) stageTo = chosen.name;
-      }
-
-      await onSubmit({
-        channel,
-        outcome: flow.meta.outcome,
-        note: noteValue.trim() ? noteValue.trim() : null,
-        next_dt: opts.nextDt,
-        stage_to: stageTo,
-        set_no_followup: !!opts.setNoFollowup,
-      });
+      await onSubmit(request);
       onClose();
     } catch (err) {
       const msg =
@@ -347,287 +297,265 @@ export function OutcomeSheet({
     }
   }
 
-  function handleDateChip(offsetMs: number | null) {
-    if (offsetMs === null) {
-      setPickerOpen(true);
-      return;
-    }
-    if (offsetMs === -1) {
-      // Channel switch sentinel.
-      onSwitchChannel?.(channel === "call" ? "whatsapp" : "call");
-      setPicked(null);
-      return;
-    }
-    const nextDt = new Date(Date.now() + offsetMs).toISOString();
-    submit({ nextDt });
-  }
+  // --- Save button label -------------------------------------------------
+  const saveLabel = useMemo(() => {
+    if (!picked) return "Pick an outcome to save";
+    const bits: string[] = [`Log "${OUTCOME_META[picked].title}"`];
+    if (nextAction === "reschedule") bits.push("reschedule");
+    else if (nextAction === "newfu") bits.push("new follow-up");
+    else if (nextAction === "checkin") bits.push("check-in");
+    else if (nextAction === "lost") bits.push("mark lost");
+    const tgt = nextAction === "lost" ? lostStage?.name : moveStage ? stageName(targetStageId) : null;
+    if (tgt) bits.push(`→ ${tgt}`);
+    return bits.join(" · ");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [picked, nextAction, moveStage, targetStageId, lostStage]);
 
-  function handlePickedDateConfirm() {
-    if (!pickedDate) return;
-    const isoDt = new Date(pickedDate).toISOString();
-    submit({ nextDt: isoDt });
-  }
-
-  function handleEscape() {
-    if (!flow) return;
-    // Different semantics per bucket — see spec.
-    if (flow.meta.bucket === "no_contact" || flow.meta.bucket === "wa_no_number") {
-      // "Pick a different date" — open the calendar picker.
-      setPickerOpen(true);
-      return;
-    }
-    if (flow.meta.bucket === "terminal") {
-      // "Keep open instead" — close without writing.
-      onClose();
-      return;
-    }
-    // positive / neutral / sent → set_no_followup escape hatch.
-    submit({ nextDt: null, setNoFollowup: true });
-  }
-
-  function handleTerminalMarkLost() {
-    if (!flow) return;
-    const lostStage = stages.find((s) => s.id === selectedStageId);
-    submit({
-      nextDt: null,
-      setNoFollowup: true,
-      forceStageTo: lostStage?.name ?? "Lost",
-    });
-  }
-
-  function handleWrongNumberClose(keepOpen: boolean) {
-    submit({ nextDt: null, setNoFollowup: !keepOpen, forceStageTo: null });
-  }
-
-  // --- Render ----------------------------------------------------------
+  // --- Render ------------------------------------------------------------
 
   const channelTitle = channel === "call" ? "Log call outcome" : "Log WhatsApp outcome";
-  const stageOptions = stages;
+  const actionLine =
+    channel === "call"
+      ? `You called ${firstName}`
+      : `You messaged ${firstName} on WhatsApp`;
+  const earlier = earlierAttemptsText(followup.negativeAttempts);
+  const isLost = nextAction === "lost";
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      ariaLabel={channelTitle}
-      className="max-h-[92vh]"
-    >
-      <DialogHeader
-        title={picked ? OUTCOME_META[picked].title : channelTitle}
-        onClose={onClose}
-      />
-      <DialogBody className="space-y-4">
+    <Dialog open={open} onClose={onClose} ariaLabel={channelTitle} className="max-h-[92vh]">
+      <DialogHeader title={channelTitle} onClose={onClose} />
+      <DialogBody className="space-y-5">
+        {/* Header context */}
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium text-muted-foreground">{actionLine}</p>
+          <h3 className="text-lg font-bold tracking-tight text-foreground">
+            {lead.customerName ?? lead.title}
+          </h3>
+          {earlier ? (
+            <p className="inline-flex rounded-md border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700">
+              {earlier}
+            </p>
+          ) : null}
+        </div>
+
         {error ? (
           <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
             {error}
           </div>
         ) : null}
 
-        {!picked ? (
-          // --- STAGE 1: chip picker ---
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Tap what happened — we'll figure out the rest.
-            </p>
-            {CHIP_GROUPS[channel].map((group) => (
-              <div key={group.heading} className="space-y-2">
-                {group.heading.trim() ? (
-                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {group.heading}
-                  </h3>
-                ) : null}
-                <div className="flex flex-wrap gap-2">
-                  {group.outcomes.map((o) => (
-                    <ChipButton key={o} onClick={() => setPicked(o)}>
-                      {OUTCOME_META[o].chipLabel}
-                    </ChipButton>
-                  ))}
-                </div>
-              </div>
+        {/* Block 1 — outcome chips */}
+        <section className="space-y-2">
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            How did it go?
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            {chips.map((c) => (
+              <button
+                key={c.outcome}
+                type="button"
+                onClick={() => selectOutcome(c.outcome)}
+                className={cn(
+                  "inline-flex min-h-11 items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-semibold transition-colors md:min-h-9",
+                  chipClass(c.sentiment, picked === c.outcome),
+                )}
+              >
+                <span aria-hidden>{c.emoji}</span>
+                {c.label}
+              </button>
             ))}
           </div>
-        ) : flow ? (
-          // --- STAGE 2: morphed body for the chosen outcome ---
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <button
-                  type="button"
-                  onClick={() => setPicked(null)}
-                  className="inline-flex items-center gap-1 text-primary hover:underline"
-                >
-                  <ArrowLeft className="size-3.5" /> change
-                </button>
-              </div>
-              <span className="text-2xl leading-none">{flow.meta.icon}</span>
-            </div>
+        </section>
 
-            {/* Lifecycle pills */}
-            <div className="flex flex-wrap gap-2">
-              {flow.meta.lifecycle.map((pill) => (
-                <span
-                  key={pill.key}
-                  className={cn(
-                    "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium",
-                    pillClass(pill.tone),
-                  )}
-                >
-                  {pill.label}
+        {picked && flow ? (
+          <>
+            {/* Block 2 — note */}
+            <section className="space-y-2">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Add a note{" "}
+                <span className="font-medium normal-case text-muted-foreground/70">
+                  · optional · saved to activity log
                 </span>
-              ))}
-            </div>
+              </h4>
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="What happened?"
+                rows={2}
+                className="min-h-[64px] w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm"
+              />
+              <p className="text-[11px] font-medium text-muted-foreground/70">
+                📝 Goes to activity log, not the follow-up topic
+              </p>
+            </section>
 
-            <p className="text-sm text-foreground">{flow.meta.suggestion}</p>
+            {/* Blocks 3 + 4 are skipped for the awaiting flow — it's
+                note-only; saving keeps the follow-up open & flagged. */}
+            {flow !== "awaiting" ? (
+              <>
+            {/* Block 3 — what next */}
+            <section className="space-y-2">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                What next?{" "}
+                <span className="font-medium normal-case text-muted-foreground/70">· optional</span>
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {nextOptionsFor(flow).map((opt) => {
+                  const active = nextAction === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => applyNextAction(opt.id, flow)}
+                      className={cn(
+                        "flex min-w-[140px] flex-1 items-start gap-2 rounded-xl border px-3 py-2.5 text-left transition-colors",
+                        active && !opt.danger && "border-primary bg-primary/10",
+                        active && opt.danger && "border-rose-400 bg-rose-50",
+                        !active && "border-border bg-background hover:bg-muted",
+                      )}
+                    >
+                      <span className="text-sm font-semibold text-foreground">
+                        {opt.label}
+                        <span className="block text-[11px] font-medium text-muted-foreground">
+                          {opt.sub}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
 
-            {/* Stage block */}
-            {flow.stage.kind !== "none" ? (
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Stage
-                </label>
+              {/* Schedule mini-form */}
+              {needsSchedule ? (
+                <div className="space-y-2 pt-1">
+                  <div className="flex flex-wrap gap-2">
+                    {DATE_CHIPS.map((chip) => {
+                      const active =
+                        chip.days === null
+                          ? pickerOpen
+                          : !pickerOpen && schedDays === chip.days;
+                      return (
+                        <button
+                          key={chip.label}
+                          type="button"
+                          onClick={() => handleDateChip(chip)}
+                          className={cn(
+                            "rounded-lg border px-3 py-2 text-sm font-semibold transition-colors",
+                            active
+                              ? "border-foreground bg-foreground text-background"
+                              : "border-border bg-background hover:bg-muted",
+                          )}
+                        >
+                          {chip.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {pickerOpen ? (
+                    <input
+                      type="datetime-local"
+                      value={pickedDate}
+                      onChange={(e) => setPickedDate(e.target.value)}
+                      className="min-h-11 w-full rounded-lg border border-border bg-background px-3 text-sm md:min-h-9"
+                    />
+                  ) : null}
+                  <input
+                    value={regarding}
+                    onChange={(e) => setRegarding(e.target.value)}
+                    placeholder="Regarding… e.g. send revised quote"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm"
+                  />
+                </div>
+              ) : null}
+            </section>
+
+            {/* Block 4 — move stage */}
+            <section className="space-y-2">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Move stage?{" "}
+                <span className="font-medium normal-case text-muted-foreground/70">· optional</span>
+              </h4>
+              <div
+                className={cn(
+                  "flex items-center gap-3 rounded-xl border px-3.5 py-3",
+                  isLost
+                    ? "border-rose-200 bg-rose-50"
+                    : moveStage
+                      ? "border-teal-200 bg-teal-50"
+                      : "border-border bg-background",
+                )}
+              >
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-foreground">
+                    {isLost
+                      ? "Move to Lost"
+                      : moveStage && targetStageId
+                        ? `Move to ${stageName(targetStageId)}`
+                        : `Keep in ${lead.stageName ?? "current stage"}`}
+                  </p>
+                  <p className="text-[11px] font-medium text-muted-foreground">
+                    {isLost
+                      ? `From ${lead.stageName ?? "current"} → Lost`
+                      : moveStage
+                        ? "Tap the dropdown to change"
+                        : "No stage change · turn on to move"}
+                  </p>
+                </div>
+                {!isLost ? (
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={moveStage}
+                    onClick={() => {
+                      const on = !moveStage;
+                      setMoveStage(on);
+                      if (on && !targetStageId) {
+                        setTargetStageId(nextStage?.id ?? lead.stageId);
+                      }
+                    }}
+                    className={cn(
+                      "relative h-7 w-12 flex-none rounded-full transition-colors",
+                      moveStage ? "bg-teal-500" : "bg-muted-foreground/30",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-all",
+                        moveStage ? "left-[22px]" : "left-0.5",
+                      )}
+                    />
+                  </button>
+                ) : null}
+              </div>
+              {moveStage && !isLost ? (
                 <select
-                  value={selectedStageId}
-                  onChange={(e) => setSelectedStageId(e.target.value)}
-                  className={cn(
-                    "min-h-11 w-full rounded-md border bg-background px-3 text-sm md:min-h-9",
-                    flow.stage.kind === "highlight-next" &&
-                      "border-primary ring-1 ring-primary/40",
-                    flow.stage.kind === "lost" &&
-                      "border-rose-300 bg-rose-50 text-rose-900 ring-1 ring-rose-300/50",
-                  )}
+                  value={targetStageId ?? ""}
+                  onChange={(e) => setTargetStageId(e.target.value)}
+                  className="min-h-11 w-full rounded-lg border border-border bg-background px-3 text-sm md:min-h-9"
                 >
-                  {stageOptions.map((s) => (
+                  {stages.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name}
                     </option>
                   ))}
                 </select>
-                {flow.stage.kind === "highlight-next" ? (
-                  <p className="text-xs text-muted-foreground">{flow.stage.hint}</p>
-                ) : flow.stage.kind === "default-current" ? (
-                  <p className="text-xs text-muted-foreground">
-                    Stage unchanged — set when to come back.
-                  </p>
-                ) : null}
-              </div>
+              ) : null}
+            </section>
+              </>
             ) : null}
-
-            {/* Note */}
-            {flow.note.mode === "open" || noteExpanded ? (
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Note
-                </label>
-                <div className="relative">
-                  <textarea
-                    value={noteValue}
-                    onChange={(e) => setNoteValue(e.target.value)}
-                    placeholder={flow.note.placeholder}
-                    rows={3}
-                    className="min-h-[88px] w-full resize-y rounded-md border border-border bg-background px-3 py-2 pr-10 text-sm"
-                  />
-                  <button
-                    type="button"
-                    disabled
-                    title="Voice note — coming soon"
-                    className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground/60"
-                  >
-                    <Mic className="size-4" />
-                  </button>
-                </div>
-              </div>
-            ) : flow.note.mode === "collapsed" ? (
-              <button
-                type="button"
-                onClick={() => setNoteExpanded(true)}
-                className="text-sm text-primary hover:underline"
-              >
-                {flow.note.placeholder ?? "+ Add a note"}
-              </button>
-            ) : null}
-
-            {/* Date picker (calendar fallback) */}
-            {pickerOpen ? (
-              <div className="space-y-2 rounded-md border border-border bg-muted/30 p-3">
-                <input
-                  type="datetime-local"
-                  value={pickedDate}
-                  onChange={(e) => setPickedDate(e.target.value)}
-                  className="min-h-11 w-full rounded-md border border-border bg-background px-3 text-sm md:min-h-9"
-                />
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setPickerOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={handlePickedDateConfirm}
-                    disabled={!pickedDate || submitting}
-                  >
-                    Save
-                  </Button>
-                </div>
-              </div>
-            ) : null}
-
-            {/* Terminal mark-lost / wrong-number primary actions */}
-            {flow.meta.bucket === "terminal" ? (
-              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                <Button
-                  variant="destructive"
-                  onClick={handleTerminalMarkLost}
-                  disabled={submitting}
-                >
-                  Mark Lost
-                </Button>
-              </div>
-            ) : flow.meta.bucket === "wrong_number" ? (
-              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                <Button
-                  variant="destructive"
-                  onClick={() => handleWrongNumberClose(false)}
-                  disabled={submitting}
-                >
-                  Flag &amp; close
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => handleWrongNumberClose(true)}
-                  disabled={submitting}
-                >
-                  Flag, keep open
-                </Button>
-              </div>
-            ) : flow.dateChips.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {flow.dateChips.map((chip) => (
-                  <ChipButton
-                    key={chip.label}
-                    onClick={() => handleDateChip(chip.offsetMs)}
-                  >
-                    {chip.label}
-                  </ChipButton>
-                ))}
-              </div>
-            ) : null}
-          </div>
+          </>
         ) : null}
       </DialogBody>
-      {picked && flow?.escapeLabel ? (
-        <DialogFooter>
-          <button
-            type="button"
-            onClick={handleEscape}
-            className="text-sm text-muted-foreground hover:text-foreground hover:underline"
-            disabled={submitting}
-          >
-            {flow.escapeLabel}
-          </button>
-        </DialogFooter>
-      ) : null}
+
+      <DialogFooter>
+        <Button
+          onClick={handleSave}
+          disabled={!canSave}
+          className={cn("w-full", isLost && "bg-rose-500 hover:bg-rose-600")}
+        >
+          {submitting ? "Saving…" : saveLabel}
+        </Button>
+      </DialogFooter>
     </Dialog>
   );
 }

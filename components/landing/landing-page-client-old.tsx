@@ -4,12 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import sellNSettleIcon from "@/app/sellnsettle-icon.png";
-import { HeroV2 } from "./v2/hero-v2";
-import { ProblemSection } from "./v2/problem-section";
-import { HowLoopSection } from "./v2/how-loop-section";
-import { CaptureSection } from "./v2/capture-section";
-import { AISection } from "./v2/ai-section";
-import { LV2_CSS, THEME_VARS } from "./v2/styles";
 
 /* ═══════════════════════════════════════════════════════
    SellNSettle Landing Page — v2
@@ -39,6 +33,151 @@ function Icon({ name, style }: { name: string; style?: React.CSSProperties }) {
     >
       {name}
     </span>
+  );
+}
+
+/* ═══════════════════════════════════════
+   HERO CHAT — Animated with @mention,
+   confirmation, invoice card, share chips
+   ═══════════════════════════════════════ */
+
+interface HeroChatStep {
+  type: "user" | "typing" | "confirm" | "invoice" | "chips";
+  delay: number;
+}
+
+const HERO_STEPS: HeroChatStep[] = [
+  { type: "user", delay: 400 },
+  { type: "typing", delay: 1500 },
+  { type: "confirm", delay: 2200 },
+  { type: "invoice", delay: 3800 },
+  { type: "chips", delay: 4200 },
+];
+
+function HeroChat() {
+  const [v, setV] = useState(0);
+  const [cycle, setCycle] = useState(0);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setV(0);
+    const timers = HERO_STEPS.map((s, i) =>
+      setTimeout(() => setV(i + 1), s.delay)
+    );
+    const replay = setTimeout(() => setCycle((c) => c + 1), 8500);
+    return () => {
+      timers.forEach(clearTimeout);
+      clearTimeout(replay);
+    };
+  }, [cycle]);
+
+  return (
+    <div style={{ flex: 1, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 8, overflow: "hidden" }}>
+      {/* User message with @mention */}
+      {v >= 1 && (
+        <div style={{ display: "flex", justifyContent: "flex-end", animation: "popIn 0.3s ease" }}>
+          <div style={{
+            background: C.navy, color: "#fff",
+            padding: "8px 12px", borderRadius: "14px 14px 4px 14px",
+            fontSize: 11, lineHeight: 1.45, fontWeight: 500, maxWidth: "88%",
+            border: `2px solid ${C.navy}`,
+          }}>
+            <span style={{ color: C.gold }}>@Rajesh</span> ka invoice banao, modular kitchen ₹2.5L qty 10, due: 28 April
+          </div>
+        </div>
+      )}
+
+      {/* Typing indicator */}
+      {v === 2 && (
+        <div style={{ display: "flex", gap: 4, paddingLeft: 4, animation: "popIn 0.25s ease" }}>
+          {[0, 1, 2].map((i) => (
+            <div key={i} style={{
+              width: 6, height: 6, borderRadius: "50%", background: "#ccc",
+              animation: `dotPulse 1.2s ease ${i * 0.15}s infinite`,
+            }} />
+          ))}
+        </div>
+      )}
+
+      {/* Confirmation action */}
+      {v >= 3 && (
+        <div style={{ animation: "popIn 0.3s ease" }}>
+          <div style={{
+            background: C.gray, border: `2px solid ${C.navy}`,
+            borderRadius: "12px 12px 12px 4px", padding: "8px 10px",
+            fontSize: 10, lineHeight: 1.4, color: C.navy, fontWeight: 600,
+          }}>
+            Create invoice for <strong>Rajesh Kumar</strong>?
+            <div style={{ display: "flex", gap: 4, marginTop: 6 }}>
+              <div style={{
+                background: C.teal, color: "#fff", borderRadius: 6,
+                padding: "3px 10px", fontSize: 9, fontWeight: 800,
+                border: `1.5px solid ${C.navy}`,
+              }}>✓ Confirm</div>
+              <div style={{
+                background: "#fff", borderRadius: 6,
+                padding: "3px 10px", fontSize: 9, fontWeight: 700,
+                border: `1.5px solid ${C.navy}`, color: C.navy,
+              }}>Edit</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Invoice card with items, qty, total, due date */}
+      {v >= 4 && (
+        <div style={{ animation: "popIn 0.35s ease" }}>
+          <div style={{
+            background: "#fff", border: `3px solid ${C.navy}`,
+            borderRadius: 12, padding: "10px 12px",
+            boxShadow: shadow(3, 3, C.gold),
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+              <span style={{ fontSize: 8, fontWeight: 900, color: C.coral, letterSpacing: 1 }}>INVOICE</span>
+              <span style={{ fontSize: 8, fontWeight: 900, fontFamily: "monospace", color: C.teal }}>#INV-042</span>
+            </div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: C.navy, marginBottom: 2 }}>Rajesh Kumar</div>
+            <div style={{
+              borderTop: `1.5px dashed ${C.navy}33`, marginTop: 4, paddingTop: 4,
+              display: "flex", justifyContent: "space-between", fontSize: 9, color: `${C.navy}cc`,
+            }}>
+              <span>Modular Kitchen × 10</span>
+              <span style={{ fontWeight: 800, color: C.navy }}>₹25,00,000</span>
+            </div>
+            <div style={{
+              borderTop: `1.5px solid ${C.navy}`, marginTop: 6, paddingTop: 5,
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+            }}>
+              <span style={{ fontSize: 8, color: `${C.navy}88` }}>Due: 28 Apr</span>
+              <span style={{ fontSize: 14, fontWeight: 900, color: C.navy }}>₹25,00,000</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share + WhatsApp chips */}
+      {v >= 5 && (
+        <div style={{ display: "flex", gap: 5, animation: "popIn 0.3s ease" }}>
+          <div style={{
+            background: "#fff", border: `2px solid ${C.navy}`,
+            borderRadius: 100, padding: "4px 12px",
+            fontSize: 10, fontWeight: 800, color: C.navy,
+            display: "flex", alignItems: "center", gap: 4,
+          }}>
+            <Icon name="share" style={{ fontSize: 12 }} /> Share
+          </div>
+          <div style={{
+            background: "#25D366", border: `2px solid ${C.navy}`,
+            borderRadius: 100, padding: "4px 12px",
+            fontSize: 10, fontWeight: 800, color: "#fff",
+            display: "flex", alignItems: "center", gap: 4,
+          }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492l4.624-1.467A11.932 11.932 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818c-2.168 0-4.19-.588-5.932-1.61l-.424-.253-2.744.871.882-2.68-.278-.442A9.77 9.77 0 012.182 12c0-5.423 4.395-9.818 9.818-9.818 5.423 0 9.818 4.395 9.818 9.818 0 5.423-4.395 9.818-9.818 9.818z"/></svg>
+            WhatsApp
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -294,9 +433,25 @@ function DemoSection() {
 
 const DEMO_VIDEO_ID = "AgvNQAbc4ss";
 
-export function LandingChrome() {
+export default function LandingPageClientOld() {
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isVideoOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsVideoOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [isVideoOpen]);
+
   return (
-    <>
+    <div style={{ background: "#fff", color: C.navy, overflowX: "hidden", minHeight: "100vh" }}>
       {/* eslint-disable-next-line @next/next/no-page-custom-font */}
       <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@400,0" rel="stylesheet" />
       <style>{`
@@ -343,92 +498,113 @@ export function LandingChrome() {
           .demo-card-ml { margin-left: 12px !important; }
         }
       `}</style>
-    </>
-  );
-}
 
-export function LandingNav() {
-  return (
-    <nav style={{
-      position: "fixed", top: 24, left: "50%", transform: "translateX(-50%)",
-      width: "90%", maxWidth: 1100, zIndex: 50,
-      background: "rgba(255,255,255,0.92)", backdropFilter: "blur(16px)",
-      border: `3px solid ${C.navy}`, borderRadius: 100,
-      boxShadow: shadow(5, 5, C.coral), padding: "12px 24px",
-      display: "flex", justifyContent: "space-between", alignItems: "center",
-    }}>
-      <Link href="/" style={{ fontSize: 18, fontWeight: 900, color: '#E8862E', display: "flex", alignItems: "center", gap: 6, fontFamily: FH, textDecoration: "none", flexShrink: 0 }}>
-        <Image
-          src={sellNSettleIcon}
-          alt="SellNSettle"
-          width={26}
-          height={26}
-          style={{ flexShrink: 0 }}
-        />
-        SellNSettle
-      </Link>
-      <div className="hidden md:flex" style={{ gap: 28, alignItems: "center" }}>
-        {["Features", "Comparison", "Pricing"].map((l) => (
-          <a key={l} href={`#${l.toLowerCase()}`} style={{ color: C.navy, fontWeight: 700, textDecoration: "none", fontSize: 14 }}>{l}</a>
-        ))}
-        <Link href="/blog" style={{ color: C.navy, fontWeight: 700, textDecoration: "none", fontSize: 14 }}>Blog</Link>
-      </div>
-      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-        <Link href="/login" style={{ fontWeight: 700, color: C.navy, fontSize: 13, textDecoration: "none" }}>Login</Link>
-        <Link href="/register" style={{
-          background: C.gold, color: C.navy, padding: "8px 16px", borderRadius: 100,
-          fontWeight: 900, fontSize: 13, border: `2px solid ${C.navy}`,
-          boxShadow: shadow(3, 3, C.navy), fontFamily: FH, textDecoration: "none", whiteSpace: "nowrap",
-        }}>Start Free</Link>
-      </div>
-    </nav>
-  );
-}
+      {/* ═══ NAV ═══ */}
+      <nav style={{
+        position: "fixed", top: 24, left: "50%", transform: "translateX(-50%)",
+        width: "90%", maxWidth: 1100, zIndex: 50,
+        background: "rgba(255,255,255,0.92)", backdropFilter: "blur(16px)",
+        border: `3px solid ${C.navy}`, borderRadius: 100,
+        boxShadow: shadow(5, 5, C.coral), padding: "12px 24px",
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+      }}>
+        <Link href="/" style={{ fontSize: 18, fontWeight: 900, color:'#E8862E', display: "flex", alignItems: "center", gap: 6, fontFamily: FH, textDecoration: "none", flexShrink: 0 }}>
+          <Image
+            src={sellNSettleIcon}
+            alt="SellNSettle"
+            width={26}
+            height={26}
+            style={{ flexShrink: 0 }}
+          />
+          SellNSettle
+        </Link>
+        <div className="hidden md:flex" style={{ gap: 28, alignItems: "center" }}>
+          {["Features", "Comparison", "Pricing"].map((l) => (
+            <a key={l} href={`#${l.toLowerCase()}`} style={{ color: C.navy, fontWeight: 700, textDecoration: "none", fontSize: 14 }}>{l}</a>
+          ))}
+          <Link href="/blog" style={{ color: C.navy, fontWeight: 700, textDecoration: "none", fontSize: 14 }}>Blog</Link>
+        </div>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <Link href="/login" style={{ fontWeight: 700, color: C.navy, fontSize: 13, textDecoration: "none" }}>Login</Link>
+          <Link href="/register" style={{
+            background: C.gold, color: C.navy, padding: "8px 16px", borderRadius: 100,
+            fontWeight: 900, fontSize: 13, border: `2px solid ${C.navy}`,
+            boxShadow: shadow(3, 3, C.navy), fontFamily: FH, textDecoration: "none", whiteSpace: "nowrap",
+          }}>Start Free</Link>
+        </div>
+      </nav>
 
-export default function LandingPageClient() {
-  return (
-    <div style={{ background: "#fff", color: C.navy, overflowX: "hidden", minHeight: "100vh" }}>
-      <LandingChrome />
+      <main style={{ paddingTop: 140 }}>
 
-      <LandingNav />
+        {/* ═══ HERO ═══ */}
+        <section style={{ padding: "0 24px 72px", position: "relative" }} aria-label="Hero">
+          <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16" style={{ maxWidth: 1000, margin: "0 auto" }}>
+            <div className="w-full lg:w-3/5" style={{ zIndex: 20 }}>
+              {/* CHANGED #7: no "first" claim */}
+              <div style={{
+                display: "inline-block", padding: "6px 14px", marginBottom: 20,
+                fontSize: 10, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase",
+                color: "#fff", background: C.teal,
+                border: `2px solid ${C.navy}`, boxShadow: shadow(4, 4, C.navy), fontFamily: FH,
+              }}>🤖 AI-Powered Business Diary for Bharat</div>
 
-      <div className="lv2-root" style={{ ...THEME_VARS.neo, paddingTop: 80 }}>
-        <style>{LV2_CSS}</style>
-        <main>
-          <HeroV2 />
-          <ProblemSection />
-          <HowLoopSection />
-          <CaptureSection />
-          <AISection />
-        </main>
-      </div>
+              <h1 style={{
+                fontFamily: FH, fontSize: "clamp(32px, 5.5vw, 72px)",
+                fontWeight: 900, letterSpacing: -2, lineHeight: 0.95, marginBottom: 24, color: C.navy,
+              }}>
+                Apni business diary, <span style={{ color: C.coral }}>ab AI</span>{" "}
+                <span style={{ color: C.gold, fontStyle: "italic" }}>ke saath</span>
+              </h1>
 
-      <LandingLowerSections v2 />
-    </div>
-  );
-}
+              <p style={{ fontSize: 15, color: `${C.navy}cc`, marginBottom: 24, maxWidth: 440, lineHeight: 1.6, fontWeight: 500 }}>
+                Track enquiries, send invoices, collect payments — just by chatting. In{" "}
+                <span style={{ textDecoration: "underline", textDecorationColor: C.teal, textDecorationThickness: 4, textUnderlineOffset: 4 }}>Hindi, English, ya Hinglish.</span>
+              </p>
 
-export function LandingLowerSections({ v2 = false }: { v2?: boolean } = {}) {
-  const [isVideoOpen, setIsVideoOpen] = useState(false);
+              <Link href="/register" style={{
+                background: C.coral, color: "#fff", padding: "14px 28px", borderRadius: 12,
+                fontWeight: 900, fontSize: 16, border: `3px solid ${C.navy}`,
+                boxShadow: shadow(6, 6, C.navy), fontFamily: FH,
+                display: "inline-block", textDecoration: "none",
+              }}>Start free — no card needed</Link>
+            </div>
 
-  useEffect(() => {
-    if (!isVideoOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsVideoOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
-    };
-  }, [isVideoOpen]);
+            {/* Phone with animated chat */}
+            <div className="w-full lg:w-2/5" style={{ position: "relative", zIndex: 10 }}>
+              <div aria-hidden="true" className="hidden lg:block" style={{
+                position: "absolute", top: -60, right: -60, width: 280, height: 280,
+                background: `${C.gold}33`,
+                borderRadius: "40% 60% 70% 30% / 40% 50% 60% 50%",
+                zIndex: 0, animation: "blobPulse 4s ease infinite",
+              }} />
+              <div className="hero-phone mx-auto lg:mx-0" style={{
+                position: "relative", zIndex: 1, width: "100%", maxWidth: 240,
+                aspectRatio: "9/19", background: C.navy, borderRadius: 36, padding: 7,
+                boxShadow: shadow(10, 10, C.teal), border: `3px solid ${C.navy}`,
+                transform: "rotate(-4deg) scale(1.05)",
+              }}>
+                <div style={{ width: "100%", height: "100%", background: "#fff", borderRadius: 36, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                  <div style={{
+                    padding: "24px 16px 12px", borderBottom: `4px solid ${C.navy}`,
+                    display: "flex", alignItems: "center", gap: 10, background: C.gray,
+                  }}>
+                    <div style={{
+                      width: 36, height: 36, borderRadius: "50%", background: C.coral,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      border: `2px solid ${C.navy}`, boxShadow: shadow(2, 2, C.navy),
+                    }}><Icon name="smart_toy" style={{ color: "#fff", fontSize: 18 }} /></div>
+                    <div>
+                      <p style={{ fontWeight: 900, fontSize: 13, color: C.navy, fontFamily: FH }}>AI Assistant</p>
+                      <p style={{ fontSize: 8, color: C.teal, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase" }}>Active Now</p>
+                    </div>
+                  </div>
+                  <HeroChat />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
-  return (
-    <>
-        {!v2 && (
-        <>
         {/* ═══ PAIN — with skew (#2) ═══ */}
         <section aria-label="Common problems" className="skew-section" style={{ padding: "72px 24px", background: C.gray, transform: "skewY(-2deg)" }}>
           <div style={{ transform: "skewY(2deg)", maxWidth: 1000, margin: "0 auto", padding: "24px 0" }}>
@@ -578,22 +754,14 @@ export function LandingLowerSections({ v2 = false }: { v2?: boolean } = {}) {
             </div>
           </div>
         </section>
-        </>
-        )}
 
         {/* ═══ PERSONAS — with hover animation (#5) ═══ */}
         <section aria-label="Target audience" style={{ padding: "72px 24px", background: "#fff" }}>
           <div style={{ maxWidth: 1100, margin: "0 auto" }}>
             <div style={{ marginBottom: 48 }}>
-              {v2 ? (
-                <span style={{ display: "inline-block", fontFamily: FH, fontSize: 12, fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase", color: C.teal, marginBottom: 12 }}>
-                  05 · Who it&apos;s for
-                </span>
-              ) : (
-                <h2 style={{ fontFamily: FH, fontSize: "clamp(32px, 5vw, 64px)", fontWeight: 900, color: C.navy, letterSpacing: -3, marginBottom: 8 }}>
-                  Yeh <span style={{ color: C.coral }}>Kiske</span> Liye Hai?
-                </h2>
-              )}
+              <h2 style={{ fontFamily: FH, fontSize: "clamp(32px, 5vw, 64px)", fontWeight: 900, color: C.navy, letterSpacing: -3, marginBottom: 8 }}>
+                Yeh <span style={{ color: C.coral }}>Kiske</span> Liye Hai?
+              </h2>
               <p style={{ fontSize: 18, fontWeight: 700, color: `${C.navy}55` }}>Tailored for the modern Indian entrepreneur.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3" style={{ gap: 32 }}>
@@ -770,7 +938,6 @@ export function LandingLowerSections({ v2 = false }: { v2?: boolean } = {}) {
         </section>
 
         {/* ═══ HOW IT WORKS ═══ */}
-        {!v2 && (
         <section aria-label="How it works" style={{ padding: "72px 24px", background: `${C.teal}18` }}>
           <div style={{ maxWidth: 1100, margin: "0 auto" }}>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
@@ -800,7 +967,6 @@ export function LandingLowerSections({ v2 = false }: { v2?: boolean } = {}) {
             </div>
           </div>
         </section>
-        )}
 
         {/* ═══ CTA — removed "Join 5000+" (#6) ═══ */}
         <section aria-label="Call to action" style={{ padding: "80px 24px" }}>
@@ -820,17 +986,8 @@ export function LandingLowerSections({ v2 = false }: { v2?: boolean } = {}) {
                   fontFamily: FH, fontSize: "clamp(32px, 6vw, 72px)",
                   fontWeight: 900, color: "#fff", letterSpacing: -3, lineHeight: 0.95, marginBottom: 48,
                 }}>
-                  {v2 ? (
-                    <>
-                      Stop <span style={{ color: C.navy }}>remembering.</span><br />
-                      Start <span style={{ fontStyle: "italic", fontWeight: 300, opacity: 0.8, textDecoration: "underline" }}>closing.</span>
-                    </>
-                  ) : (
-                    <>
-                      Notebook <span style={{ color: C.navy }}>band</span> karo.<br />
-                      Chat <span style={{ fontStyle: "italic", fontWeight: 300, opacity: 0.8, textDecoration: "underline" }}>shuru</span> karo.
-                    </>
-                  )}
+                  Notebook <span style={{ color: C.navy }}>band</span> karo.<br />
+                  Chat <span style={{ fontStyle: "italic", fontWeight: 300, opacity: 0.8, textDecoration: "underline" }}>shuru</span> karo.
                 </h2>
                 <div className="flex flex-col sm:flex-row" style={{ justifyContent: "center", gap: 20 }}>
                   <Link href="/register" style={{
@@ -856,6 +1013,7 @@ export function LandingLowerSections({ v2 = false }: { v2?: boolean } = {}) {
             </div>
           </div>
         </section>
+      </main>
 
       {/* ═══ FOOTER ═══ */}
       <footer style={{ padding: "56px 24px", borderTop: `4px solid ${C.navy}`, background: C.gray }}>
@@ -943,6 +1101,6 @@ export function LandingLowerSections({ v2 = false }: { v2?: boolean } = {}) {
           </div>
         </div>
       ) : null}
-    </>
+    </div>
   );
 }

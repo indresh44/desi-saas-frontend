@@ -1,21 +1,22 @@
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/constants/api";
 import type { Lead, LeadApiResponseItem } from "@/lib/types/lead";
-import type { LeadFollowUp } from "@/lib/types/followup";
+import type { LeadFollowUp, NegativeAttempts } from "@/lib/types/followup";
 
 // Outcome enum mirrors the backend `Outcome` str-Enum (app/models/enums.py).
-// Keep in sync — backend Pydantic Literal validation will 422 on drift.
+// Keep in sync — backend Pydantic validation will 422 on drift. These are the
+// live outcomes; the deprecated wrong_number / wa_later / wa_no_number values
+// still parse server-side for historical rows but are never written from here.
 export type Outcome =
   | "no_answer"
   | "busy"
-  | "wrong_number"
   | "spoke_interested"
   | "spoke_later"
   | "spoke_not_interested"
   | "wa_sent"
   | "wa_replied"
-  | "wa_later"
-  | "wa_no_number";
+  | "wa_not_replied"
+  | "wa_not_interested";
 
 export type ResolveChannel = "call" | "whatsapp";
 
@@ -24,6 +25,9 @@ export interface ResolveFollowupRequest {
   outcome: Outcome;
   note?: string | null;
   next_dt?: string | null; // ISO 8601
+  /** Topic for the next/rescheduled follow-up ("Regarding…"). Distinct from
+   *  `note`, which is written to the activity log only. */
+  next_regarding?: string | null;
   stage_to?: string | null;
   set_no_followup?: boolean;
 }
@@ -46,6 +50,7 @@ type FollowupApi = {
   completed_at: string | null;
   attempt_count?: number;
   last_outcome?: string | null;
+  negative_attempts?: Record<string, number> | null;
 };
 
 type ResolveApiResponse = {
@@ -54,6 +59,18 @@ type ResolveApiResponse = {
   next_followup: FollowupApi | null;
   activities_created: number;
 };
+
+export function toNegativeAttempts(
+  raw: Record<string, number> | null | undefined,
+): NegativeAttempts | null {
+  if (!raw) return null;
+  return {
+    no_answer: raw.no_answer ?? 0,
+    busy: raw.busy ?? 0,
+    wa_not_replied: raw.wa_not_replied ?? 0,
+    total: raw.total ?? 0,
+  };
+}
 
 function toFollowupModel(raw: FollowupApi): LeadFollowUp {
   return {
@@ -67,6 +84,7 @@ function toFollowupModel(raw: FollowupApi): LeadFollowUp {
     completedAt: raw.completed_at,
     attemptCount: raw.attempt_count ?? 0,
     lastOutcome: raw.last_outcome ?? null,
+    negativeAttempts: toNegativeAttempts(raw.negative_attempts),
   };
 }
 

@@ -53,6 +53,7 @@ export interface OpenFollowupApi {
   completed_at: string | null;
   attempt_count: number;
   last_outcome: string | null;
+  negative_attempts?: Record<string, number> | null;
 }
 
 export interface LeadApiItemWithNextAction {

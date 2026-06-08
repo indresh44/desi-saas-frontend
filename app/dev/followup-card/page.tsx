@@ -65,6 +65,7 @@ function mkFollowup(overrides: Partial<LeadFollowUp>): LeadFollowUp {
     completedAt: null,
     attemptCount: 0,
     lastOutcome: null,
+    negativeAttempts: null,
     ...overrides,
   };
 }
@@ -91,10 +92,17 @@ function mockResolve(stages: PipelineStage[]) {
             status: "pending",
             attemptCount: 0,
           });
+    // Mirror the backend: retry "just log" / reschedule and WhatsApp
+    // "wait for reply" / check-in keep the follow-up open (pending); only
+    // positive / terminal / mark-lost complete it.
+    const keepsOpen =
+      (["no_answer", "busy", "wa_not_replied"].includes(body.outcome) &&
+        !body.stage_to) ||
+      body.outcome === "wa_sent";
     return {
       followup: mkFollowup({
-        status: "done",
-        completedAt: new Date().toISOString(),
+        status: keepsOpen ? "pending" : "done",
+        completedAt: keepsOpen ? null : new Date().toISOString(),
         lastOutcome: body.outcome,
       }),
       lead: stage
@@ -115,29 +123,37 @@ const SCENARIOS = [
     description:
       'Lead is in the FIRST pipeline stage. Positive outcome should pre-select "Interested" (triage), not "Site Visit Scheduled".',
     lead: mkLead({}),
-    followup: mkFollowup({}),
+    followup: mkFollowup({ note: "Send revised quote — 3 modular options" }),
   },
   {
     key: "new-enquiry-2x-attempts",
-    title: "New Enquiry · 2 prior no-answers",
+    title: "New Enquiry · prior negatives (No answer ×2 · Busy ×1)",
     description:
-      "Pending card should show red badge 'Called 2× · no answer'. No-contact stage 2 should also offer a 'Switch to WhatsApp' chip.",
+      "Pending card should show one tally chip per type ('↻ No answer ×2', '↻ Busy ×1'). The sheet header repeats them as 'Earlier attempts'.",
     lead: mkLead({}),
-    followup: mkFollowup({ attemptCount: 2, lastOutcome: "no_answer" }),
+    followup: mkFollowup({
+      attemptCount: 3,
+      lastOutcome: "no_answer",
+      negativeAttempts: { no_answer: 2, busy: 1, wa_not_replied: 0, total: 3 },
+    }),
   },
   {
-    key: "no-answer-streak-3",
-    title: "No-answer streak — 3rd attempt about to commit",
+    key: "retry-flow",
+    title: "Retry flow — picking 'No answer'",
     description:
-      "Selecting 'No answer' should morph the sheet to the terminal-style layout: Lost pre-selected, [Mark Lost] / [Try WhatsApp].",
+      "'No answer' (retry) should default to [Reschedule] with date chips + Regarding, and offer [Mark lost] (forces Lost).",
     lead: mkLead({}),
-    followup: mkFollowup({ attemptCount: 3, lastOutcome: "no_answer" }),
+    followup: mkFollowup({
+      attemptCount: 1,
+      lastOutcome: "no_answer",
+      negativeAttempts: { no_answer: 1, busy: 0, wa_not_replied: 0, total: 1 },
+    }),
   },
   {
     key: "mid-pipeline",
     title: "Mid-pipeline · 'Site Visit Scheduled'",
     description:
-      "Positive outcome should pre-select the next stage ('WIP'), highlighted with the 'change if it didn't move' hint.",
+      "Active stage → Call chips show 'Spoke' (not 'Interested'). A positive outcome pre-selects the next stage ('WIP'), changeable.",
     lead: mkLead({
       stageId: "stage-visit",
       stageName: "Site Visit Scheduled",
@@ -147,6 +163,17 @@ const SCENARIOS = [
       estimatedValue: "120000",
     }),
     followup: mkFollowup({ id: "fup-2", leadId: "lead-2" }),
+  },
+  {
+    key: "awaiting-reply",
+    title: "WhatsApp · awaiting reply (holding state)",
+    description:
+      "Follow-up already flagged 'sent · awaiting reply'. The card shows an 'Awaiting reply' button; tapping opens the WhatsApp sheet WITHOUT the 'Sent · awaiting reply' chip (log the resolution).",
+    lead: mkLead({}),
+    followup: mkFollowup({
+      lastOutcome: "wa_sent",
+      note: "Sent intro + portfolio link",
+    }),
   },
   {
     key: "no-phone",

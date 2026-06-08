@@ -27,14 +27,18 @@ import type { PipelineStage } from "@/lib/types/pipeline";
 // ---------------------------------------------------------------------------
 
 type Outcome =
+  // live set
   | "no_answer"
   | "busy"
-  | "wrong_number"
   | "spoke_interested"
   | "spoke_later"
   | "spoke_not_interested"
   | "wa_sent"
   | "wa_replied"
+  | "wa_not_replied"
+  | "wa_not_interested"
+  // deprecated — kept so historical rows still render
+  | "wrong_number"
   | "wa_later"
   | "wa_no_number";
 
@@ -42,19 +46,30 @@ type ResultAction =
   | "rescheduled"
   | "next_followup"
   | "closed"
-  | "marked_done";
+  | "marked_done"
+  | "logged";
 
-// Channel-prefixed labels per the spec. For no_answer we suffix with
-// "(×N)" when attempt > 1 so the timeline shows the streak inline.
+// Retry outcomes get a "(×N)" streak suffix when attempt > 1.
+const RETRY_OUTCOMES: ReadonlySet<Outcome> = new Set<Outcome>([
+  "no_answer",
+  "busy",
+  "wa_not_replied",
+]);
+
+// Channel-prefixed labels. For retry outcomes we suffix with "(×N)" when
+// attempt > 1 so the timeline shows the streak inline.
 const OUTCOME_LABEL: Record<Outcome, { channel: "CALL" | "WHATSAPP"; suffix: string }> = {
   no_answer:            { channel: "CALL",     suffix: "NO ANSWER" },
   busy:                 { channel: "CALL",     suffix: "BUSY" },
-  wrong_number:         { channel: "CALL",     suffix: "WRONG NUMBER" },
-  spoke_interested:     { channel: "CALL",     suffix: "SPOKE — INTERESTED" },
+  spoke_interested:     { channel: "CALL",     suffix: "INTERESTED" },
   spoke_later:          { channel: "CALL",     suffix: "CALL ME LATER" },
   spoke_not_interested: { channel: "CALL",     suffix: "NOT INTERESTED" },
-  wa_sent:              { channel: "WHATSAPP", suffix: "SENT" },
+  wa_sent:              { channel: "WHATSAPP", suffix: "SENT — AWAITING REPLY" },
   wa_replied:           { channel: "WHATSAPP", suffix: "REPLIED" },
+  wa_not_replied:       { channel: "WHATSAPP", suffix: "NOT REPLIED" },
+  wa_not_interested:    { channel: "WHATSAPP", suffix: "NOT INTERESTED" },
+  // deprecated
+  wrong_number:         { channel: "CALL",     suffix: "WRONG NUMBER" },
   wa_later:             { channel: "WHATSAPP", suffix: "REPLIED — NOT NOW" },
   wa_no_number:         { channel: "WHATSAPP", suffix: "NO NUMBER" },
 };
@@ -64,6 +79,7 @@ const RESULT_ACTION_FALLBACK: Record<ResultAction, string> = {
   next_followup: "Next follow-up created",
   closed:        "Follow-up closed",
   marked_done:   "Marked done, no next step",
+  logged:        "Logged, follow-up still open",
 };
 
 // ---------------------------------------------------------------------------
@@ -93,10 +109,31 @@ function outcomeFrom(a: LeadActivity): Outcome | null {
 
 function resultActionFrom(a: LeadActivity): ResultAction | null {
   const raw = readString(payloadOf(a), "result_action");
-  if (raw === "rescheduled" || raw === "next_followup" || raw === "closed" || raw === "marked_done") {
+  if (
+    raw === "rescheduled" ||
+    raw === "next_followup" ||
+    raw === "closed" ||
+    raw === "marked_done" ||
+    raw === "logged"
+  ) {
     return raw;
   }
   return null;
+}
+
+/** Payload schema version stamped by resolve_followup (v2 carries the rich
+ *  diary fields: note / next_dt / next_regarding / to_stage_name). Pre-v2
+ *  rows render via the legacy description path. */
+export function activityPayloadVersion(a: LeadActivity): number {
+  return readNumber(payloadOf(a), "v") ?? 1;
+}
+
+/** Format an ISO date as a short absolute day, e.g. "10 Jun". Future
+ *  follow-up dates read better absolute than relativised. */
+function shortDate(iso: string): string | null {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
 /** True for rows emitted by `resolve_followup` (carry a result_action in
@@ -117,7 +154,7 @@ export function activityLabel(
   const outcome = outcomeFrom(a);
   if (outcome) {
     const { channel, suffix } = OUTCOME_LABEL[outcome];
-    if (outcome === "no_answer") {
+    if (RETRY_OUTCOMES.has(outcome)) {
       const attempt = readNumber(payloadOf(a), "attempt");
       if (attempt !== null && attempt > 1) {
         return `${channel} · ${suffix} (×${attempt})`;
@@ -143,11 +180,15 @@ export function activityAccentColor(a: LeadActivity): string | null {
     return "var(--follow-done)";
   }
   // terminal — red accent
-  if (outcome === "spoke_not_interested" || outcome === "wrong_number") {
+  if (
+    outcome === "spoke_not_interested" ||
+    outcome === "wa_not_interested" ||
+    outcome === "wrong_number"
+  ) {
     return "var(--follow-overdue)";
   }
-  // no-contact — amber accent
-  if (outcome === "no_answer" || outcome === "busy" || outcome === "wa_no_number") {
+  // retry / no-contact — amber accent
+  if (RETRY_OUTCOMES.has(outcome) || outcome === "wa_no_number") {
     return "var(--follow-unset)";
   }
   // neutral / sent — default colour
@@ -184,5 +225,85 @@ export function statusChangeTransition(
   const fromName = fromId ? stageMap[fromId]?.name ?? null : null;
   if (fromName && toName) return `${fromName} → ${toName}`;
   if (toName) return `→ ${toName}`;
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Rich resolution rendering (payload v2). The eyebrow label carries the
+// outcome; this composes the "what we did next" line — result action + the
+// resulting date + the next topic + any stage move — into one readable string.
+// ---------------------------------------------------------------------------
+
+/** "What next" line for a resolution row, e.g.
+ *  "Rescheduled to 10 Jun · send revised quote" or
+ *  "Next follow-up 12 Jun · → WIP" or "Marked Lost" or "Awaiting reply".
+ *  Returns null for non-resolution rows. */
+export function resolutionSummary(a: LeadActivity): string | null {
+  const action = resultActionFrom(a);
+  if (!action) return null;
+  const p = payloadOf(a);
+  const outcome = outcomeFrom(a);
+  const nextDtRaw = readString(p, "next_dt");
+  const datePart = nextDtRaw ? shortDate(nextDtRaw) : null;
+  const regarding = readString(p, "next_regarding");
+  const toStage = readString(p, "to_stage_name");
+
+  let base: string;
+  switch (action) {
+    case "rescheduled":
+      base = datePart ? `Rescheduled to ${datePart}` : "Rescheduled — still open";
+      break;
+    case "next_followup":
+      base = datePart ? `Next follow-up ${datePart}` : "Next follow-up created";
+      break;
+    case "closed":
+      base = toStage ? `Marked ${toStage}` : "Closed";
+      break;
+    case "marked_done":
+      base = "No next follow-up set";
+      break;
+    case "logged":
+      base = outcome === "wa_sent" ? "Awaiting reply" : "Logged — still open";
+      break;
+    default:
+      return null;
+  }
+  if (regarding) base += ` · ${regarding}`;
+  // "closed" already names the stage above; for the rest show "→ Stage".
+  if (toStage && action !== "closed") base += ` · → ${toStage}`;
+  return base;
+}
+
+/** The user's free-text note, kept separate from the synthesized
+ *  `description` in payload v2. Null when there was none. */
+export function activityNote(a: LeadActivity): string | null {
+  const note = readString(payloadOf(a), "note");
+  return note && note.trim() ? note.trim() : null;
+}
+
+/** Topic ("Regarding") of the follow-up this activity resolved — snapshotted
+ *  into payload v2 as `followup_note`. Lets the timeline show what the
+ *  follow-up was about. Null when the follow-up had no topic. */
+export function resolvedFollowupNote(a: LeadActivity): string | null {
+  const n = readString(payloadOf(a), "followup_note");
+  return n && n.trim() ? n.trim() : null;
+}
+
+/** Best label for the resolved follow-up: its own topic ("Regarding") when
+ *  set, otherwise the lead title (snapshotted as `followup_title`). Used to
+ *  always show a "Follow-up: …" line on resolution rows, even when the
+ *  follow-up had no topic of its own. Null only on non-v2 rows. */
+export function resolvedFollowupLabel(a: LeadActivity): string | null {
+  const note = resolvedFollowupNote(a);
+  if (note) return note;
+  const title = readString(payloadOf(a), "followup_title");
+  return title && title.trim() ? title.trim() : null;
+}
+
+/** Short badge for non-human authors so the owner can trust the log.
+ *  Returns null for human / unknown (implied — no badge). */
+export function activityActorLabel(a: LeadActivity): string | null {
+  if (a.actorType === "ai" || a.actorType === "task") return "AI";
+  if (a.actorType === "system") return "Auto";
   return null;
 }

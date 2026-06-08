@@ -47,9 +47,14 @@ import { LeadNotes } from "@/components/leads/lead-notes";
 import { FollowupActionCard } from "@/components/followup-card/followup-action-card";
 import {
   activityAccentColor,
+  activityActorLabel,
   activityFallbackDescription,
   activityLabel,
+  activityNote,
+  activityPayloadVersion,
   isResolutionActivity,
+  resolutionSummary,
+  resolvedFollowupLabel,
   statusChangeTransition,
 } from "@/lib/activity-presentation";
 import { useLookupMaps } from "@/hooks/use-lookup-maps";
@@ -1245,10 +1250,30 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
                 // For status_change rows we prefer the resolved "{from} → {to}"
                 // string over the row's existing "Stage moved to X" description.
                 const stageTransition = statusChangeTransition(a, stageMap);
+                // Rich resolution rendering only for payload v2 rows (carry
+                // next_dt / next_regarding / to_stage_name / note). Pre-v2 rows
+                // fall through to the legacy description/fallback path.
+                const richResolution =
+                  isResolutionActivity(a) && activityPayloadVersion(a) >= 2;
+                const resolution = richResolution ? resolutionSummary(a) : null;
+                const resolutionNote = richResolution ? activityNote(a) : null;
+                // Every resolution row resolved a follow-up — lead with
+                // "Follow-up: …" (its topic, or the lead title as fallback) so
+                // the row shows what the touch was about, and demote the
+                // result ("Rescheduled to …") to a muted sub-line.
+                const followupTopic = richResolution
+                  ? resolvedFollowupLabel(a)
+                  : null;
+                const actorBadge = activityActorLabel(a);
                 const fallbackDesc = activityFallbackDescription(a);
                 const displayDescription =
                   stageTransition ??
+                  (followupTopic ? `Follow-up: “${followupTopic}”` : null) ??
+                  resolution ??
                   (a.description && a.description.trim() ? a.description : null);
+                // Result/next-step line, shown only when the topic is the
+                // primary line (otherwise the result IS the primary line).
+                const nextStepLine = followupTopic ? resolution : null;
 
                 return (
                   <div
@@ -1469,6 +1494,25 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
                               {fallbackDesc}
                             </p>
                           ) : null}
+                          {nextStepLine ? (
+                            <p
+                              className="mt-0.5 text-[12.5px] leading-snug"
+                              style={{ color: "var(--color-text-muted)" }}
+                            >
+                              {nextStepLine}
+                            </p>
+                          ) : null}
+                          {resolutionNote ? (
+                            <p
+                              className="mt-1 text-[13px] italic leading-snug"
+                              style={{
+                                color: "var(--color-text-muted)",
+                                textWrap: "pretty",
+                              }}
+                            >
+                              &ldquo;{resolutionNote}&rdquo;
+                            </p>
+                          ) : null}
                           <ActivityAttachmentStrip
                             attachments={atts}
                             onOpen={(idx) =>
@@ -1481,6 +1525,7 @@ export default function LeadDetailClient({ leadId }: { leadId: string }) {
                             style={{ color: "var(--color-text-faint)" }}
                           >
                             {timeAgo(a.createdAt)}
+                            {actorBadge ? ` · ${actorBadge}` : ""}
                           </Mono>
                         </>
                       )}

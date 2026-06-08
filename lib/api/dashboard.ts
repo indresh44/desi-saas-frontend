@@ -2,6 +2,7 @@ import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/constants/api";
 import { fetchLeadFollowUps } from "@/lib/api/followups";
 import { toLeadModel } from "@/lib/api/leads";
+import { toNegativeAttempts } from "@/lib/api/resolve-followup";
 import type { Lead } from "@/lib/types/lead";
 import type {
   AssistantTasksResponse,
@@ -32,6 +33,7 @@ function toOpenFollowupModel(raw: OpenFollowupApi): LeadFollowUp {
     completedAt: raw.completed_at,
     attemptCount: raw.attempt_count,
     lastOutcome: raw.last_outcome,
+    negativeAttempts: toNegativeAttempts(raw.negative_attempts),
   };
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MessageCircle, Phone } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -95,22 +95,57 @@ export function FollowupActionCard({
   const phoneWaHref = useMemo(() => waLink(lead.customerPhone), [lead.customerPhone]);
   const noPhone = !lead.customerPhone;
 
-  function openSheet(channel: ResolveChannel) {
+  // "Open on return" arming — see action-card.tsx for the rationale.
+  const autoOpenRef = useRef(false);
+  const lastChannelRef = useRef<ResolveChannel>("call");
+
+  const openSheet = useCallback((channel: ResolveChannel) => {
+    autoOpenRef.current = false;
     setSheetChannel(channel);
     setLastChannel(channel);
     setSheetOpen(true);
+  }, []);
+
+  useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState === "visible" && autoOpenRef.current) {
+        openSheet(lastChannelRef.current);
+      }
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [openSheet]);
+
+  // Fire the deep link via a transient anchor (never window.location /
+  // _self — that blanks the SPA view), flip to awaiting, and arm the sheet
+  // to open on return (with a desktop timeout fallback).
+  function fireDeepLink(href: string | null, channel: ResolveChannel) {
+    if (href) {
+      const a = document.createElement("a");
+      a.href = href;
+      a.target = "_blank";
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+    lastChannelRef.current = channel;
+    setLastChannel(channel);
+    setCardState("awaiting");
+    autoOpenRef.current = true;
+    window.setTimeout(() => {
+      if (autoOpenRef.current && document.visibilityState === "visible") {
+        openSheet(channel);
+      }
+    }, 600);
   }
 
   function handleCallTap() {
-    if (phoneCallHref) window.open(phoneCallHref, "_self");
-    setCardState("awaiting");
-    setLastChannel("call");
+    fireDeepLink(phoneCallHref, "call");
   }
 
   function handleWaTap() {
-    if (phoneWaHref) window.open(phoneWaHref, "_blank", "noopener,noreferrer");
-    setCardState("awaiting");
-    setLastChannel("whatsapp");
+    fireDeepLink(phoneWaHref, "whatsapp");
   }
 
   async function handleSubmit(request: ResolveFollowupRequest) {
@@ -136,13 +171,17 @@ export function FollowupActionCard({
           onCall={handleCallTap}
           onWhatsApp={handleWaTap}
           onDone={() => openSheet(lastChannel)}
+          onAwaitingReply={() => openSheet("whatsapp")}
         />
       ) : cardState === "awaiting" ? (
         <AwaitingCard
           lead={lead}
           channel={lastChannel}
           onLog={() => openSheet(lastChannel)}
-          onCancel={() => setCardState("pending")}
+          onCancel={() => {
+            autoOpenRef.current = false;
+            setCardState("pending");
+          }}
         />
       ) : resolved ? (
         <ResolvedCard
@@ -159,7 +198,6 @@ export function FollowupActionCard({
         lead={lead}
         stages={stages}
         onSubmit={handleSubmit}
-        onSwitchChannel={(next) => setSheetChannel(next)}
       />
     </>
   );
@@ -196,6 +234,7 @@ function PendingCard({
   onCall,
   onWhatsApp,
   onDone,
+  onAwaitingReply,
 }: {
   followup: LeadFollowUp;
   lead: Lead;
@@ -203,10 +242,19 @@ function PendingCard({
   onCall: () => void;
   onWhatsApp: () => void;
   onDone: () => void;
+  onAwaitingReply: () => void;
 }) {
   const value = shortMoney(lead.estimatedValue);
-  const attempts = followup.attemptCount ?? 0;
+  const neg = followup.negativeAttempts ?? null;
+  const negChips = neg
+    ? ([
+        { key: "no_answer", label: "No answer" },
+        { key: "busy", label: "Busy" },
+        { key: "wa_not_replied", label: "Not replied" },
+      ] as const).filter((c) => neg[c.key] > 0)
+    : [];
   const nextActionLine = lead.nextAction?.label ?? null;
+  const followUpNote = followup.note?.trim() ? followup.note.trim() : null;
 
   return (
     <CardShell tone="neutral">
@@ -230,42 +278,58 @@ function PendingCard({
               </span>
             ) : null}
           </div>
-          <p className="mt-0.5 truncate text-sm text-muted-foreground">{lead.title}</p>
+          <p className="mt-0.5 truncate text-sm text-muted-foreground">
+            {lead.title}
+            {followUpNote ? <span> - ({followUpNote})</span> : null}
+          </p>
           {nextActionLine ? (
             <p className="mt-1 text-xs text-muted-foreground">{nextActionLine}</p>
           ) : null}
-          {attempts >= 1 ? (
-            <span className="mt-2 inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-800">
-              Called {attempts}× ·{" "}
-              {followup.lastOutcome === "busy"
-                ? "busy"
-                : "no answer"}
-            </span>
+          {negChips.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {negChips.map((c) => (
+                <span
+                  key={c.key}
+                  className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-800"
+                >
+                  ↻ {c.label} ×{neg![c.key]}
+                </span>
+              ))}
+            </div>
           ) : null}
         </div>
       </div>
       <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-        <Button
-          variant="outline"
-          onClick={onWhatsApp}
-          disabled={!phoneAvailable}
-          title={phoneAvailable ? undefined : "No phone number on file"}
-          className="sm:flex-1"
-        >
-          <MessageCircle data-icon="inline-start" /> WhatsApp
-        </Button>
-        <Button
-          variant="outline"
-          onClick={onCall}
-          disabled={!phoneAvailable}
-          title={phoneAvailable ? undefined : "No phone number on file"}
-          className="sm:flex-1"
-        >
-          <Phone data-icon="inline-start" /> Call
-        </Button>
-        <Button onClick={onDone} className="sm:flex-1">
-          Done
-        </Button>
+        {followup.lastOutcome === "wa_sent" ? (
+          // Awaiting-reply holding state — one action to log how it landed.
+          <Button onClick={onAwaitingReply} className="sm:flex-1">
+            ⏳ Awaiting reply
+          </Button>
+        ) : (
+          <>
+            <Button
+              variant="outline"
+              onClick={onWhatsApp}
+              disabled={!phoneAvailable}
+              title={phoneAvailable ? undefined : "No phone number on file"}
+              className="sm:flex-1"
+            >
+              <MessageCircle data-icon="inline-start" /> WhatsApp
+            </Button>
+            <Button
+              variant="outline"
+              onClick={onCall}
+              disabled={!phoneAvailable}
+              title={phoneAvailable ? undefined : "No phone number on file"}
+              className="sm:flex-1"
+            >
+              <Phone data-icon="inline-start" /> Call
+            </Button>
+            <Button onClick={onDone} className="sm:flex-1">
+              Done
+            </Button>
+          </>
+        )}
       </div>
     </CardShell>
   );
@@ -289,7 +353,7 @@ function AwaitingCard({
           {channel === "call" ? "Called" : "Messaged"} {lead.customerName ?? "this lead"} — what happened?
         </h3>
         <p className="text-sm text-amber-800/80">
-          Log the outcome and we'll line up the next step.
+          Log the outcome and we&apos;ll line up the next step.
         </p>
       </div>
       <div className="mt-3 flex flex-col gap-2 sm:flex-row">
@@ -313,15 +377,24 @@ function ResolvedCard({
 }) {
   const { result, request, resolvedAt } = summary;
   const outcomeMeta = OUTCOME_META[request.outcome];
-  const isLost = outcomeMeta.bucket === "terminal" || outcomeMeta.bucket === "wrong_number";
+  const isLost =
+    outcomeMeta.flow === "terminal" ||
+    (request.stage_to ?? "").toLowerCase() === "lost";
   const tone: "teal" | "rose" = isLost ? "rose" : "teal";
 
+  const stillOpen = result.followup.status === "pending";
   const resultLine = (() => {
     if (result.nextFollowup) {
       const when = new Date(result.nextFollowup.scheduledAt).toLocaleString();
       return `${outcomeMeta.title} — next follow-up ${when}`;
     }
     if (isLost) return `${outcomeMeta.title} — closed`;
+    if (stillOpen) {
+      if (outcomeMeta.flow === "awaiting") return `${outcomeMeta.title} — awaiting reply`;
+      return request.next_dt
+        ? `${outcomeMeta.title} — rescheduled`
+        : `${outcomeMeta.title} — logged, follow-up still open`;
+    }
     if (request.set_no_followup) return `${outcomeMeta.title} — done, no next step set`;
     return `${outcomeMeta.title} — rescheduled`;
   })();
@@ -363,7 +436,7 @@ function ResolvedCard({
             <div className="mt-1 italic">&ldquo;{request.note}&rdquo;</div>
           ) : null}
         </div>
-        {request.set_no_followup && !isLost ? (
+        {!stillOpen && request.set_no_followup && !isLost ? (
           <p className="text-xs italic text-muted-foreground">
             🛟 No next step set — will resurface if it goes quiet.
           </p>

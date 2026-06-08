@@ -21,7 +21,7 @@
 // raw colours here.
 
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   ChevronDown,
@@ -58,7 +58,7 @@ import {
   whatsappHref,
 } from "@/lib/contact";
 import type { Lead } from "@/lib/types/lead";
-import type { LeadFollowUp } from "@/lib/types/followup";
+import type { LeadFollowUp, NegativeAttempts } from "@/lib/types/followup";
 import type {
   LeadContext,
   LeadContextFollowup,
@@ -230,6 +230,28 @@ export function ActionCard({
   type CardState = "pending" | "awaiting" | "resolved";
   const [cardState, setCardState] = useState<CardState>("pending");
   const [awaitingChannel, setAwaitingChannel] = useState<ResolveChannel>("call");
+  // "Open on return" arming. After the user taps Call/WhatsApp the deep link
+  // takes over; when they come back (visibilitychange) — or after a short
+  // desktop fallback — we auto-open the sheet ONCE. Dismissing it clears the
+  // flag so the card's "Log outcome" button stays the only way back in.
+  const autoOpenRef = useRef(false);
+  const awaitingChannelRef = useRef<ResolveChannel>("call");
+
+  const openSheetFromAwaiting = useCallback(() => {
+    autoOpenRef.current = false;
+    setSheetChannel(awaitingChannelRef.current);
+    setSheetOpen(true);
+  }, []);
+
+  useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState === "visible" && autoOpenRef.current) {
+        openSheetFromAwaiting();
+      }
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [openSheetFromAwaiting]);
   const [resolvedSummary, setResolvedSummary] = useState<{
     result: ResolveFollowupResult;
     request: ResolveFollowupRequest;
@@ -360,26 +382,51 @@ export function ActionCard({
         setOpenFollowup(f);
       }
       if (!f) return;
+      awaitingChannelRef.current = channel;
       setAwaitingChannel(channel);
       setCardState("awaiting");
+      // Arm the auto-open. The deep link may background the tab (mobile →
+      // visibilitychange handles it) or do nothing (desktop tel: → the
+      // timeout fallback opens the sheet so the flow still completes).
+      autoOpenRef.current = true;
+      window.setTimeout(() => {
+        if (autoOpenRef.current && document.visibilityState === "visible") {
+          openSheetFromAwaiting();
+        }
+      }, 600);
     },
-    [onResolved, openFollowup, lead.id],
+    [onResolved, openFollowup, lead.id, openSheetFromAwaiting],
   );
 
   // [Log outcome] in awaiting state — opens the sheet on the channel
   // the user just deep-linked through.
   const handleLogFromAwaiting = useCallback(() => {
+    autoOpenRef.current = false;
     setSheetChannel(awaitingChannel);
     setSheetOpen(true);
   }, [awaitingChannel]);
 
   // [Cancel] in awaiting state — back to pending without writing anything.
   const handleCancelAwaiting = useCallback(() => {
+    autoOpenRef.current = false;
     setCardState("pending");
+  }, []);
+
+  // [Awaiting reply] — the open follow-up is flagged awaiting (WhatsApp sent,
+  // no reply yet). Tapping logs the resolution; the sheet drops the
+  // "Sent · awaiting reply" chip (it's already in that state).
+  const handleAwaitingReply = useCallback(() => {
+    autoOpenRef.current = false;
+    setSheetChannel("whatsapp");
+    setSheetOpen(true);
   }, []);
 
   const hasFollowupAction =
     action?.type === "followup_overdue" || action?.type === "followup_due_today";
+
+  // Open follow-up is in the "awaiting reply" holding state (WhatsApp sent).
+  // Dashboard-only — needs onResolved to drive the resolve sheet.
+  const isAwaitingReply = !!onResolved && openFollowup?.lastOutcome === "wa_sent";
 
   // Follow-up pill: pick the cascade-derived kind; fall back to derived
   // calm label on the list variant when the cascade is NONE but the stage
@@ -397,8 +444,12 @@ export function ActionCard({
   // Attempt-streak: only renders for follow-ups that have been tried at
   // least once. Reads payload-snapshot fields the dashboard endpoint
   // now bulk-stitches into the lead.
-  const attemptCount = openFollowup?.attemptCount ?? 0;
-  const lastOutcome = openFollowup?.lastOutcome ?? null;
+  // Negative-attempt tally — backend-derived per-type streak (resets on a
+  // positive outcome). Rendered as one chip per outcome type.
+  const negAttempts = openFollowup?.negativeAttempts ?? null;
+  const negTotal = negAttempts?.total ?? 0;
+  // The open follow-up's topic ("Regarding…") — shown as a line on the card.
+  const followUpNote = openFollowup?.note?.trim() ? openFollowup.note.trim() : null;
   const moneyChip = !isListVariant ? shortMoney(lead.estimatedValue) : null;
 
   // --- Resolved-state derivations ---
@@ -408,8 +459,8 @@ export function ActionCard({
     ? OUTCOME_META[resolvedSummary.request.outcome]
     : null;
   const resolvedIsLost =
-    resolvedOutcomeMeta?.bucket === "terminal" ||
-    resolvedOutcomeMeta?.bucket === "wrong_number";
+    resolvedOutcomeMeta?.flow === "terminal" ||
+    (resolvedSummary?.request.stage_to ?? "").toLowerCase() === "lost";
 
   // Card tone for the article wrapper. Pending = default surface; awaiting
   // = soft amber; resolved = soft teal or rose. We reuse existing Ledger
@@ -465,6 +516,11 @@ export function ActionCard({
                     style={{ color: "var(--color-text)" }}
                   >
                     {lead.title}
+                    {followUpNote ? (
+                      <span className="font-medium" style={{ color: "var(--color-text-muted)" }}>
+                        {" "}- ({followUpNote})
+                      </span>
+                    ) : null}
                   </h3>
                   {lead.stageName ? (
                     <StageBadge name={lead.stageName} color={lead.stageColor} />
@@ -508,6 +564,11 @@ export function ActionCard({
                   style={{ color: "var(--color-text)" }}
                 >
                   {lead.title}
+                  {followUpNote ? (
+                    <span className="font-medium" style={{ color: "var(--color-text-muted)" }}>
+                      {" "}- ({followUpNote})
+                    </span>
+                  ) : null}
                 </h3>
                 <p
                   className="mt-0.5 truncate text-[13px] font-medium"
@@ -523,27 +584,13 @@ export function ActionCard({
                 primary signal (Ledger §7.7); the attempt streak surfaces
                 "this lead has already been chased" so the user can pick
                 a different channel; the money chip aids prioritisation. */}
-            {(action && followupLabel) || attemptCount >= 1 || moneyChip ? (
+            {(action && followupLabel) || negTotal >= 1 || moneyChip ? (
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 {action && followupLabel ? (
                   <FollowupPill kind={followupKindForPill} label={followupLabel} />
                 ) : null}
-                {!isListVariant && attemptCount >= 1 ? (
-                  <span
-                    className="inline-flex items-center rounded-full px-2 py-0.5 text-[11.5px] font-semibold"
-                    style={{
-                      background: "color-mix(in oklch, var(--follow-overdue) 12%, transparent)",
-                      color: "var(--follow-overdue)",
-                      border: "1px solid color-mix(in oklch, var(--follow-overdue) 30%, transparent)",
-                    }}
-                  >
-                    Called {attemptCount}× ·{" "}
-                    {lastOutcome === "busy"
-                      ? "busy"
-                      : lastOutcome === "wa_sent"
-                        ? "WA sent"
-                        : "no answer"}
-                  </span>
+                {!isListVariant && negTotal >= 1 ? (
+                  <AttemptTally attempts={negAttempts} />
                 ) : null}
                 {moneyChip ? (
                   <Mono
@@ -637,6 +684,15 @@ export function ActionCard({
                 outcomeTitle={resolvedOutcomeMeta.title}
                 isLost={resolvedIsLost}
               />
+            ) : isAwaitingReply ? (
+              // WhatsApp sent, waiting on a reply — tap to log how it landed.
+              <LedgerButton
+                variant="setFollowup"
+                size="md"
+                onClick={handleAwaitingReply}
+              >
+                ⏳ Awaiting reply
+              </LedgerButton>
             ) : hasFollowupAction ? (
               <>
                 <WhatsAppAction
@@ -725,7 +781,6 @@ export function ActionCard({
           lead={lead}
           stages={stagesArray}
           onSubmit={handleSheetSubmit}
-          onSwitchChannel={(next) => setSheetChannel(next)}
         />
       ) : null}
     </article>
@@ -788,7 +843,15 @@ function CallAction({
 }) {
   const handleClick = tel
     ? () => {
-        window.location.href = tel;
+        // Use a transient anchor instead of window.location — assigning
+        // location to a tel: URL blanks the SPA view on some browsers.
+        const a = document.createElement("a");
+        a.href = tel;
+        a.target = "_blank";
+        a.rel = "noopener";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
         onAfterOpen?.();
       }
     : undefined;
@@ -842,13 +905,20 @@ function ResolvedConfirmation({
 }) {
   const { result, request, resolvedAt } = summary;
 
-  // Headline: where the resolve actually landed.
+  // Headline: where the resolve actually landed. A still-pending follow-up
+  // means it was kept on the list (retry "just log" / WhatsApp "wait for
+  // reply" / reschedule) rather than completed.
+  const stillOpen = result.followup.status === "pending";
   const resultLine = (() => {
     if (result.nextFollowup) {
       const when = new Date(result.nextFollowup.scheduledAt).toLocaleString();
       return `Next follow-up ${when}`;
     }
     if (isLost) return "Closed";
+    if (stillOpen) {
+      if (OUTCOME_META[request.outcome].flow === "awaiting") return "Awaiting reply";
+      return request.next_dt ? "Rescheduled" : "Logged — follow-up still open";
+    }
     if (request.set_no_followup) return "Done, no next step set";
     return "Rescheduled";
   })();
@@ -873,7 +943,7 @@ function ResolvedConfirmation({
           &ldquo;{request.note}&rdquo;
         </p>
       ) : null}
-      {request.set_no_followup && !isLost ? (
+      {!stillOpen && request.set_no_followup && !isLost ? (
         <p
           className="text-[11.5px] italic"
           style={{ color: "var(--color-text-faint)" }}
@@ -882,6 +952,41 @@ function ResolvedConfirmation({
         </p>
       ) : null}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Attempt tally — one chip per retry-negative outcome type from the
+// backend-derived streak ("↻ No answer ×2", "↻ Busy ×1"). Resets when a
+// positive outcome is logged. Uses the overdue Ledger token like the pill.
+// ---------------------------------------------------------------------------
+
+const ATTEMPT_LABELS: { key: keyof Omit<NegativeAttempts, "total">; label: string }[] = [
+  { key: "no_answer", label: "No answer" },
+  { key: "busy", label: "Busy" },
+  { key: "wa_not_replied", label: "Not replied" },
+];
+
+function AttemptTally({ attempts }: { attempts: NegativeAttempts | null }) {
+  if (!attempts) return null;
+  const chips = ATTEMPT_LABELS.filter(({ key }) => attempts[key] > 0);
+  if (chips.length === 0) return null;
+  return (
+    <>
+      {chips.map(({ key, label }) => (
+        <span
+          key={key}
+          className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11.5px] font-semibold"
+          style={{
+            background: "color-mix(in oklch, var(--follow-overdue) 12%, transparent)",
+            color: "var(--follow-overdue)",
+            border: "1px solid color-mix(in oklch, var(--follow-overdue) 30%, transparent)",
+          }}
+        >
+          ↻ {label} ×{attempts[key]}
+        </span>
+      ))}
+    </>
   );
 }
 
