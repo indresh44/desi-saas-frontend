@@ -24,6 +24,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
+  Calendar,
   ChevronDown,
   Phone,
   Sparkles,
@@ -41,6 +42,8 @@ import {
 } from "@/components/ledger";
 import { OUTCOME_META } from "@/components/followup-card/outcome-config";
 import { OutcomeSheet } from "@/components/followup-card/outcome-sheet";
+import { ScheduleFollowupSheet } from "@/components/followup-card/schedule-followup-sheet";
+import { ActivitySummaryInfo } from "@/components/leads/activity-summary-info";
 import { fetchLeadContext } from "@/lib/api/dashboard";
 import { fetchLeadFollowUps } from "@/lib/api/followups";
 import {
@@ -99,9 +102,6 @@ interface ActionCardProps {
    *  when `onResolved` is not supplied OR the lazy follow-up lookup
    *  returns nothing. Ignored in `variant="list"`. */
   onMarkDone?: (leadId: string) => Promise<void> | void;
-  /** Dashboard-only. Navigates to the lead detail page so the existing
-   *  follow-up form can be used. A dedicated modal is parked. */
-  onSetFollowUp?: (leadId: string) => void;
   /** Optional override for the WhatsApp button. The list page passes this
    *  to open the in-app `LeadWhatsAppChatDrawer` instead of the wa.me
    *  deep link. When absent, the button uses the wa.me href fallback. */
@@ -196,7 +196,6 @@ export function ActionCard({
   lead,
   variant = "dashboard",
   onMarkDone,
-  onSetFollowUp,
   onWhatsApp,
   onResolved,
 }: ActionCardProps) {
@@ -218,6 +217,7 @@ export function ActionCard({
   const stagesArray = useMemo(() => Object.values(stageMap), [stageMap]);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetChannel, setSheetChannel] = useState<ResolveChannel>("call");
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   const [openFollowup, setOpenFollowup] = useState<LeadFollowUp | null>(
     lead.openFollowup ?? null,
   );
@@ -485,6 +485,131 @@ export function ActionCard({
     } as React.CSSProperties;
   }, [cardState, resolvedIsLost]);
 
+  // --- Enquiry-list card (mobile) — dedicated layout: identity + circular
+  // action icons in the header, then a footer bar with the follow-up line and
+  // a Details link. The dashboard layout below is unaffected. ---
+  if (isListVariant) {
+    return (
+      <article
+        className="relative overflow-hidden border bg-card"
+        style={{
+          borderColor: "var(--color-border)",
+          borderRadius: "var(--ledger-radius-card)",
+        }}
+      >
+        <div className="flex flex-col gap-3 px-4 py-3 sm:px-5">
+          {/* Header: identity (left) + circular Call/WhatsApp (right). */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                <h3
+                  className="min-w-0 truncate text-[15px] font-semibold tracking-[-0.01em]"
+                  style={{ color: "var(--color-text)" }}
+                >
+                  {lead.title}
+                  {followUpNote ? (
+                    <span className="font-medium" style={{ color: "var(--color-text-muted)" }}>
+                      {" "}- ({followUpNote})
+                    </span>
+                  ) : null}
+                </h3>
+                {lead.stageName ? (
+                  <StageBadge name={lead.stageName} color={lead.stageColor} />
+                ) : null}
+              </div>
+
+              {/* Customer name · number + activity-summary info. */}
+              <div className="mt-1 flex items-center gap-1.5 text-[13px]">
+                <span
+                  className="truncate font-medium"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  {customerLabel}
+                </span>
+                {lead.customerPhone ? (
+                  <>
+                    <span aria-hidden style={{ color: "var(--color-border)" }}>·</span>
+                    <Mono
+                      className="flex-none text-[12.5px] font-semibold"
+                      style={{ color: "var(--color-text-secondary)" }}
+                    >
+                      {lead.customerPhone}
+                    </Mono>
+                  </>
+                ) : null}
+                {lead.activitySummary ? (
+                  <ActivitySummaryInfo summary={lead.activitySummary} />
+                ) : null}
+              </div>
+
+              {addedDateLabel ? (
+                <p className="mt-1 text-[12.5px]" style={{ color: "var(--color-text-faint)" }}>
+                  Added {addedDateLabel}
+                </p>
+              ) : null}
+
+              <button
+                type="button"
+                onClick={toggle}
+                aria-expanded={open}
+                aria-controls={`ctx-${lead.id}`}
+                className="-ml-1 mt-2 flex items-center gap-1.5 self-start rounded px-1 py-0.5 text-[12.5px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                style={{ color: "var(--color-text-muted)" }}
+              >
+                <ChevronDown
+                  className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")}
+                />
+                {open ? "Hide context" : "View context"}
+              </button>
+            </div>
+
+            <div className="flex flex-none items-center gap-2">
+              <WhatsAppAction lead={lead} wa={wa} onWhatsApp={onWhatsApp} iconOnly />
+              <CallAction tel={tel} iconOnly />
+            </div>
+          </div>
+
+          {/* Expanded context. */}
+          {open ? (
+            <div
+              id={`ctx-${lead.id}`}
+              className="space-y-4 border-t pt-4"
+              style={{ borderColor: "var(--color-border-subtle)" }}
+            >
+              {contextLoading ? (
+                <p className="text-[12.5px]" style={{ color: "var(--color-text-muted)" }}>
+                  Loading context…
+                </p>
+              ) : contextError ? (
+                <p className="text-[12.5px]" style={{ color: "var(--follow-overdue)" }}>
+                  {contextError}
+                </p>
+              ) : context ? (
+                <ContextBody context={context} leadId={lead.id} />
+              ) : null}
+            </div>
+          ) : null}
+
+          {/* Footer: follow-up line (left) + Details link (right). */}
+          <div
+            className="flex items-center justify-between gap-3 border-t pt-3"
+            style={{ borderColor: "var(--color-border-subtle)" }}
+          >
+            <FollowupFooter kind={followupKindForPill} label={followupLabel} />
+            <Link
+              href={`/leads/${lead.id}`}
+              className="inline-flex flex-none items-center gap-1 rounded text-[13px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              style={{ color: "var(--color-accent)" }}
+            >
+              Details
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+        </div>
+      </article>
+    );
+  }
+
   return (
     <article
       className="relative overflow-hidden border bg-card transition-colors"
@@ -526,50 +651,75 @@ export function ActionCard({
                     <StageBadge name={lead.stageName} color={lead.stageColor} />
                   ) : null}
                 </div>
-                <div
-                  className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px]"
-                  style={{ color: "var(--color-text-muted)" }}
-                >
+                {/* Customer name · number (inline on mobile) + summary info. */}
+                <div className="mt-1 flex items-center gap-1.5 text-[13px]">
                   <span
                     className="truncate font-medium"
                     style={{ color: "var(--color-text-secondary)" }}
                   >
                     {customerLabel}
                   </span>
-                  {lead.source ? (
+                  {lead.customerPhone ? (
                     <>
                       <span aria-hidden style={{ color: "var(--color-border)" }}>·</span>
-                      <span className="capitalize">
-                        {lead.source.replaceAll("_", " ")}
-                      </span>
-                    </>
-                  ) : null}
-                  {addedDateLabel ? (
-                    <>
-                      <span aria-hidden style={{ color: "var(--color-border)" }}>·</span>
-                      <Mono className="text-[12.5px]" style={{ color: "var(--color-text-faint)" }}>
-                        Added {addedDateLabel}
+                      <Mono
+                        className="flex-none text-[12px]"
+                        style={{ color: "var(--color-text-muted)" }}
+                      >
+                        {lead.customerPhone}
                       </Mono>
                     </>
                   ) : null}
+                  {lead.activitySummary ? (
+                    <ActivitySummaryInfo summary={lead.activitySummary} />
+                  ) : null}
                 </div>
+                {/* Source · Added — only when there's something to show. */}
+                {lead.source || addedDateLabel ? (
+                  <div
+                    className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px]"
+                    style={{ color: "var(--color-text-muted)" }}
+                  >
+                    {lead.source ? (
+                      <span className="capitalize">
+                        {lead.source.replaceAll("_", " ")}
+                      </span>
+                    ) : null}
+                    {lead.source && addedDateLabel ? (
+                      <span aria-hidden style={{ color: "var(--color-border)" }}>·</span>
+                    ) : null}
+                    {addedDateLabel ? (
+                      <Mono className="text-[12.5px]" style={{ color: "var(--color-text-faint)" }}>
+                        Added {addedDateLabel}
+                      </Mono>
+                    ) : null}
+                  </div>
+                ) : null}
               </>
             ) : (
               <Link
                 href={`/leads/${lead.id}`}
                 className="block rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <h3
-                  className="truncate text-[14px] font-semibold tracking-[-0.01em] sm:text-[15px]"
-                  style={{ color: "var(--color-text)" }}
-                >
-                  {lead.title}
-                  {followUpNote ? (
-                    <span className="font-medium" style={{ color: "var(--color-text-muted)" }}>
-                      {" "}- ({followUpNote})
-                    </span>
+                {/* Overdue / due-today cards carry the lead's stage tag at the
+                    top so the owner sees where the deal stands before acting
+                    (a quote-sent overdue is a different call than a new one). */}
+                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                  <h3
+                    className="min-w-0 truncate text-[14px] font-semibold tracking-[-0.01em] sm:text-[15px]"
+                    style={{ color: "var(--color-text)" }}
+                  >
+                    {lead.title}
+                    {followUpNote ? (
+                      <span className="font-medium" style={{ color: "var(--color-text-muted)" }}>
+                        {" "}- ({followUpNote})
+                      </span>
+                    ) : null}
+                  </h3>
+                  {hasFollowupAction && lead.stageName ? (
+                    <StageBadge name={lead.stageName} color={lead.stageColor} />
                   ) : null}
-                </h3>
+                </div>
                 <p
                   className="mt-0.5 truncate text-[13px] font-medium"
                   style={{ color: "var(--color-text-secondary)" }}
@@ -726,15 +876,13 @@ export function ActionCard({
               </>
             ) : (
               <>
-                {onSetFollowUp ? (
-                  <LedgerButton
-                    variant="setFollowup"
-                    size="md"
-                    onClick={() => onSetFollowUp(lead.id)}
-                  >
-                    Set follow-up
-                  </LedgerButton>
-                ) : null}
+                <LedgerButton
+                  variant="setFollowup"
+                  size="md"
+                  onClick={() => setScheduleOpen(true)}
+                >
+                  Set follow-up
+                </LedgerButton>
                 <WhatsAppAction lead={lead} wa={wa} onWhatsApp={onWhatsApp} />
               </>
             )}
@@ -783,6 +931,19 @@ export function ActionCard({
           onSubmit={handleSheetSubmit}
         />
       ) : null}
+
+      {/* Inline "Set a follow-up" — schedule without leaving for the lead
+          page. On success, notify the parent so the card drops out of the
+          "no follow-up" group and the dashboard refetches. */}
+      <ScheduleFollowupSheet
+        open={scheduleOpen}
+        onClose={() => setScheduleOpen(false)}
+        lead={lead}
+        onScheduled={() => {
+          setScheduleOpen(false);
+          onResolved?.(lead.id);
+        }}
+      />
     </article>
   );
 }
@@ -797,6 +958,7 @@ function WhatsAppAction({
   wa,
   onWhatsApp,
   onAfterOpen,
+  iconOnly,
 }: {
   lead: Lead;
   wa: string | null;
@@ -806,6 +968,8 @@ function WhatsAppAction({
    *  Skipped when `onWhatsApp` is the override (in-app drawer surface
    *  handles its own follow-up logging). */
   onAfterOpen?: () => void;
+  /** Render as a circular icon button (enquiry-list card header). */
+  iconOnly?: boolean;
 }) {
   const disabled = !onWhatsApp && !wa;
   const handleClick = () => {
@@ -821,12 +985,13 @@ function WhatsAppAction({
   return (
     <LedgerButton
       variant="whatsapp"
-      size="md"
+      size={iconOnly ? "icon" : "md"}
+      aria-label={iconOnly ? "WhatsApp" : undefined}
       onClick={handleClick}
       disabled={disabled}
     >
       <WhatsAppIcon size={15} />
-      WhatsApp
+      {iconOnly ? null : "WhatsApp"}
     </LedgerButton>
   );
 }
@@ -834,12 +999,15 @@ function WhatsAppAction({
 function CallAction({
   tel,
   onAfterOpen,
+  iconOnly,
 }: {
   tel: string | null;
   /** Fired after the tel: deep link is triggered. On mobile the dialer
    *  takes over, but the sheet is still mounted when the user returns;
    *  on desktop the tel: nav is a no-op so the sheet surfaces right away. */
   onAfterOpen?: () => void;
+  /** Render as a circular icon button (enquiry-list card header). */
+  iconOnly?: boolean;
 }) {
   const handleClick = tel
     ? () => {
@@ -858,12 +1026,13 @@ function CallAction({
   return (
     <LedgerButton
       variant="action"
-      size="md"
+      size={iconOnly ? "icon" : "md"}
+      aria-label={iconOnly ? "Call" : undefined}
       onClick={handleClick}
       disabled={!tel}
     >
       <Phone className="size-[15px]" strokeWidth={1.8} />
-      Call
+      {iconOnly ? null : "Call"}
     </LedgerButton>
   );
 }
@@ -990,6 +1159,38 @@ function AttemptTally({ attempts }: { attempts: NegativeAttempts | null }) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Follow-up footer line (enquiry-list card) — calendar glyph + the cascade
+// label ("Follow up on 12 Jun", "Overdue · 2 days", …), tinted by kind.
+// ---------------------------------------------------------------------------
+
+function FollowupFooter({ kind, label }: { kind: FollowupKind; label: string | null }) {
+  if (!label) {
+    return (
+      <span className="text-[13px]" style={{ color: "var(--color-text-faint)" }}>
+        No follow-up set
+      </span>
+    );
+  }
+  const color =
+    kind === "overdue"
+      ? "var(--follow-overdue)"
+      : kind === "today"
+        ? "var(--color-accent)"
+        : kind === "scheduled"
+          ? "var(--color-text-secondary)"
+          : "var(--color-text-muted)";
+  return (
+    <span
+      className="inline-flex min-w-0 items-center gap-1.5 text-[13px] font-semibold"
+      style={{ color }}
+    >
+      <Calendar className="h-[15px] w-[15px] flex-none" strokeWidth={1.8} />
+      <span className="truncate">{label}</span>
+    </span>
+  );
+}
+
 function StatusEdge({ kind }: { kind: FollowupKind }) {
   let color: string | null = null;
   if (kind === "overdue") color = "var(--follow-overdue)";
@@ -1031,21 +1232,42 @@ function ContextBody({
     <>
       {context.aiSummary ? (
         <section>
-          <h4
-            className="mb-1.5 flex items-center gap-1 text-[10.5px] font-semibold uppercase tracking-[0.06em]"
-            style={{ color: "var(--color-accent)" }}
-          >
-            <Sparkles className="h-3 w-3" /> AI summary
-          </h4>
+          {/* AI summary — the headline insight, so it gets a highlighted
+              gradient panel + a filled "AI star" badge to read as the smart,
+              auto-generated bit (distinct from the plainer sections below). */}
           <div
-            className="rounded-[var(--ledger-radius-control)] px-3 py-2 text-[12.5px] leading-relaxed"
+            className="rounded-[var(--ledger-radius-control)] px-3 py-2.5"
             style={{
-              background: "var(--color-accent-soft)",
-              border: "1px solid color-mix(in oklch, var(--color-accent) 20%, transparent)",
-              color: "color-mix(in oklch, var(--color-accent) 78%, var(--color-text))",
+              background:
+                "linear-gradient(135deg, color-mix(in oklch, var(--color-accent) 18%, var(--color-surface)) 0%, color-mix(in oklch, var(--color-accent) 6%, var(--color-surface)) 100%)",
+              border: "1px solid color-mix(in oklch, var(--color-accent) 30%, transparent)",
             }}
           >
-            {context.aiSummary}
+            <div className="mb-1.5 flex items-center gap-1.5">
+              <span
+                className="flex h-5 w-5 items-center justify-center rounded-full"
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--color-accent) 0%, color-mix(in oklch, var(--color-accent) 55%, white) 100%)",
+                  color: "white",
+                  boxShadow: "0 1px 3px color-mix(in oklch, var(--color-accent) 40%, transparent)",
+                }}
+              >
+                <Sparkles className="h-3 w-3" strokeWidth={2.2} aria-hidden />
+              </span>
+              <span
+                className="text-[10.5px] font-semibold uppercase tracking-[0.06em]"
+                style={{ color: "var(--color-accent)" }}
+              >
+                AI summary
+              </span>
+            </div>
+            <p
+              className="text-[12.5px] leading-relaxed"
+              style={{ color: "color-mix(in oklch, var(--color-accent) 80%, var(--color-text))" }}
+            >
+              {context.aiSummary}
+            </p>
           </div>
         </section>
       ) : null}

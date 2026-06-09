@@ -7,6 +7,7 @@ import type { Lead } from "@/lib/types/lead";
 import type {
   AssistantTasksResponse,
   DashboardPaymentSummary,
+  TodayActivityResponse,
 } from "@/lib/types/dashboard";
 import type { LeadFollowUp } from "@/lib/types/followup";
 import type {
@@ -146,6 +147,19 @@ export async function fetchLeadContext(leadId: string): Promise<LeadContext> {
       description: a.description,
     })),
   };
+}
+
+export async function fetchTodayActivity(
+  limit = 50,
+): Promise<TodayActivityResponse> {
+  // Bottom-of-dashboard daily diary. Owner actions only (the backend filters
+  // actor_type=human); the response is already in snake_case shape the
+  // component reads directly — no camel-case projection needed.
+  const result = await apiClient<TodayActivityResponse>(
+    `${API_ENDPOINTS.dashboardTodayActivity}?limit=${limit}`,
+    { method: "GET", cache: "no-store" },
+  );
+  return result.data;
 }
 
 export async function fetchAssistantTasks(

@@ -30,6 +30,7 @@ export const API_ENDPOINTS = {
   dashboardPaymentSummary: "/api/v1/dashboard/payment-summary",
   dashboardAssistantTasks: "/api/v1/dashboard/assistant-tasks",
   dashboardLeadsNeedingAction: "/api/v1/dashboard/leads-needing-action",
+  dashboardTodayActivity: "/api/v1/dashboard/today-activity",
   leadContext: (id: string) => `/api/v1/leads/${id}/context`,
   customerOutstanding: (id: string) => `/api/v1/customers/${id}/outstanding`,
   customerSummary: (id: string) => `/api/v1/customers/${id}/summary`,

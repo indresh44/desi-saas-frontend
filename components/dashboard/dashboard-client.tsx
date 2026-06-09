@@ -31,13 +31,16 @@ import { ActionCard } from "@/components/dashboard/action-card";
 import { AiPanel } from "@/components/dashboard/ai-panel";
 import { AssistantTasksSection } from "@/components/dashboard/assistant-tasks-section";
 import { NeedsYouRail } from "@/components/dashboard/needs-you-rail";
+import { TodayActivitySection } from "@/components/dashboard/today-activity-section";
 import { CreateLeadDialog } from "@/components/leads/create-lead-dialog";
 import { Eyebrow, LedgerButton, PageTitle } from "@/components/ledger";
 import { useAuth } from "@/lib/auth/auth-context";
 import {
   fetchLeadsNeedingAction,
+  fetchTodayActivity,
   type LeadsNeedingActionResult,
 } from "@/lib/api/dashboard";
+import type { TodayActivityResponse } from "@/lib/types/dashboard";
 import { fetchLeadFollowUps, markFollowUpDone } from "@/lib/api/followups";
 import { fetchLeads } from "@/lib/api/leads";
 import { fetchBusinessSettings } from "@/lib/api/business-settings";
@@ -103,6 +106,8 @@ export default function DashboardClient() {
     () => new Set(),
   );
   const [recentLeads, setRecentLeads] = useState<Lead[]>([]);
+  const [todayActivity, setTodayActivity] =
+    useState<TodayActivityResponse | null>(null);
   const [businessSettings, setBusinessSettings] = useState<BusinessSettings | null>(
     null,
   );
@@ -115,11 +120,13 @@ export default function DashboardClient() {
     setIsLoading(true);
     setError(null);
     try {
-      const [needs, leads] = await Promise.all([
+      const [needs, leads, today] = await Promise.all([
         fetchLeadsNeedingAction(ACTION_LIST_LIMIT),
         fetchLeads(),
+        fetchTodayActivity(),
       ]);
       setActionList(needs);
+      setTodayActivity(today);
       // Authoritative refresh — drop the optimistic-removal set now that
       // we have fresh truth from the backend.
       setOptimisticallyRemoved(new Set());
@@ -233,16 +240,6 @@ export default function DashboardClient() {
       }
     },
     [loadDashboard],
-  );
-
-  const handleSetFollowUp = useCallback(
-    (leadId: string) => {
-      // No dedicated set-follow-up modal yet — punt to the lead detail
-      // page where the existing follow-up form lives. Tracked in
-      // dashboard-build-plan §H (parked).
-      router.push(`/leads/${leadId}`);
-    },
-    [router],
   );
 
   // After an ActionCard's outcome sheet posts to /resolve, drop the
@@ -497,7 +494,6 @@ export default function DashboardClient() {
                             key={lead.id}
                             lead={lead}
                             onMarkDone={handleMarkDone}
-                            onSetFollowUp={handleSetFollowUp}
                             onResolved={handleResolved}
                           />
                         ))}
@@ -531,6 +527,19 @@ export default function DashboardClient() {
             ) : null}
           </div>
         </div>
+
+        {/* Today's Activity — full-width daily diary pinned to the bottom.
+            Only the established-user view reaches here (the new-user welcome
+            returns early), so we render whenever the feed has loaded; the
+            section shows its own empty state when nothing's been logged yet. */}
+        {todayActivity ? (
+          <TodayActivitySection
+            items={todayActivity.items}
+            total={todayActivity.total}
+            countsByType={todayActivity.counts_by_type}
+            moneyCollectedToday={todayActivity.money_collected_today}
+          />
+        ) : null}
       </section>
 
       <CreateLeadDialog

@@ -72,6 +72,56 @@ export type AssistantTaskIcon =
   | "write"
   | "read";
 
+// ---------------------------------------------------------------------------
+// "Today's Activity" feed — bottom-of-dashboard daily diary (owner actions)
+// ---------------------------------------------------------------------------
+
+/** Mirrors `LeadActivityType` values the feed can return (high-signal set). */
+export type TodayActivityType =
+  | "call"
+  | "whatsapp"
+  | "meeting"
+  | "note"
+  | "status_change"
+  | "followup_scheduled"
+  | "followup_rescheduled"
+  | "followup_completed"
+  | "followup_cancelled"
+  | "invoice_created"
+  | "invoice_sent"
+  | "invoice_approved"
+  | "invoice_cancelled"
+  | "invoice_adjusted"
+  | "payment_recorded"
+  | "lead_created";
+
+export interface TodayActivityItem {
+  id: string;
+  type: TodayActivityType;
+  description: string;
+  lead_id: string | null;
+  lead_title: string | null;
+  customer_name: string | null;
+  created_at: string;
+  // Lifted from payload so the frontend can compose a descriptive line
+  // (action + outcome + follow-up topic + note + stage/next) instead of
+  // leaning on `description`. All null for types that don't carry them.
+  channel: string | null;
+  outcome: string | null;
+  result_action: string | null;
+  note: string | null;
+  followup_note: string | null;
+  next_dt: string | null;
+  to_stage_name: string | null;
+}
+
+export interface TodayActivityResponse {
+  items: TodayActivityItem[];
+  total: number;
+  counts_by_type: Record<string, number>;
+  money_collected_today: number;
+}
+
 export interface AssistantTasksResponse {
   running: AssistantTaskSummary[];
   awaiting_approval: AssistantTaskSummary[];

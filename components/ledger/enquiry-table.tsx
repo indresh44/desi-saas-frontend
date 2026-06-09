@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { firstName, telHref, whatsappHref } from "@/lib/contact";
+import { ActivitySummaryInfo } from "@/components/leads/activity-summary-info";
 import type { Lead } from "@/lib/types/lead";
 import type { NextActionType } from "@/lib/types/next-action";
 import { FOLLOWUPS, type FollowupKind } from "./tokens";
@@ -232,9 +233,23 @@ function Row({
         </div>
       </Td>
       <Td padding={padding}>
-        <span style={{ color: "var(--color-text-secondary)", fontWeight: 500 }}>
-          {lead.customerName ?? "Unknown customer"}
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span style={{ color: "var(--color-text-secondary)", fontWeight: 500 }}>
+            {lead.customerName ?? "Unknown customer"}
+          </span>
+          {lead.activitySummary ? (
+            <ActivitySummaryInfo summary={lead.activitySummary} />
+          ) : null}
+        </div>
+        {lead.customerPhone ? (
+          <div
+            className="mt-0.5 flex items-center gap-1"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            <Phone className="size-[12px]" strokeWidth={1.8} />
+            <span className="ledger-mono text-[12px]">{lead.customerPhone}</span>
+          </div>
+        ) : null}
       </Td>
       <Td padding={padding}>
         <SourceTag source={sourceText} />
